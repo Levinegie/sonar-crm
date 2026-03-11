@@ -19,4 +19,4 @@ RUN npx prisma generate
 EXPOSE 3000
 
 # 启动命令
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node src/index.js"]
+CMD ["node", "src/index.js"]
