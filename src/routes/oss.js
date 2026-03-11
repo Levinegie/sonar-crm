@@ -4,7 +4,8 @@
 
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
-const { authenticate, tenantScope, success, error } = require('../utils/helpers');
+const { success, error } = require('../utils/helpers');
+const { authenticate, tenantScope } = require('../middleware/auth');
 const { getSignedUrl, listFiles } = require('../services/oss');
 
 const router = express.Router();

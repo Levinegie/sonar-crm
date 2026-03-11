@@ -7,7 +7,8 @@ const express = require('express');
 const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const { PrismaClient } = require('@prisma/client');
-const { authenticate, tenantScope, success, error, paginate } = require('../utils/helpers');
+const { success, error, paginate } = require('../utils/helpers');
+const { authenticate, tenantScope } = require('../middleware/auth');
 const { uploadToOSS, deleteFromOSS } = require('../services/oss');
 const { analyzeRecording } = require('../services/ai');
 
@@ -195,9 +196,7 @@ router.delete('/:id', authenticate, tenantScope, async (req, res) => {
     });
 
     res.json(success(null, '删除成功'));
-    });
-
-    catch (err) {
+  } catch (err) {
     res.status(500).json(error('删除失败', 500));
   }
 });

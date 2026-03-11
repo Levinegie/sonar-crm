@@ -1,25 +1,234 @@
 // =====================================================
+// 声纳 CRM 数据库结构
+// =====================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// 租户表
+// =====================================================
+model Tenant {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+
+  maxUsers    Int      @default(10)
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users              User[]
+  customers          Customer[]
+  recordings         Recording[]
+  notifications      Notification[]
+  targets            Target[]
+  dashboardConfigs   DashboardConfig[]
+  importTasks        ImportTask[]
+
+  @@map("tenants")
+}
+
+// =====================================================
+// 用户表
+// =====================================================
+model User {
+  id            String   @id @default(uuid())
+  tenantId      String
+  username      String
+  password      String
+  name          String
+  role          String   @default("agent")
+  phone         String?
+  avatar        String?
+  isActive      Boolean  @default(true)
+  maxCustomers  Int      @default(50)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id])
+  customers  Customer[]
+  recordings Recording[]
+
+  @@unique([tenantId, username])
+  @@index([tenantId])
+  @@map("users")
+}
+
+// =====================================================
+// 客户表
+// =====================================================
+model Customer {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String?
+  phone        String
+  phoneMasked  String?
+  community    String?
+  area         Float?
+  houseType    String?
+  budget       String?
+  portrait     Json?
+  portraitPct  Int      @default(0)
+  level        String   @default("C")
+  status       String   @default("pending")
+  source       String?
+  agentId      String?
+  nextFollowAt DateTime?
+  lastCallAt   DateTime?
+  callCount    Int      @default(0)
+  pinned       Boolean  @default(false)
+  seaStatus    String?
+  seaReason    String?
+  seaAt        DateTime?
+  claimedAt    DateTime?
+  claimedById  String?
+  tags         String[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant     Tenant          @relation(fields: [tenantId], references: [id])
+  agent      User?           @relation(fields: [agentId], references: [id])
+  recordings Recording[]
+  followUps  FollowUp[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@index([agentId])
+  @@index([seaStatus])
+  @@map("customers")
+}
+
+// =====================================================
+// 跟进记录表
+// =====================================================
+model FollowUp {
+  id          String   @id @default(uuid())
+  customerId  String
+  agentId     String?
+  type        String
+  content     String?  @db.Text
+  nextAction  String?
+  nextAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+
+  @@index([customerId])
+  @@map("follow_ups")
+}
+
+// =====================================================
+// 录音表
+// =====================================================
+model Recording {
+  id             String   @id @default(uuid())
+  tenantId       String
+  customerId     String?
+  agentId        String?
+  fileName       String
+  ossUrl         String
+  ossKey         String
+  fileSize       Int
+  duration       Int?
+  customerPhone  String
+  customerName   String?
+  isValid        Boolean?
+  callStage      String?
+  analysisStatus String   @default("pending")
+  analysisError  String?
+  callTime       DateTime?
+  uploadedAt     DateTime @default(now())
+  analyzedAt     DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id])
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  agent           User?            @relation(fields: [agentId], references: [id])
+  analysisResults AnalysisResult[]
+
+  @@index([tenantId])
+  @@index([customerId])
+  @@index([agentId])
+  @@map("recordings")
+}
+
+// =====================================================
+// 分析结果表
+// =====================================================
+model AnalysisResult {
+  id            String   @id @default(uuid())
+  recordingId   String
+  customerId    String?
+  stage         String
+  lineType      String
+  modelName     String?
+  provider      String?
+  tokensUsed    Int?
+  rawOutput     String?  @db.Text
+  transcript    String?  @db.Text
+  scores        Json?
+  customerCard  Json?
+  metadata      Json?
+  summary       String?  @db.Text
+  redFlag       Boolean  @default(false)
+  redFlagDetail String?
+  createdAt     DateTime @default(now())
+
+  recording Recording @relation(fields: [recordingId], references: [id])
+
+  @@index([recordingId])
+  @@map("analysis_results")
+}
+
+// =====================================================
+// AI 配置表
+// =====================================================
+model AIConfig {
+  id           String   @id @default(uuid())
+  tenantId     String
+  name         String
+  description  String?
+  provider     String
+  model        String
+  apiUrl       String?
+  apiKey       String?
+  systemPrompt String?  @db.Text
+  isActive     Boolean  @default(true)
+  priority     Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([tenantId, name])
+  @@map("ai_configs")
+}
+
+// =====================================================
 // 通知消息表
 // =====================================================
 model Notification {
-  id          String   @id @default(uuid())
-  tenantId    String
-  userId      String?  // 为 null 则发给所有人
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  type      String
+  title     String
+  content   String
+  link      String?
+  isRead    Boolean  @default(false)
+  readAt    DateTime?
+  createdAt DateTime @default(now())
 
-  type        String   // system/remind/alert/achievement
-  title       String
-  content     String
-  link        String?  // 点击跳转地址
-
-  isRead      Boolean  @default(false)
-  readAt      DateTime?
-
-  createdAt   DateTime @default(now())
-
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId, userId])
-  @@index([isRead])
   @@map("notifications")
 }
 
@@ -27,22 +236,19 @@ model Notification {
 // 目标管理表
 // =====================================================
 model Target {
-  id          String   @id @default(uuid())
-  tenantId    String
-  agentId     String?
+  id        String   @id @default(uuid())
+  tenantId  String
+  agentId   String?
+  period    String
+  type      String
+  target    Int
+  achieved  Int      @default(0)
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  period      String   // daily/weekly/monthly
-  type        String   // calls/visits/signs/customers
-  target      Int      // 目标值
-  achieved    Int      @default(0)
-
-  startDate   DateTime
-  endDate     DateTime
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId, period])
   @@map("targets")
@@ -52,18 +258,16 @@ model Target {
 // 仪表盘配置表
 // =====================================================
 model DashboardConfig {
-  id          String   @id @default(uuid())
-  tenantId    String
-  userId      String?  // null 表示租户级别
+  id        String   @id @default(uuid())
+  tenantId  String
+  userId    String?
+  name      String
+  layout    Json?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  name        String
-  layout      Json?    // 布局配置
-
-  isDefault   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@unique([tenantId, userId, name])
   @@map("dashboard_configs")
@@ -73,23 +277,20 @@ model DashboardConfig {
 // 批量导入任务表
 // =====================================================
 model ImportTask {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   tenantId    String
   userId      String
-
-  type        String   // customer
+  type        String
   fileName    String
-  totalRows   Int      @default(0)
-  successRows Int      @default(0)
-  failRows    Int      @default(0)
-  errorLog    String?  @db.Text
-
-  status      String   @default("pending") // pending/processing/completed/failed
-
-  createdAt   DateTime @default(now())
+  totalRows   Int       @default(0)
+  successRows Int       @default(0)
+  failRows    Int       @default(0)
+  errorLog    String?   @db.Text
+  status      String    @default("pending")
+  createdAt   DateTime  @default(now())
   completedAt DateTime?
 
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenant Tenant @relation(fields: [tenantId], references: [id])
 
   @@index([tenantId])
   @@map("import_tasks")

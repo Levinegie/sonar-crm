@@ -5,7 +5,8 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { PrismaClient } = require('@prisma/client');
-const { authenticate, authorize, tenantScope, success, error, paginate } = require('../utils/helpers');
+const { success, error, paginate } = require('../utils/helpers');
+const { authenticate, authorize, tenantScope } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();

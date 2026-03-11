@@ -5,7 +5,8 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { Prisma } = require('@prisma/client');
-const { authenticate, tenantScope, success, error } = require('../utils/helpers');
+const { success, error } = require('../utils/helpers');
+const { authenticate, tenantScope } = require('../middleware/auth');
 const dayjs = require('dayjs');
 
 const router = express.Router();
