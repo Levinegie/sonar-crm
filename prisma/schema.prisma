@@ -39,19 +39,21 @@ model Tenant {
 // 用户表
 // =====================================================
 model User {
-  id            String   @id @default(uuid())
-  tenantId      String
-  username      String
-  password      String
-  name          String
-  role          String   @default("agent")
-  phone         String?
-  avatar        String?
-  isActive      Boolean  @default(true)
-  maxCustomers  Int      @default(50)
-  lastLoginAt   DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id             String    @id @default(uuid())
+  tenantId       String
+  username       String
+  password       String
+  name           String
+  role           String    @default("agent")
+  phone          String?
+  avatar         String?
+  isActive       Boolean   @default(true)
+  maxCustomers   Int       @default(50)
+  lastLoginAt    DateTime?
+  loginFailCount Int       @default(0)
+  lockedUntil    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   tenant     Tenant      @relation(fields: [tenantId], references: [id])
   customers  Customer[]
@@ -294,4 +296,23 @@ model ImportTask {
 
   @@index([tenantId])
   @@map("import_tasks")
+}
+
+// =====================================================
+// 审计日志表
+// =====================================================
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String?
+  userId     String?
+  action     String
+  resource   String?
+  resourceId String?
+  ip         String?
+  detail     String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([userId])
+  @@map("audit_logs")
 }
