@@ -1,0 +1,96 @@
+// =====================================================
+// 通知消息表
+// =====================================================
+model Notification {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String?  // 为 null 则发给所有人
+
+  type        String   // system/remind/alert/achievement
+  title       String
+  content     String
+  link        String?  // 点击跳转地址
+
+  isRead      Boolean  @default(false)
+  readAt      DateTime?
+
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// =====================================================
+// 目标管理表
+// =====================================================
+model Target {
+  id          String   @id @default(uuid())
+  tenantId    String
+  agentId     String?
+
+  period      String   // daily/weekly/monthly
+  type        String   // calls/visits/signs/customers
+  target      Int      // 目标值
+  achieved    Int      @default(0)
+
+  startDate   DateTime
+  endDate     DateTime
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId, period])
+  @@map("targets")
+}
+
+// =====================================================
+// 仪表盘配置表
+// =====================================================
+model DashboardConfig {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String?  // null 表示租户级别
+
+  name        String
+  layout      Json?    // 布局配置
+
+  isDefault   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, userId, name])
+  @@map("dashboard_configs")
+}
+
+// =====================================================
+// 批量导入任务表
+// =====================================================
+model ImportTask {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+
+  type        String   // customer
+  fileName    String
+  totalRows   Int      @default(0)
+  successRows Int      @default(0)
+  failRows    Int      @default(0)
+  errorLog    String?  @db.Text
+
+  status      String   @default("pending") // pending/processing/completed/failed
+
+  createdAt   DateTime @default(now())
+  completedAt DateTime?
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("import_tasks")
+}

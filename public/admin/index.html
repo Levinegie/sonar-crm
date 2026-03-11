@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>声纳 CRM - 管理后台</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1f3c; --blue:#1a56db; --blue-light:#3b82f6; --blue-pale:#eff6ff;
+  --cyan:#0ea5e9; --green:#10b981; --green-pale:#f0fdf4; --amber:#f59e0b;
+  --amber-pale:#fffbeb; --red:#ef4444; --red-pale:#fef2f2; --purple:#8b5cf6;
+  --purple-pale:#f5f3ff; --gray-50:#f8fafc; --gray-100:#f1f5f9; --gray-200:#e2e8f0;
+  --gray-300:#cbd5e1; --gray-400:#94a3b8; --gray-500:#64748b; --gray-600:#475569;
+  --gray-700:#334155; --gray-800:#1e293b; --text:#0f172a; --white:#fff; --sidebar:220px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--gray-50);color:var(--text);min-height:100vh;}
+
+/* 登录页 */
+.login-page{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy),#1e3a5f);}
+.login-card{background:white;border-radius:16px;padding:40px;width:400px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.login-logo{font-family:'Noto Serif SC',serif;font-size:28px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:8px;letter-spacing:4px}
+.login-logo span{color:var(--blue)}
+.login-sub{text-align:center;color:var(--gray-400);font-size:13px;margin-bottom:32px}
+.form-group{margin-bottom:20px}
+.form-group label{display:block;font-size:13px;font-weight:500;color:var(--gray-600);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
+.form-group input:focus{border-color:var(--blue)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:'Noto Sans SC',sans-serif;width:100%}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:#1d4ed8}
+.btn-outline{background:transparent;color:var(--gray-600);border:1px solid var(--gray-200)}
+.btn-outline:hover{background:var(--gray-50)}
+
+/* 后台布局 */
+.app{display:none;min-height:100vh}
+.app.active{display:flex}
+.topbar{position:fixed;top:0;left:0;right:0;height:56px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:1000}
+.topbar-logo{font-family:'Noto Serif SC',serif;font-size:18px;font-weight:700;color:white;letter-spacing:2px}
+.topbar-logo span{color:var(--blue-light)}
+.topbar-user{display:flex;align-items:center;gap:12px;color:white;font-size:14px}
+.topbar-user .avatar{width:32px;height:32px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:600}
+.topbar-user .name{font-weight:500}
+.topbar-user .role{font-size:12px;opacity:0.6;cursor:pointer}
+.sidebar{width:var(--sidebar);position:fixed;top:56px;left:0;bottom:0;background:white;border-right:1px solid var(--gray-200);overflow-y:auto}
+.nav-group{padding:12px 0}
+.nav-group-label{font-size:10px;font-weight:700;color:var(--gray-400);letter-spacing:1.5px;text-transform:uppercase;padding:8px 20px 4px}
+.nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--gray-500);font-size:13px;font-weight:400;transition:all 0.15s;border-left:3px solid transparent}
+.nav-link:hover{color:var(--gray-800);background:var(--gray-50)}
+.nav-link.active{color:var(--blue);background:var(--blue-pale);border-left-color:var(--blue);font-weight:500}
+.main{margin-left:var(--sidebar);margin-top:56px;padding:24px;min-height:calc(100vh - 56px)}
+
+/* 页面标题 */
+.page-header{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-size:18px;font-weight:700;color:var(--navy)}
+.page-sub{font-size:12px;color:var(--gray-400);margin-top:2px}
+
+/* 统计卡片 */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;position:relative;overflow:hidden}
+.stat-card .stat-label{font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:500}
+.stat-card .stat-val{font-size:28px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif}
+.stat-card .stat-sub{font-size:11px;color:var(--gray-400);margin-top:4px}
+.stat-card .stat-icon{position:absolute;right:16px;top:16px;font-size:28px;opacity:0.15}
+
+/* 表格 */
+.table-card{background:white;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden}
+.table-toolbar{padding:14px 20px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:12px}
+.search-box{display:flex;align-items:center;gap:8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:6px 12px;flex:1;max-width:280px}
+.search-box input{border:none;background:transparent;font-size:13px;color:var(--gray-700);outline:none;width:100%}
+table{width:100%;border-collapse:collapse}
+th{padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:0.5px;text-transform:uppercase;background:var(--gray-50);border-bottom:1px solid var(--gray-200);white-space:nowrap}
+td{padding:12px 16px;font-size:13px;color:var(--gray-700);border-bottom:1px solid var(--gray-100)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--gray-50)}
+
+/* 标签 */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge-s{background:#fef2f2;color:#dc2626}
+.badge-a{background:#fffbeb;color:#d97706}
+.badge-b{background:#f0fdf4;color:#16a34a}
+.badge-c{background:var(--gray-100);color:var(--gray-500)}
+.badge-new{background:#eff6ff;color:#2563eb}
+.badge-pending{background:#fefce8;color:#ca8a04}
+.badge-valid{background:#f0fdf4;color:#16a34a}
+.badge-invited{background:#fdf4ff;color:#9333ea}
+.badge-visited{background:#fff7ed;color:#ea580c}
+.badge-signed{background:#dcfce7;color:#15803d}
+.badge-dead{background:var(--gray-100);color:var(--gray-400)}
+.badge-sea{background:#fef2f2;color:#dc2626}
+
+/* 按钮 */
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 8px;font-size:11px}
+.btn-green{background:var(--green);color:white}
+.btn-red{background:var(--red);color:white}
+.btn-purple{background:var(--purple);color:white}
+
+/* 表单 */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:2000}
+.modal.active{display:flex}
+.modal-content{background:white;border-radius:12px;padding:24px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.modal-title{font-size:16px;font-weight:700;color:var(--navy)}
+.modal-close{font-size:20px;color:var(--gray-400);cursor:pointer}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+/* 配置卡片 */
+.config-card{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;margin-bottom:16px}
+.config-card-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.config-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-100)}
+.config-row:last-child{border-bottom:none}
+.config-label{font-size:13px;color:var(--gray-700)}
+.config-value{font-size:13px;color:var(--gray-500)}
+
+/* 开关 */
+.toggle{position:relative;width:44px;height:24px;background:var(--gray-200);border-radius:12px;cursor:pointer;transition:background 0.2s}
+.toggle.active{background:var(--green)}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:transform 0.2s}
+.toggle.active::after{transform:translateX(20px)}
+
+/* 漏斗 */
+.funnel{display:flex;flex-direction:column;gap:8px}
+.funnel-row{display:flex;align-items:center;gap:12px}
+.funnel-label{font-size:12px;color:var(--gray-500);width:70px;flex-shrink:0}
+.funnel-bar-wrap{flex:1;background:var(--gray-100);border-radius:4px;height:26px;overflow:hidden}
+.funnel-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:10px}
+.funnel-bar span{font-size:11px;font-weight:700;color:white}
+.funnel-bar .rate{font-size:10px;color:rgba(255,255,255,0.7)}
+.funnel-count{font-size:12px;color:var(--gray-500);width:30px;text-align:right;flex-shrink:0}
+
+/* 加载 */
+.loading{text-align:center;padding:40px;color:var(--gray-400)}
+.spinner{width:24px;height:24px;border:3px solid var(--gray-200);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 响应式 */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">声纳<span>CRM</span></div>
+    <div class="login-sub">智能客服管理平台</div>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="loginUsername" placeholder="请输入用户名">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="loginPassword" placeholder="请输入密码">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">登录</button>
+  </div>
+</div>
+
+<!-- 管理后台 -->
+<div class="app" id="app">
+  <!-- 顶部导航 -->
+  <div class="topbar">
+    <div class="topbar-logo">声纳<span>CRM</span></div>
+    <div class="topbar-user">
+      <div class="avatar" id="userAvatar">管</div>
+      <div>
+        <div class="name" id="userName">管理员</div>
+        <div class="role" onclick="logout()">退出登录</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 侧边栏 -->
+  <nav class="sidebar">
+    <div class="nav-group">
+      <div class="nav-group-label">概览</div>
+      <a class="nav-link active" data-view="dashboard" onclick="showView('dashboard',this)">
+        <span>📊</span>数据概览
+      </a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">客户管理</div>
+      <a class="nav-link" data-view="customers" onclick="showView('customers',this)">
+        <span>👥</span>我的客户
+      </a>
+      <a class="nav-link" data-view="sea" onclick="showView('sea',this)">
+        <span>🌊</span>公海客户
+      </a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">录音管理</div>
+      <a class="nav-link" data-view="recordings" onclick="showView('recordings',this)">
+        <span>📞</span>通话录音
+      </a>
+      <a class="nav-link" data-view="pending" onclick="showView('pending',this)">
+        <span>📋</span>待确认卡片
+      </a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">系统设置</div>
+      <a class="nav-link" data-view="users" onclick="showView('users',this)">
+        <span>👤</span>用户管理
+      </a>
+      <a class="nav-link" data-view="ai-config" onclick="showView('ai-config',this)">
+        <span>🤖</span>AI 配置
+      </a>
+      <a class="nav-link" data-view="settings" onclick="showView('settings',this)">
+        <span>⚙️</span>系统配置
+      </a>
+    </div>
+  </nav>
+
+  <!-- 主内容区 -->
+  <main class="main" id="mainContent">
+    <!-- 仪表盘 -->
+    <div class="view" id="view-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">数据概览</div>
+          <div class="page-sub" id="dashboardDate">今日数据 · 实时更新</div>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">今日通话</div>
+          <div class="stat-val" id="statTodayCalls">-</div>
+          <div class="stat-sub">有效通话</div>
+          <div class="stat-icon">📞</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">客户总数</div>
+          <div class="stat-val" id="statTotalCustomers">-</div>
+          <div class="stat-sub">有效客户</div>
+          <div class="stat-icon">👥</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">公海客户</div>
+          <div class="stat-val" id="statSeaCustomers">-</div>
+          <div class="stat-sub">可抢单</div>
+          <div class="stat-icon">🌊</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">待确认</div>
+          <div class="stat-val" id="statPending">-</div>
+          <div class="stat-sub">待处理</div>
+          <div class="stat-icon">📋</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="table-card">
+          <div class="table-toolbar"><span style="font-weight:600">转化漏斗</span></div>
+          <div style="padding:20px">
+            <div class="funnel" id="funnelData"></div>
+          </div>
+        </div>
+        <div class="table-card">
+          <div class="table-toolbar"><span style="font-weight:600">客服排行</span></div>
+          <div id="agentRank"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 客户列表 -->
+    <div class="view" id="view-customers" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">我的客户</div>
+          <div class="page-sub" id="customerCount">共 0 位客户</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">+ 新增客户</button>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>客户</th>
+              <th>小区</th>
+              <th>级别</th>
+              <th>状态</th>
+              <th>通话数</th>
+              <th>最近跟进</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="customerTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 公海 -->
+    <div class="view" id="view-sea" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🌊 公海客户</div>
+          <div class="page-sub">抢单后成为您的客户</div>
+        </div>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>客户</th>
+              <th>小区</th>
+              <th>预算</th>
+              <th>通话数</th>
+              <th>进入公海原因</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="seaTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 录音列表 -->
+    <div class="view" id="view-recordings" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">通话录音</div>
+          <div class="page-sub" id="recordingCount">共 0 条录音</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openUploadModal()">+ 上传录音</button>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>客户</th>
+              <th>通话时间</th>
+              <th>类型</th>
+              <th>分析状态</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="recordingTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 待确认 -->
+    <div class="view" id="view-pending" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📋 待确认卡片</div>
+          <div class="page-sub">请核对 AI 识别的客户信息</div>
+        </div>
+      </div>
+      <div id="pendingList"></div>
+    </div>
+
+    <!-- 用户管理 -->
+    <div class="view" id="view-users" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">👤 用户管理</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ 添加用户</button>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>用户名</th>
+              <th>姓名</th>
+              <th>角色</th>
+              <th>状态</th>
+              <th>最近登录</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody id="userTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- AI 配置 -->
+    <div class="view" id="view-ai-config" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">🤖 AI 模型配置</div>
+          <div class="page-sub">配置不同阶段使用的 AI 模型和提示词</div>
+        </div>
+      </div>
+      <div id="aiConfigList"></div>
+    </div>
+
+    <!-- 系统配置 -->
+    <div class="view" id="view-settings" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">⚙️ 系统配置</div>
+        </div>
+      </div>
+      <div class="config-card">
+        <div class="config-card-title">跟进规则</div>
+        <div class="config-row">
+          <span class="config-label">每日底线任务数</span>
+          <input type="number" value="60" style="width:80px;padding:6px;border:1px solid var(--gray-200);border-radius:6px" id="configDailyTarget">
+        </div>
+        <div class="config-row">
+          <span class="config-label">跟进周期（天）</span>
+          <input type="number" value="3" style="width:80px;padding:6px;border:1px solid var(--gray-200);border-radius:6px" id="configFollowDays">
+        </div>
+        <div class="config-row">
+          <span class="config-label">公海回收天数</span>
+          <input type="number" value="6" style="width:80px;padding:6px;border:1px solid var(--gray-200);border-radius:6px" id="configSeaDays">
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
+    </div>
+  </main>
+</div>
+
+<script>
+let token = localStorage.getItem('sonar_token');
+let currentUser = null;
+
+// 检查登录状态
+async function checkAuth() {
+  if (!token) {
+    showLogin();
+    return;
+  }
+  try {
+    const res = await fetch('/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    currentUser = data.data;
+    showApp();
+    loadDashboard();
+  } catch (e) {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('app').classList.remove('active');
+}
+
+function showApp() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('userAvatar').textContent = currentUser.name[0];
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value;
+  const password = document.getElementById('loginPassword').value;
+
+  const res = await fetch('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+
+  const data = await res.json();
+  if (data.success) {
+    token = data.data.token;
+    localStorage.setItem('sonar_token', token);
+    currentUser = data.data.user;
+    showApp();
+    loadDashboard();
+  } else {
+    alert(data.error || '登录失败');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('sonar_token');
+  token = null;
+  showLogin();
+}
+
+function showView(view, link) {
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  document.getElementById('view-' + view).style.display = 'block';
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  link.classList.add('active');
+
+  if (view === 'dashboard') loadDashboard();
+  if (view === 'customers') loadCustomers();
+  if (view === 'sea') loadSea();
+  if (view === 'recordings') loadRecordings();
+  if (view === 'users') loadUsers();
+  if (view === 'ai-config') loadAIConfig();
+}
+
+async function loadDashboard() {
+  try {
+    const res = await fetch('/api/stats/dashboard', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const d = data.data;
+    document.getElementById('statTodayCalls').textContent = d.todayCalls || 0;
+    document.getElementById('statTotalCustomers').textContent = d.totalCustomers || 0;
+    document.getElementById('statSeaCustomers').textContent = d.inSeaCount || 0;
+    document.getElementById('statPending').textContent = d.pendingConfirm || 0;
+
+    // 漏斗
+    const funnel = d.funnel;
+    const total = funnel.total || 1;
+    const funnelHtml = [
+      { label: '新线索', val: total, color: '#3b82f6' },
+      { label: '有效', val: funnel.valid || 0, color: '#06b6d4', rate: Math.round((funnel.valid || 0) / total * 100) },
+      { label: '已邀约', val: funnel.invited || 0, color: '#8b5cf6', rate: Math.round((funnel.invited || 0) / total * 100) },
+      { label: '已到店', val: funnel.visited || 0, color: '#f59e0b', rate: Math.round((funnel.visited || 0) / total * 100) },
+      { label: '已签单', val: funnel.signed || 0, color: '#10b981', rate: Math.round((funnel.signed || 0) / total * 100) }
+    ].map(f => `
+      <div class="funnel-row">
+        <div class="funnel-label">${f.label}</div>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${f.val === total ? 100 : f.rate}%;background:${f.color}">
+            <span>${f.val}</span>
+            ${f.rate ? `<span class="rate">${f.rate}%</span>` : ''}
+          </div>
+        </div>
+        <div class="funnel-count">${f.val}</div>
+      </div>
+    `).join('');
+    document.getElementById('funnelData').innerHTML = funnelHtml;
+
+    // 客服排行
+    const agents = d.agentStats || [];
+    if (agents.length === 0) {
+      document.getElementById('agentRank').innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-400)">暂无数据</div>';
+    } else {
+      document.getElementById('agentRank').innerHTML = agents.map(a => `
+        <div style="padding:12px 16px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">${a.name[0]}</div>
+            <span>${a.name}</span>
+          </div>
+          <span style="font-weight:600;color:var(--navy)">${a.todayCalls} 通</span>
+        </div>
+      `).join('');
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadCustomers() {
+  try {
+    const res = await fetch('/api/customers', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const list = data.data.list || [];
+    document.getElementById('customerCount').textContent = '共 ' + data.data.pagination.total + ' 位客户';
+
+    const statusMap = { pending:'待确认', valid:'有效', invited:'已邀约', visited:'已到店', signed:'已签单', dead:'死单' };
+    const levelClass = { S:'badge-s', A:'badge-a', B:'badge-b', C:'badge-c' };
+
+    document.getElementById('customerTable').innerHTML = list.map(c => `
+      <tr>
+        <td>
+          <div style="font-weight:500">${c.name || '-'}</div>
+          <div style="font-size:11px;color:var(--gray-400)">${c.phone}</div>
+        </td>
+        <td>${c.community || '-'}</td>
+        <td><span class="badge ${levelClass[c.level]}">${c.level}级</span></td>
+        <td><span class="badge badge-${c.status}">${statusMap[c.status]}</span></td>
+        <td>${c.callCount || 0}</td>
+        <td>${c.lastCallAt ? new Date(c.lastCallAt).toLocaleDateString() : '-'}</td>
+        <td>
+          <button class="btn btn-outline btn-xs" onclick="alert('查看详情')">详情</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">暂无数据</td></tr>';
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadSea() {
+  try {
+    const res = await fetch('/api/customers/sea', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const list = data.data.list || [];
+
+    document.getElementById('seaTable').innerHTML = list.map(c => `
+      <tr>
+        <td>${c.name || '-'}</td>
+        <td>${c.community || '-'}</td>
+        <td>${c.budget || '-'}</td>
+        <td>${c.callCount || 0}</td>
+        <td><span class="badge badge-sea">${c.seaReason || '未跟进'}</span></td>
+        <td>
+          <button class="btn btn-green btn-xs" onclick="claimCustomer('${c.id}')">抢单</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400)">公海为空</td></tr>';
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function claimCustomer(id) {
+  if (!confirm('确定要抢这个客户吗？')) return;
+  const res = await fetch('/api/customers/' + id + '/claim', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + token }
+  });
+  const data = await res.json();
+  if (data.success) {
+    alert('抢单成功！');
+    loadSea();
+  } else {
+    alert(data.error || '抢单失败');
+  }
+}
+
+async function loadRecordings() {
+  try {
+    const res = await fetch('/api/recordings', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const list = data.data.list || [];
+    document.getElementById('recordingCount').textContent = '共 ' + data.data.pagination.total + ' 条录音';
+
+    const statusMap = { pending:'待分析', processing:'分析中', completed:'已完成', failed:'失败' };
+    const stageMap = { cold_call:'首通', follow_up:'跟进' };
+
+    document.getElementById('recordingTable').innerHTML = list.map(r => `
+      <tr>
+        <td>
+          <div style="font-weight:500">${r.customerName || r.customerPhone || '-'}</div>
+        </td>
+        <td>${r.callTime ? new Date(r.callTime).toLocaleString() : '-'}</td>
+        <td><span class="badge badge-${r.callStage === 'cold_call' ? 'new' : 'invited'}">${stageMap[r.callStage] || '-'}</span></td>
+        <td><span class="badge badge-${r.analysisStatus === 'completed' ? 'valid' : r.analysisStatus === 'failed' ? 'dead' : 'pending'}">${statusMap[r.analysisStatus]}</span></td>
+        <td>
+          <button class="btn btn-outline btn-xs" onclick="viewRecording('${r.id}')">查看</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--gray-400)">暂无录音</td></tr>';
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadUsers() {
+  try {
+    const res = await fetch('/api/users/agents', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const list = data.data.list || [];
+    const roleMap = { admin:'管理员', boss:'老板', agent:'客服' };
+
+    document.getElementById('userTable').innerHTML = list.map(u => `
+      <tr>
+        <td>${u.username}</td>
+        <td>${u.name}</td>
+        <td><span class="badge badge-${u.role === 'admin' ? 'new' : u.role === 'boss' ? 'invited' : 'valid'}">${roleMap[u.role]}</span></td>
+        <td><span class="badge badge-${u.isActive ? 'valid' : 'dead'}">${u.isActive ? '正常' : '禁用'}</span></td>
+        <td>${u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '-'}</td>
+        <td>
+          <button class="btn btn-outline btn-xs" onclick="alert('编辑')">编辑</button>
+        </td>
+      </tr>
+    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400)">暂无用户</td></tr>';
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+async function loadAIConfig() {
+  try {
+    const res = await fetch('/api/config/ai', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return;
+
+    const list = data.data || [];
+    const nameMap = { line_a1:'Line A1 - 首通录音解析', line_a2:'Line A2 - 首通深度诊断', line_b1:'Line B1 - 跟进录音解析', line_b2:'Line B2 - 跟进深度诊断' };
+
+    document.getElementById('aiConfigList').innerHTML = list.map(c => `
+      <div class="config-card">
+        <div class="config-card-title">
+          <span>${nameMap[c.name] || c.name}</span>
+          <div class="toggle ${c.isActive ? 'active' : ''}" onclick="toggleAIConfig('${c.id}', ${!c.isActive})"></div>
+        </div>
+        <div class="config-row">
+          <span class="config-label">模型</span>
+          <span class="config-value">${c.provider} / ${c.model}</span>
+        </div>
+        <div class="config-row">
+          <span class="config-label">API Key</span>
+          <span class="config-value">${c.apiKey || '未设置'}</span>
+        </div>
+        <div style="margin-top:12px">
+          <button class="btn btn-outline btn-sm" onclick="editAIConfig('${c.id}')">编辑配置</button>
+        </div>
+      </div>
+    `).join('') || '<div style="padding:20px;text-align:center;color:var(--gray-400)">暂无配置</div>';
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+function openCustomerModal() { alert('新增客户功能'); }
+function openUploadModal() { alert('上传录音功能'); }
+function openUserModal() { alert('添加用户功能'); }
+function editAIConfig(id) { alert('编辑 AI 配置: ' + id); }
+function viewRecording(id) { alert('查看录音: ' + id); }
+function saveSettings() { alert('配置已保存'); }
+
+checkAuth();
+</script>
+</body>
+</html>
