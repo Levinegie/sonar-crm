@@ -242,8 +242,22 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 
 <div class="role-switch">
   <div class="logo">声纳 <span style="font-weight:400;opacity:0.6">· 管理看板</span></div>
-  <div style="color:rgba(255,255,255,0.6);font-size:12px">
-    <span id="current-user">王总</span> · <span onclick="alert('退出登录')" style="cursor:pointer;opacity:0.7">退出</span>
+  <div style="color:rgba(255,255,255,0.6);font-size:12px" id="user-info" style="display:none">
+    <span id="current-user">老板</span> · <span onclick="doLogout()" style="cursor:pointer;opacity:0.7">退出</span>
+  </div>
+  <div id="login-btn" style="color:rgba(255,255,255,0.6);font-size:12px">
+    <span onclick="showLoginModal()" style="cursor:pointer;opacity:0.7">登录</span>
+  </div>
+</div>
+
+<!-- 登录弹窗 -->
+<div id="login-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:12px;padding:32px;width:360px;max-width:90%">
+    <div style="font-size:20px;font-weight:700;margin-bottom:20px;text-align:center">老板登录</div>
+    <input id="login-username" type="text" placeholder="用户名" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:12px;font-size:14px">
+    <input id="login-password" type="password" placeholder="密码" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:16px;font-size:14px">
+    <button onclick="handleLogin()" style="width:100%;padding:12px;background:#1a56db;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">登录</button>
+    <div onclick="document.getElementById('login-modal').style.display='none'" style="text-align:center;margin-top:12px;color:#64748b;font-size:13px;cursor:pointer">取消</div>
   </div>
 </div>
 
@@ -639,6 +653,41 @@ async function doLogin(username, password) {
     alert('登录失败');
     return false;
   }
+}
+
+// 显示登录弹窗
+function showLoginModal() {
+  document.getElementById('login-modal').style.display = 'flex';
+}
+
+// 处理登录
+async function handleLogin() {
+  const username = document.getElementById('login-username').value.trim();
+  const password = document.getElementById('login-password').value;
+  if (!username || !password) {
+    alert('请输入用户名和密码');
+    return;
+  }
+  const success = await doLogin(username, password);
+  if (success) {
+    document.getElementById('login-modal').style.display = 'none';
+    document.getElementById('login-btn').style.display = 'none';
+    document.getElementById('user-info').style.display = 'block';
+    // 重新加载数据
+    await loadDashboard();
+    await loadCustomers();
+    await loadAgents();
+    renderDashboard();
+    renderAgentList();
+  }
+}
+
+// 退出登录
+function doLogout() {
+  localStorage.removeItem('sonar_token');
+  token = null;
+  currentUser = null;
+  location.reload();
 }
 
 // 分配客户
@@ -1692,12 +1741,16 @@ function buildJanReport() {
 // 初始化
 async function init() {
   const loggedIn = await checkAuth();
-  if (!loggedIn) {
+  if (loggedIn) {
+    // 已登录，显示用户信息
+    document.getElementById('login-btn').style.display = 'none';
+    document.getElementById('user-info').style.display = 'block';
+    // 加载真实数据
+    await Promise.all([loadCustomers(), loadAgents(), loadDashboard()]);
+  } else {
+    // 未登录，使用 mock 数据
     window.customers = mockCustomers;
     window.seaCustomers = mockSeaCustomers;
-  } else {
-    const [c] = await Promise.all([loadCustomers(), loadAgents()]);
-    if (!c) window.customers = mockCustomers;
   }
   renderTodo();
   renderConfirmCards();
