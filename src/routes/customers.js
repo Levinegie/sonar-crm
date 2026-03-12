@@ -59,7 +59,15 @@ router.get('/', authenticate, tenantScope, async (req, res) => {
     // 脱敏处理
     const sanitizedList = list.map(c => ({
       ...c,
-      phone: c.phone ? maskPhone(c.phone) : null
+      phone: c.phone ? maskPhone(c.phone) : null,
+      // 字段映射： 补充
+      agentName: c.agent?.name || null,
+      callCount: c._count?.recordings || 0,
+      portraitPct: c.portraitPct || 0,
+      portrait: c.portrait || {},
+      nextFollowAt: c.nextFollowAt,
+      seaReason: c.seaReason,
+      seaAt: c.seaAt
     }));
 
     res.json(success(paginate(sanitizedList, total, page, pageSize)));
@@ -97,7 +105,10 @@ router.get('/sea', authenticate, tenantScope, async (req, res) => {
 
     const sanitizedList = list.map(c => ({
       ...c,
-      phone: c.phone ? maskPhone(c.phone) : null
+      phone: c.phone ? maskPhone(c.phone) : null,
+      // 字段映射
+      daysAgo: c.seaAt ? Math.floor((Date.now() - new Date(c.seaAt)) / 86400000) : 0,
+      reason: c.seaReason || '转入公海'
     }));
 
     res.json(success(paginate(sanitizedList, total, page, pageSize)));
