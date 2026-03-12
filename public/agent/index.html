@@ -1803,21 +1803,6 @@ function showStaffView(id, el) {
     renderPinnedCustomers();
   }
 }
-function showBossView(id, el) {
-  document.querySelectorAll('#app-boss .view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('#app-boss .nav-link').forEach(n=>n.classList.remove('active'));
-  const target = document.getElementById('boss-'+id);
-  if(target) target.classList.add('active');
-  if(el) el.classList.add('active');
-  closeDetail();
-}
-function switchRole(role, btn) {
-  document.querySelectorAll('.role-tab').forEach(t=>t.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('app-staff').style.display = role==='staff'?'flex':'none';
-  document.getElementById('app-boss').style.display = role==='boss'?'flex':'none';
-  closeDetail();
-}
 
 // ══ 经营报告 ══
 const monthReportCache = {}; // { '2026-02': { html, time, score } }
