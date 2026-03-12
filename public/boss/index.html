@@ -785,8 +785,82 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 </div>
 
 <script>
-// ══ 数据 ══
-const customers = [
+// ══ API 配置 ══
+const API_BASE = window.location.origin;
+let token = localStorage.getItem('sonar_token');
+let currentUser = null;
+
+async function api(path, options = {}) {
+  const res = await fetch(API_BASE + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': token ? `Bearer ${token}` : '',
+      ...options.headers
+    }
+  });
+  return res.json();
+}
+
+async function checkAuth() {
+  if (!token) return false;
+  try {
+    const data = await api('/api/auth/me');
+    if (data.success) {
+      currentUser = data.data;
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function loadDashboard() {
+  try {
+    const data = await api('/api/stats/dashboard');
+    if (data.success) return data.data;
+  } catch (e) {}
+  return null;
+}
+
+async function loadCustomers() {
+  try {
+    const data = await api('/api/customers');
+    if (data.success && data.data?.list) {
+      window.customers = data.data.list.map(c => ({
+        id: c.id, name: c.name, phone: c.phone, area: c.community || '',
+        budget: c.budget || '', size: c.houseType || '', style: '',
+        agent: c.agentName || '', calls: c.callCount || 0, status: c.status || 'pending',
+        level: c.level || 'C', portraitPct: c.portraitPct || 0, portrait: c.portrait || {}
+      }));
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+async function loadAgents() {
+  try {
+    const data = await api('/api/users/agents');
+    if (data.success && data.data?.list) {
+      const colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444'];
+      window.agents = data.data.list.map((a, i) => ({
+        name: a.name, avatar: a.name[0], color: colors[i % colors.length],
+        done: a.todayCalls || 0, target: 60, score: a.score || 75, portraitAvg: a.portraitAvg || 50
+      }));
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  return date.toLocaleDateString();
+}
+
+// ══ Mock 数据 ══
+const mockCustomers = [
   { id:1, name:'王明', phone:'135****6093', area:'学仕里', budget:'25万', size:'300㎡', type:'自建房', style:'现代简约', agent:'严妍', calls:3, status:'invited', level:'S', next:'今天约好14:30', lastCall:'2026-02-25', promise:'下周二带方案上门', portraitPct:72, pinned:true,
     portrait:{ building:'学仕里·300㎡·自建房', purpose:'自住', houseState:'毛坯', family:'夫妻+1孩', profession:'个体老板', habit:'夜读、喜欢智能家居', awareness:'对比多家', position:'一线品牌', budget_detail:'25万·全包', time:'3个月后交房', focus:'工程质量、工期', designer:'风格现代、有品位', newFields:[] }},
   { id:2, name:'李雪梅', phone:'137****2079', area:'碧桂园', budget:'18万', size:'128㎡', type:'商品房', style:'轻奢风', agent:'严妍', calls:2, status:'valid', level:'A', next:'明天', lastCall:'2026-02-26', promise:'发同类案例', portraitPct:55,
@@ -812,7 +886,7 @@ const customers = [
   { id:15, name:'许大明', phone:'185****7186', area:'东方明珠', budget:'40万', size:'240㎡', type:'商品房', style:'欧式', agent:'李晓东', calls:2, status:'valid', level:'S', next:'今天', lastCall:'2026-02-25', promise:'提供三套方案', portraitPct:62, portrait:{building:'东方明珠·240㎡',purpose:'自住',houseState:'毛坯',family:'夫妻+老人',profession:'企业主',habit:'有海外生活经验',awareness:'对比多家',position:'一线品牌',budget_detail:'40万',time:'暂无',focus:'设计水平、公司规模',designer:'欧式·要求出国经历设计师',newFields:[]}},
 ];
 
-const seaCustomers = [
+const mockSeaCustomers = [
   {id:101,name:'谭**',area:'碧桂园',budget:'15万',calls:2,daysAgo:7,reason:'3次未接听'},
   {id:102,name:'林**',area:'学仕里',budget:'28万',calls:1,daysAgo:8,reason:'客服离职转入'},
   {id:103,name:'杨**',area:'信阳新城',budget:'10万',calls:3,daysAgo:6,reason:'6天无跟进'},
@@ -1767,15 +1841,26 @@ function buildJanReport() {
 }
 
 // 初始化
-renderTodo();
-renderConfirmCards();
-renderCustomerTable();
-updatePinnedCount();
-renderPinnedCustomers();
-renderSea();
-renderCases();
-renderBoss();
-renderHistoryList();
+async function init() {
+  const loggedIn = await checkAuth();
+  if (!loggedIn) {
+    window.customers = mockCustomers;
+    window.seaCustomers = mockSeaCustomers;
+  } else {
+    const [c] = await Promise.all([loadCustomers(), loadAgents()]);
+    if (!c) window.customers = mockCustomers;
+  }
+  renderTodo();
+  renderConfirmCards();
+  renderCustomerTable();
+  updatePinnedCount();
+  renderPinnedCustomers();
+  renderSea();
+  renderCases();
+  renderBoss();
+  renderHistoryList();
+}
+init();
 </script>
 </body>
 </html>
