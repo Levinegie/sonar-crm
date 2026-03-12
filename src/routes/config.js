@@ -69,7 +69,7 @@ router.get('/system', authenticate, tenantScope, async (req, res) => {
 
     const result = {};
     configs.forEach(c => {
-      result[c.key] = c.type === 'json' ? JSON.parse(c.value || '{}') : c.value;
+      result[c.key] = c.value;
     });
 
     res.json(success(result));
@@ -85,12 +85,11 @@ router.put('/system', authenticate, authorize('admin'), tenantScope, async (req,
 
     for (const [key, value] of Object.entries(configs)) {
       const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
-      const type = typeof value === 'object' ? 'json' : 'string';
 
       await prisma.tenantConfig.upsert({
         where: { tenantId_key: { tenantId: req.tenantId, key } },
-        update: { value: stringValue, type },
-        create: { tenantId: req.tenantId, key, value: stringValue, type }
+        update: { value: stringValue },
+        create: { tenantId: req.tenantId, key, value: stringValue }
       });
     }
 
@@ -117,11 +116,11 @@ router.get('/forbidden-words', authenticate, authorize('admin', 'boss'), tenantS
 // 添加违禁词
 router.post('/forbidden-words', authenticate, authorize('admin'), tenantScope, async (req, res) => {
   try {
-    const { word, severity = 'medium', description } = req.body;
+    const { word, category = 'general', description } = req.body;
 
     // 检查是否存在
-    const exists = await prisma.forbiddenWord.findUnique({
-      where: { tenantId_word: { tenantId: req.tenantId, word } }
+    const exists = await prisma.forbiddenWord.findFirst({
+      where: { tenantId: req.tenantId, word }
     });
 
     if (exists) {
@@ -129,7 +128,7 @@ router.post('/forbidden-words', authenticate, authorize('admin'), tenantScope, a
     }
 
     const result = await prisma.forbiddenWord.create({
-      data: { tenantId: req.tenantId, word, severity, description }
+      data: { tenantId: req.tenantId, word, category, description }
     });
 
     res.json(success(result, '添加成功'));
