@@ -31,6 +31,9 @@ model Tenant {
   targets            Target[]
   dashboardConfigs   DashboardConfig[]
   importTasks        ImportTask[]
+  tenantConfigs     TenantConfig[]
+  forbiddenWords    ForbiddenWord[]
+  channels           Channel[]
 
   @@map("tenants")
 }
@@ -315,4 +318,64 @@ model AuditLog {
   @@index([tenantId])
   @@index([userId])
   @@map("audit_logs")
+}
+
+// =====================================================
+// 系统配置表
+// =====================================================
+model TenantConfig {
+  id              String   @id @default(uuid())
+  tenantId        String
+  key             String
+  value           String   @db.Text
+  category        String   @default("general")
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, key])
+  @@index([tenantId])
+  @@index([category])
+  @@map("tenant_configs")
+}
+
+// =====================================================
+// 违禁词表
+// =====================================================
+model ForbiddenWord {
+  id          String   @id @default(uuid())
+  tenantId    String?
+  word        String
+  category    String   @default("general")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant?  @relation(fields: [tenantId], references: [id])
+
+  @@unique([tenantId, word])
+  @@index([tenantId])
+  @@index([category])
+  @@map("forbidden_words")
+}
+
+// =====================================================
+// 渠道表
+// =====================================================
+model Channel {
+  id          String   @id @default(uuid())
+  tenantId    String
+  name        String
+  code        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+
+  @@index([tenantId])
+  @@map("channels")
 }

@@ -853,6 +853,109 @@ async function loadAgents() {
   return false;
 }
 
+// 登录功能
+async function doLogin(username, password) {
+  try {
+    const data = await api('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+    if (data.success && data.data?.token) {
+      token = data.data.token;
+      localStorage.setItem('sonar_token', token);
+      currentUser = data.data.user;
+      return true;
+    } else {
+      alert(data.error || '登录失败');
+      return false;
+    }
+  } catch (e) {
+    alert('登录失败');
+    return false;
+  }
+}
+
+// 分配客户
+async function assignCustomer(customerId, agentId) {
+  try {
+    const data = await api('/api/customers/' + customerId + '/assign', {
+      method: 'POST',
+      body: JSON.stringify({ agentId })
+    });
+    if (data.success) {
+      alert('分配成功！');
+      await loadCustomers();
+      return true;
+    } else {
+      alert(data.error || '分配失败');
+      return false;
+    }
+  } catch (e) {
+    alert('分配失败');
+    return false;
+  }
+}
+
+// 转移到公海
+async function moveToSea(customerId, reason) {
+  try {
+    const data = await api('/api/customers/' + customerId + '/to-sea', {
+      method: 'POST',
+      body: JSON.stringify({ reason })
+    });
+    if (data.success) {
+      alert('已转入公海！');
+      await loadCustomers();
+      return true;
+    } else {
+      alert(data.error || '操作失败');
+      return false;
+    }
+  } catch (e) {
+    alert('操作失败');
+    return false;
+  }
+}
+
+// 加载转化漏斗数据
+async function loadFunnel() {
+  try {
+    const data = await api('/api/stats/funnel');
+    if (data.success && data.data) {
+      return data.data;
+    }
+  } catch (e) {
+    console.error('Load funnel error:', e);
+  }
+  return null;
+}
+
+// 加载趋势数据
+async function loadTrend(period = 'month') {
+  try {
+    const data = await api('/api/stats/trend?period=' + period);
+    if (data.success && data.data) {
+      return data.data;
+    }
+  } catch (e) {
+    console.error('Load trend error:', e);
+  }
+  return null;
+}
+
+// 加载 ROI 数据
+async function loadROI() {
+  try {
+    const data = await api('/api/stats/roi');
+    if (data.success && data.data) {
+      return data.data;
+    }
+  } catch (e) {
+    console.error('Load ROI error:', e);
+  }
+  return null;
+}
+
 function formatDate(d) {
   if (!d) return '';
   const date = new Date(d);

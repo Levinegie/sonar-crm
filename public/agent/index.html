@@ -894,6 +894,147 @@ async function claimSeaCustomer(id) {
   }
 }
 
+// 登录功能
+async function doLogin(username, password) {
+  try {
+    const data = await api('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ username, password })
+    });
+    if (data.success && data.data?.token) {
+      token = data.data.token;
+      localStorage.setItem('sonar_token', token);
+      currentUser = data.data.user;
+      updateUserInfo();
+      return true;
+    } else {
+      alert(data.error || '登录失败');
+      return false;
+    }
+  } catch (e) {
+    alert('登录失败');
+    return false;
+  }
+}
+
+// 录音上传功能
+async function uploadRecording(file, customerPhone, customerName) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('customerPhone', customerPhone);
+    formData.append('customerName', customerName || '');
+    formData.append('callTime', new Date().toISOString());
+
+    const response = await fetch(API_BASE + '/api/recordings/upload', {
+      method: 'POST',
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      },
+      body: formData
+    });
+
+    const data = await response.json();
+    if (data.success) {
+      alert('录音上传成功！AI 分析中...');
+      return data.data;
+    } else {
+      alert(data.error || '上传失败');
+      return null;
+    }
+  } catch (e) {
+    console.error('Upload error:', e);
+    alert('上传失败');
+    return null;
+  }
+}
+
+// 加载客户详情
+async function loadCustomerDetail(id) {
+  try {
+    const data = await api('/api/customers/' + id);
+    if (data.success && data.data) {
+      return data.data;
+    }
+  } catch (e) {
+    console.error('Load customer detail error:', e);
+  }
+  return null;
+}
+
+// 加载客户录音列表
+async function loadCustomerRecordings(customerId) {
+  try {
+    const data = await api(`/api/recordings?customerId=${customerId}`);
+    if (data.success && data.data?.list) {
+      return data.data.list;
+    }
+  } catch (e) {
+    console.error('Load recordings error:', e);
+  }
+  return [];
+}
+
+// 添加跟进记录
+async function addFollowUp(customerId, content, nextAction, nextAt) {
+  try {
+    const data = await api('/api/follow-ups', {
+      method: 'POST',
+      body: JSON.stringify({
+        customerId,
+        type: 'call',
+        content,
+        nextAction,
+        nextAt
+      })
+    });
+    if (data.success) {
+      alert('跟进记录添加成功！');
+      return true;
+    } else {
+      alert(data.error || '添加失败');
+      return false;
+    }
+  } catch (e) {
+    alert('添加失败');
+    return false;
+  }
+}
+
+// 更新客户信息
+async function updateCustomer(id, updateData) {
+  try {
+    const data = await api('/api/customers/' + id, {
+      method: 'PUT',
+      body: JSON.stringify(updateData)
+    });
+    if (data.success) {
+      alert('更新成功！');
+      await loadCustomers();
+      return true;
+    } else {
+      alert(data.error || '更新失败');
+      return false;
+    }
+  } catch (e) {
+    alert('更新失败');
+    return false;
+  }
+}
+
+// 加载统计数据
+async function loadStats() {
+  try {
+    const data = await api('/api/stats/dashboard');
+    if (data.success && data.data) {
+      return data.data;
+    }
+  } catch (e) {
+    console.error('Load stats error:', e);
+  }
+  return null;
+}
+
 function formatDate(d) {
   if (!d) return '';
   const date = new Date(d);
