@@ -14,8 +14,10 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// 静态文件（后台管理界面）
+// 静态文件（三个端）
 app.use('/admin', express.static(path.join(__dirname, '../public/admin')));
+app.use('/agent', express.static(path.join(__dirname, '../public/agent')));
+app.use('/boss', express.static(path.join(__dirname, '../public/boss')));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // API 路由
