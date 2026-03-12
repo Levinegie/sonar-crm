@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>声纳 CRM - 管理看板</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0d1f3c; --blue:#1a56db; --blue-light:#3b82f6; --blue-pale:#eff6ff;
+  --cyan:#0ea5e9; --green:#10b981; --green-pale:#f0fdf4; --amber:#f59e0b;
+  --amber-pale:#fffbeb; --red:#ef4444; --red-pale:#fef2f2; --purple:#8b5cf6;
+  --purple-pale:#f5f3ff; --gray-50:#f8fafc; --gray-100:#f1f5f9; --gray-200:#e2e8f0;
+  --gray-300:#cbd5e1; --gray-400:#94a3b8; --gray-500:#64748b; --gray-600:#475569;
+  --gray-700:#334155; --gray-800:#1e293b; --text:#0f172a; --white:#fff; --sidebar:200px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Sans SC',sans-serif;background:var(--gray-50);color:var(--text);min-height:100vh;}
+
+/* 登录页 */
+.login-page{height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--navy),#1e3a5f);}
+.login-card{background:white;border-radius:16px;padding:40px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3);}
+.login-logo{font-family:'Noto Serif SC',serif;font-size:26px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:6px;letter-spacing:4px}
+.login-logo span{color:var(--blue)}
+.login-sub{text-align:center;color:var(--gray-400);font-size:12px;margin-bottom:28px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:500;color:var(--gray-600);margin-bottom:5px}
+.form-group input,.form-group select{width:100%;padding:10px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
+.form-group input:focus{border-color:var(--blue)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:'Noto Sans SC',sans-serif;width:100%}
+.btn-primary{background:var(--blue);color:white}
+.btn-primary:hover{background:#1d4ed8}
+.btn-outline{background:transparent;color:var(--gray-600);border:1px solid var(--gray-200)}
+.btn-outline:hover{background:var(--gray-50)}
+.btn-sm{padding:6px 10px;font-size:12px}
+
+/* 后台布局 */
+.app{display:none;min-height:100vh}
+.app.active{display:flex}
+.topbar{position:fixed;top:0;left:0;right:0;height:52px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:1000}
+.topbar-logo{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:700;color:white;letter-spacing:2px}
+.topbar-logo span{color:var(--blue-light)}
+.topbar-user{display:flex;align-items:center;gap:10px;color:white;font-size:13px}
+.topbar-user .avatar{width:28px;height:28px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:12px}
+.topbar-user .role{font-size:11px;opacity:0.5;cursor:pointer}
+.sidebar{width:var(--sidebar);position:fixed;top:52px;left:0;bottom:0;background:white;border-right:1px solid var(--gray-200);overflow-y:auto}
+.nav-group{padding:10px 0}
+.nav-group-label{font-size:10px;font-weight:700;color:var(--gray-400);letter-spacing:1px;text-transform:uppercase;padding:6px 16px 4px}
+.nav-link{display:flex;align-items:center;gap:8px;padding:8px 16px;cursor:pointer;color:var(--gray-500);font-size:12px;font-weight:400;transition:all 0.15s;border-left:3px solid transparent}
+.nav-link:hover{color:var(--gray-800);background:var(--gray-50)}
+.nav-link.active{color:var(--blue);background:var(--blue-pale);border-left-color:var(--blue);font-weight:500}
+.main{margin-left:var(--sidebar);margin-top:52px;padding:16px;min-height:calc(100vh - 52px)}
+
+/* 页面标题 */
+.page-header{background:white;border:1px solid var(--gray-200);border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-size:15px;font-weight:700;color:var(--navy)}
+.page-sub{font-size:11px;color:var(--gray-400);margin-top:2px}
+
+/* 统计卡片 */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.stat-card{background:white;border:1px solid var(--gray-200);border-radius:10px;padding:16px;position:relative;overflow:hidden}
+.stat-card .stat-label{font-size:11px;color:var(--gray-400);margin-bottom:6px;font-weight:500}
+.stat-card .stat-val{font-size:24px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif}
+.stat-card .stat-sub{font-size:10px;color:var(--gray-400);margin-top:2px}
+.stat-card .stat-icon{position:absolute;right:12px;top:12px;font-size:24px;opacity:0.1}
+
+/* 标签 */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600;white-space:nowrap}
+.badge-s{background:#fef2f2;color:#dc2626}
+.badge-a{background:#fffbeb;color:#d97706}
+.badge-b{background:#f0fdf4;color:#16a34a}
+.badge-c{background:var(--gray-100);color:var(--gray-500)}
+.badge-new{background:#eff6ff;color:#2563eb}
+.badge-pending{background:#fefce8;color:#ca8a04}
+.badge-valid{background:#f0fdf4;color:#16a34a}
+.badge-invited{background:#fdf4ff;color:#9333ea}
+.badge-visited{background:#fff7ed;color:#ea580c}
+.badge-signed{background:#dcfce7;color:#15803d}
+.badge-dead{background:var(--gray-100);color:var(--gray-400)}
+
+/* 漏斗 */
+.funnel{display:flex;flex-direction:column;gap:6px}
+.funnel-row{display:flex;align-items:center;gap:10px}
+.funnel-label{font-size:11px;color:var(--gray-500);width:60px;flex-shrink:0}
+.funnel-bar-wrap{flex:1;background:var(--gray-100);border-radius:4px;height:24px;overflow:hidden}
+.funnel-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:8px}
+.funnel-bar span{font-size:10px;font-weight:700;color:white}
+.funnel-bar .rate{font-size:9px;color:rgba(255,255,255,0.7)}
+.funnel-count{font-size:11px;color:var(--gray-500);width:24px;text-align:right;flex-shrink:0}
+
+/* 表格 */
+.table-card{background:white;border:1px solid var(--gray-200);border-radius:10px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{padding:10px 12px;text-align:left;font-size:10px;font-weight:700;color:var(--gray-400);letter-spacing:0.5px;text-transform:uppercase;background:var(--gray-50);border-bottom:1px solid var(--gray-200);white-space:nowrap}
+td{padding:10px 12px;font-size:12px;color:var(--gray-700);border-bottom:1px solid var(--gray-100)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--gray-50)}
+
+/* 筛选 */
+.filter-bar{background:white;border:1px solid var(--gray-200);border-radius:10px;padding:12px 16px;margin-bottom:12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.search-box{display:flex;align-items:center;gap:6px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:6px;padding:6px 10px;flex:1;max-width:200px}
+.search-box input{border:none;background:transparent;font-size:12px;color:var(--gray-700);outline:none;width:100%}
+
+/* 客服排行 */
+.agent-card{background:white;border:1px solid var(--gray-200);border-radius:10px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.agent-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:600;font-size:14px}
+.agent-info{flex:1}
+.agent-name{font-size:14px;font-weight:600;color:var(--navy)}
+.agent-stats{font-size:11px;color:var(--gray-400);margin-top:2px}
+.agent-score{font-size:18px;font-weight:700;color:var(--navy)}
+
+/* 预警 */
+.warn-item{background:var(--red-pale);border-left:3px solid var(--red);padding:12px;border-radius:0 8px 8px 0;margin-bottom:8px;font-size:12px}
+.warn-item .time{font-size:10px;color:var(--gray-500);margin-top:4px}
+
+/* 加载 */
+.loading{text-align:center;padding:40px;color:var(--gray-400)}
+.spinner{width:24px;height:24px;border:3px solid var(--gray-200);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* 响应式 */
+@media(max-width:768px){
+  .sidebar{display:none}
+  .main{margin-left:0}
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+}
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <div class="login-logo">声纳<span>CRM</span></div>
+    <div class="login-sub">管理看板</div>
+    <div class="form-group">
+      <label>用户名</label>
+      <input type="text" id="loginUsername" placeholder="请输入用户名">
+    </div>
+    <div class="form-group">
+      <label>密码</label>
+      <input type="password" id="loginPassword" placeholder="请输入密码">
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">登录</button>
+  </div>
+</div>
+
+<!-- 管理看板 -->
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="topbar-logo">声纳<span>CRM</span> · 管理</div>
+    <div class="topbar-user">
+      <div class="avatar" id="userAvatar">管</div>
+      <div>
+        <div class="name" id="userName">管理</div>
+        <div class="role" onclick="logout()">退出</div>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sidebar">
+    <div class="nav-group">
+      <div class="nav-group-label">概览</div>
+      <a class="nav-link active" data-view="dashboard" onclick="showView('dashboard',this)">
+        <span>📊</span>数据大屏
+      </a>
+      <a class="nav-link" data-view="customers" onclick="showView('customers',this)">
+        <span>👥</span>全部客户
+      </a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">团队</div>
+      <a class="nav-link" data-view="agents" onclick="showView('agents',this)">
+        <span>👤</span>客服管理
+      </a>
+      <a class="nav-link" data-view="stats" onclick="showView('stats',this)">
+        <span>📈</span>统计报表
+      </a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">设置</div>
+      <a class="nav-link" data-view="settings" onclick="showView('settings',this)">
+        <span>⚙️</span>系统设置
+      </a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- 数据大屏 -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📊 数据概览</div>
+          <div class="page-sub" id="dashboardDate">今日数据 · 实时更新</div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">今日通话</div>
+          <div class="stat-val" id="statTodayCalls">-</div>
+          <div class="stat-sub">有效通话</div>
+          <div class="stat-icon">📞</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">客户总数</div>
+          <div class="stat-val" id="statTotalCustomers">-</div>
+          <div class="stat-sub">有效客户</div>
+          <div class="stat-icon">👥</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">公海客户</div>
+          <div class="stat-val" id="statSeaCustomers">-</div>
+          <div class="stat-sub">可抢单</div>
+          <div class="stat-icon">🌊</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">待确认</div>
+          <div class="stat-val" id="statPending">-</div>
+          <div class="stat-sub">待处理</div>
+          <div class="stat-icon">📋</div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="table-card">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--gray-100);font-size:13px;font-weight:600">转化漏斗</div>
+          <div style="padding:16px" id="funnelData"></div>
+        </div>
+        <div class="table-card">
+          <div style="padding:12px 16px;border-bottom:1px solid var(--gray-100);font-size:13px;font-weight:600">客服排行</div>
+          <div style="padding:8px" id="agentRankList"></div>
+        </div>
+      </div>
+
+      <div class="table-card" style="margin-top:12px">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--gray-100);font-size:13px;font-weight:600">⚠️ 预警提醒</div>
+        <div style="padding:12px" id="warnList"></div>
+      </div>
+    </div>
+
+    <!-- 全部客户 -->
+    <div class="view" id="view-customers" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">👥 全部客户</div>
+          <div class="page-sub" id="cust-count">共 0 位客户</div>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-box">
+          <span>🔍</span>
+          <input type="text" placeholder="姓名/电话/小区..." oninput="applyFilter()">
+        </div>
+        <select id="filter-status" onchange="applyFilter()">
+          <option value="">全部状态</option>
+          <option value="pending">待确认</option>
+          <option value="valid">有效</option>
+          <option value="invited">已邀约</option>
+          <option value="visited">已到店</option>
+          <option value="signed">已签单</option>
+        </select>
+        <select id="filter-agent" onchange="applyFilter()">
+          <option value="">全部客服</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>客户</th>
+              <th>负责客服</th>
+              <th>小区</th>
+              <th>级别</th>
+              <th>状态</th>
+              <th>通话</th>
+            </tr>
+          </thead>
+          <tbody id="customer-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 客服管理 -->
+    <div class="view" id="view-agents" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">👤 客服管理</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="alert('添加客服')">+ 添加客服</button>
+      </div>
+      <div id="agent-list">
+        <div class="loading"><div class="spinner"></div>加载中...</div>
+      </div>
+    </div>
+
+    <!-- 统计报表 -->
+    <div class="view" id="view-stats" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">📈 统计报表</div>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">本月通话</div>
+          <div class="stat-val" id="statMonthCalls">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本月新增客户</div>
+          <div class="stat-val" id="statMonthNew">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本月到店</div>
+          <div class="stat-val" id="statMonthVisited">-</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">本月签单</div>
+          <div class="stat-val" id="statMonthSigned">-</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系统设置 -->
+    <div class="view" id="view-settings" style="display:none">
+      <div class="page-header">
+        <div>
+          <div class="page-title">⚙️ 系统设置</div>
+        </div>
+      </div>
+      <div class="table-card" style="padding:20px">
+        <div style="margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;margin-bottom:12px">跟进规则</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+            <span style="font-size:12px">每日底线任务数</span>
+            <input type="number" value="60" style="width:60px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;text-align:center">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+            <span style="font-size:12px">跟进周期（天）</span>
+            <input type="number" value="3" style="width:60px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;text-align:center">
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100)">
+            <span style="font-size:12px">公海回收天数</span>
+            <input type="number" value="6" style="width:60px;padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;text-align:center">
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="alert('配置已保存')">保存设置</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API_BASE = '';
+let token = localStorage.getItem('sonar_token');
+let currentUser = null;
+let customers = [];
+let agents = [];
+
+const statusMap = {pending:['待确认','badge-pending'],valid:['有效','badge-valid'],invited:['已邀约','badge-invited'],visited:['已到店','badge-visited'],signed:['已签单','badge-signed'],dead:['死单','badge-dead']};
+const levelMap = {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c'};
+
+// 检查登录
+async function checkAuth() {
+  if (!token) { showLogin(); return; }
+  try {
+    const res = await fetch(API_BASE + '/api/auth/me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    currentUser = data.data;
+    showApp();
+    loadData();
+  } catch (e) { showLogin(); }
+}
+
+function showLogin() {
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('app').classList.remove('active');
+}
+
+function showApp() {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('userName').textContent = currentUser.name;
+  document.getElementById('userAvatar').textContent = currentUser.name[0];
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value;
+  const password = document.getElementById('loginPassword').value;
+  const res = await fetch(API_BASE + '/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await res.json();
+  if (data.success) {
+    token = data.data.token;
+    localStorage.setItem('sonar_token', token);
+    currentUser = data.data.user;
+    showApp();
+    loadData();
+  } else { alert(data.error || '登录失败'); }
+}
+
+function logout() {
+  localStorage.removeItem('sonar_token');
+  token = null;
+  showLogin();
+}
+
+// 加载数据
+async function loadData() {
+  await Promise.all([
+    loadDashboard(),
+    loadCustomers(),
+    loadAgents()
+  ]);
+}
+
+async function loadDashboard() {
+  try {
+    const res = await fetch(API_BASE + '/api/stats/dashboard', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    if (!data.success) return;
+    const d = data.data;
+
+    document.getElementById('statTodayCalls').textContent = d.todayCalls || 0;
+    document.getElementById('statTotalCustomers').textContent = d.totalCustomers || 0;
+    document.getElementById('statSeaCustomers').textContent = d.inSeaCount || 0;
+    document.getElementById('statPending').textContent = d.pendingConfirm || 0;
+
+    // 漏斗
+    const funnel = d.funnel || {};
+    const total = funnel.total || 1;
+    const funnelHtml = [
+      { label: '新线索', val: total, color: '#3b82f6' },
+      { label: '有效', val: funnel.valid || 0, color: '#06b6d4', rate: Math.round((funnel.valid || 0) / total * 100) },
+      { label: '已邀约', val: funnel.invited || 0, color: '#8b5cf6', rate: Math.round((funnel.invited || 0) / total * 100) },
+      { label: '已到店', val: funnel.visited || 0, color: '#f59e0b', rate: Math.round((funnel.visited || 0) / total * 100) },
+      { label: '已签单', val: funnel.signed || 0, color: '#10b981', rate: Math.round((funnel.signed || 0) / total * 100) }
+    ].map(f => `
+      <div class="funnel-row">
+        <div class="funnel-label">${f.label}</div>
+        <div class="funnel-bar-wrap">
+          <div class="funnel-bar" style="width:${f.val === total ? 100 : f.rate}%;background:${f.color}">
+            <span>${f.val}</span>
+            ${f.rate ? `<span class="rate">${f.rate}%</span>` : ''}
+          </div>
+        </div>
+        <div class="funnel-count">${f.val}</div>
+      </div>
+    `).join('');
+    document.getElementById('funnelData').innerHTML = funnelHtml;
+
+    // 客服排行
+    const agentStats = d.agentStats || [];
+    if (agentStats.length === 0) {
+      document.getElementById('agentRankList').innerHTML = '<div class="loading" style="padding:20px">暂无数据</div>';
+    } else {
+      const colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444'];
+      document.getElementById('agentRankList').innerHTML = agentStats.map((a, i) => `
+        <div class="agent-card">
+          <div class="agent-avatar" style="background:${colors[i % colors.length]}">${a.name?.[0] || '-'}</div>
+          <div class="agent-info">
+            <div class="agent-name">${a.name || '-'}</div>
+            <div class="agent-stats">今日 ${a.todayCalls || 0} 通 · 客户 ${a.customerCount || 0}</div>
+          </div>
+          <div class="agent-score">${a.score || 0}</div>
+        </div>
+      `).join('');
+    }
+
+    // 预警
+    const warns = [];
+    if ((d.inSeaCount || 0) > 10) warns.push({type:'公海', msg:`公海积压 ${d.inSeaCount} 个客户`});
+    if ((d.pendingConfirm || 0) > 5) warns.push({type:'待确认', msg:`${d.pendingConfirm} 个客户待确认`});
+    if (warns.length === 0) {
+      document.getElementById('warnList').innerHTML = '<div style="text-align:center;padding:20px;color:var(--gray-400)">暂无预警</div>';
+    } else {
+      document.getElementById('warnList').innerHTML = warns.map(w => `
+        <div class="warn-item">
+          <div>⚠️ ${w.msg}</div>
+          <div class="time">${new Date().toLocaleTimeString()}</div>
+        </div>
+      `).join('');
+    }
+
+  } catch (e) { console.error(e); }
+}
+
+async function loadCustomers() {
+  try {
+    const res = await fetch(API_BASE + '/api/customers', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    customers = data.data?.list || [];
+    document.getElementById('cust-count').textContent = '共 ' + customers.length + ' 位客户';
+    renderCustomerTable();
+  } catch (e) { customers = []; }
+}
+
+function applyFilter() {
+  renderCustomerTable();
+}
+
+function renderCustomerTable() {
+  const kw = document.querySelector('#view-customers .search-box input').value.toLowerCase();
+  const status = document.getElementById('filter-status').value;
+  const agent = document.getElementById('filter-agent').value;
+
+  const filtered = customers.filter(c => {
+    if (kw && !((c.name||'').toLowerCase().includes(kw) || (c.phone||'').includes(kw) || (c.community||'').toLowerCase().includes(kw))) return false;
+    if (status && c.status !== status) return false;
+    if (agent && c.agentId !== agent) return false;
+    return true;
+  });
+
+  document.getElementById('customer-table').innerHTML = filtered.length ? filtered.map(c => `
+    <tr>
+      <td><div style="font-weight:500">${c.name || '-'}</div><div style="font-size:10px;color:var(--gray-400)">${c.phone}</div></td>
+      <td>${c.agentName || '-'}</td>
+      <td>${c.community || '-'}</td>
+      <td><span class="badge ${levelMap[c.level]||'badge-c'}">${c.level||'C'}级</span></td>
+      <td><span class="badge badge-${c.status}">${statusMap[c.status]?.[0]||c.status}</span></td>
+      <td>${c.callCount || 0}</td>
+    </tr>
+  `).join('') : '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400)">暂无数据</td></tr>';
+}
+
+async function loadAgents() {
+  try {
+    const res = await fetch(API_BASE + '/api/users/agents', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    const data = await res.json();
+    agents = data.data?.list || [];
+    const colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444'];
+    document.getElementById('agent-list').innerHTML = agents.length ? agents.map((a, i) => `
+      <div class="agent-card">
+        <div class="agent-avatar" style="background:${colors[i % colors.length]}">${a.name?.[0] || '-'}</div>
+        <div class="agent-info">
+          <div class="agent-name">${a.name || '-'}</div>
+          <div class="agent-stats">${a.username} · ${a.isActive ? '正常' : '禁用'}</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="alert('编辑客服')">编辑</button>
+      </div>
+    `).join('') : '<div class="empty" style="padding:40px">暂无客服</div>';
+  } catch (e) {
+    document.getElementById('agent-list').innerHTML = '<div class="empty" style="padding:40px">加载失败</div>';
+  }
+}
+
+// 导航
+function showView(view, link) {
+  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
+  document.getElementById('view-' + view).style.display = 'block';
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  link.classList.add('active');
+  if (view === 'dashboard') loadDashboard();
+}
+
+// 初始化
+checkAuth();
+</script>
+</body>
+</html>
