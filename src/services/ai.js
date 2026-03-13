@@ -5,6 +5,7 @@
 
 const { PrismaClient } = require('@prisma/client');
 const axios = require('axios');
+const { getSignedUrl } = require('./oss');
 
 const prisma = new PrismaClient();
 
@@ -162,9 +163,13 @@ async function analyzeRecording(recordingId) {
     const lineType = existingCustomer ? 'line_b' : 'line_a';
     const callStage = existingCustomer ? 'follow_up' : 'cold_call';
 
-    // 4. 第一阶段分析：录音转写 + 基础评分
+    // 4. 生成签名 URL（OSS bucket 不允许公开访问）
+    const signedUrl = await getSignedUrl(recording.ossKey, 600);
+    console.log('Generated signed URL for audio download');
+
+    // 5. 第一阶段分析：录音转写 + 基础评分
     console.log('Stage 1: Audio transcription and basic analysis...');
-    const stage1Result = await runStage1Analysis(recording, existingCustomer);
+    const stage1Result = await runStage1Analysis({ ...recording, ossUrl: signedUrl }, existingCustomer);
 
     // 5. 保存第一阶段结果
     await prisma.analysisResult.create({
