@@ -18,5 +18,5 @@ RUN npx prisma generate
 # 暴露端口
 EXPOSE 3000
 
-# 启动命令
-CMD ["node", "src/index.js"]
+# 启动时先同步数据库结构，再启动应用
+CMD ["sh", "-c", "npx prisma db push --skip-generate && node src/index.js"]
