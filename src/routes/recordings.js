@@ -481,59 +481,72 @@ router.post('/seed/confirm-cards', authenticate, async (req, res) => {
 
     const mockCards = [
       {
-        phone: '13800001111',
-        name: '张先生',
-        basicInfo: { name: '张先生', phone: '13800001111', community: '碧桂园·天玺', area: 180, houseType: '四室两厅', budget: '50-80万', decorStyle: '现代轻奢', source: '抖音广告' },
-        portrait: { familyStructure: '一家四口', decisionMaker: '男主人', urgency: '3个月内装修', concerns: ['环保材料', '收纳空间', '智能家居'] },
-        customerLevel: 'S',
-        levelReason: '大户型180㎡+高预算50-80万+明确需求+3个月内装修，意向非常强',
-        nextFollow: '明天',
-        promise: '明天下午2点到店看方案',
-        callSummary: '客户张先生，碧桂园天玺180㎡四室两厅，预算50-80万，想做现代轻奢风格。对环保材料和智能家居很感兴趣，约了明天下午到店看方案。'
-      },
-      {
-        phone: '13900002222',
-        name: '李女士',
-        basicInfo: { name: '李女士', phone: '13900002222', community: '万科·翡翠湖', area: 120, houseType: '三室两厅', budget: '30-50万', decorStyle: '北欧简约', source: '朋友推荐' },
-        portrait: { familyStructure: '新婚夫妇', decisionMaker: '女主人', urgency: '半年内', concerns: ['性价比', '环保', '设计感'] },
+        phone: '15800001111',
+        name: '陈先生',
+        basicInfo: { name: '陈先生', phone: '15800001111', community: '龙湖·春江天玺', area: 145, houseType: '三室两厅', budget: '35-45万', decorStyle: '现代简约', source: '抖音广告' },
+        portrait: { houseType: '商品房', houseUsage: '自住', houseState: '毛坯', familyMembers: '夫妻+1孩', profession: '工程师', habits: '喜欢智能家居', awareness: '对比多家', position: '一线品牌', budgetDetail: '35-45万全包', timeline: '2个月后交房', focusPoints: '工程质量、工期、环保材料', stylePreference: '现代简约' },
         customerLevel: 'A',
-        levelReason: '120㎡三室+中高预算30-50万+朋友推荐+半年内装修',
+        levelReason: '145㎡三室+预算35-45万+2个月后交房+对比多家，意向较强',
         nextFollow: '后天',
-        promise: null,
-        callSummary: '李女士，万科翡翠湖120㎡，新婚夫妇，预算30-50万，喜欢北欧简约风。朋友推荐过来的，半年内计划装修，还在对比几家公司。'
+        promise: '发同小区案例给客户参考',
+        callSummary: '陈先生，龙湖春江天玺145㎡三室两厅，夫妻带一个孩子，预算35-45万全包，喜欢现代简约风格。做IT的，对智能家居很感兴趣，2个月后交房，正在对比3家公司。承诺发同小区案例给他参考。',
+        transcript: '客服：您好，这里是声纳装饰，请问您是陈先生吗？\n客户：对，我是。\n客服：陈先生您好，我是小严，之前您在抖音上留了信息想了解装修是吧？\n客户：对对对，我们龙湖春江天玺的房子，145平，三室两厅。\n客服：好的，请问您房子现在是什么状态呢？\n客户：毛坯，大概2个月后交房。\n客服：明白了。您对装修风格有什么想法吗？\n客户：我和我老婆都比较喜欢现代简约的，不要太复杂。我是做IT的，希望能做一些智能家居的东西。\n客服：好的，智能家居我们有专门的合作方案。预算方面您大概考虑多少？\n客户：35到45万吧，全包的话。\n客服：这个预算145平做现代简约完全没问题。我们小区有好几个业主都是我们做的，我回头发一些案例给您看看。\n客户：好的，那你发给我看看。我现在也在对比其他两家公司。\n客服：没问题，我今天就整理好发给您。',
+        stage1Scores: {
+          is_valid: true,
+          lead_quality: { score: 7.5, grade: 'B' },
+          agent_attitude: { score: 8.0, grade: 'A' }
+        },
+        stage2: {
+          summary: '本通电话客服表现稳健，开场自然，需求挖掘较充分，成功获取了客户的户型、预算、风格偏好和时间节点。但在价值塑造上略显不足，当客户提到在对比其他公司时，未能主动强调差异化优势。承诺发案例是好的跟进动作。',
+          scores: {
+            overall: 7.8,
+            scene: '首通·需求了解·竞品对比',
+            opening: { score: 8.0, comment: '开场自然，快速切入主题' },
+            needs_discovery: { score: 8.5, comment: '挖掘了户型、预算、风格、时间节点，信息获取全面' },
+            value_building: { score: 6.5, comment: '提到同小区案例但未展开，竞品对比时未强调差异化' },
+            objection_handling: { score: 7.0, comment: '客户提到对比其他公司时未做深入应对' },
+            invitation: { score: 7.5, comment: '未明确邀约到店，仅承诺发案例' },
+            retention: { score: 8.0, comment: '承诺发案例保持联系，有后续跟进点' },
+            lead_quality: { score: 7.5 },
+            gold_quote: '「智能家居我们有专门的合作方案」——快速回应客户兴趣点，但可以展开说明具体方案内容',
+            suggest: '下次跟进建议：1. 发送同小区3-5个案例（重点标注智能家居部分）2. 准备一份智能家居方案清单 3. 主动对比竞品优势，强调工程质量和售后保障 4. 争取约到店看材料展厅'
+          },
+          redFlag: false
+        }
       },
       {
-        phone: '13700003333',
-        name: '王总',
-        basicInfo: { name: '王总', phone: '13700003333', community: '保利·天悦', area: 260, houseType: '复式', budget: '100万以上', decorStyle: '新中式', source: '老客户转介绍' },
-        portrait: { familyStructure: '三代同堂', decisionMaker: '男主人', urgency: '1个月内开工', concerns: ['品质', '工期', '售后保障'] },
+        phone: '15900002222',
+        name: '周女士',
+        basicInfo: { name: '周女士', phone: '15900002222', community: '绿城·桂花园', area: 200, houseType: '四室两厅', budget: '60-80万', decorStyle: '法式轻奢', source: '老客户转介绍' },
+        portrait: { houseType: '商品房', houseUsage: '自住', houseState: '毛坯', familyMembers: '夫妻+2孩', profession: '医生', habits: '注重健康环保', awareness: '有装修经验', position: '一线品牌', budgetDetail: '60-80万含软装', timeline: '已交房，尽快开工', focusPoints: '环保材料、设计感、收纳', stylePreference: '法式轻奢' },
         customerLevel: 'S',
-        levelReason: '复式260㎡+预算100万以上+老客户转介绍+1个月内开工，超高意向',
+        levelReason: '200㎡大户型+高预算60-80万+已交房急开工+老客户转介绍，超高意向',
         nextFollow: '明天',
-        promise: '周六上午带家人一起到店',
-        callSummary: '王总，保利天悦260㎡复式，三代同堂，预算100万以上，想做新中式风格。老客户转介绍，1个月内要开工，周六带家人到店看方案。'
-      },
-      {
-        phone: '13600004444',
-        name: '赵小姐',
-        basicInfo: { name: '赵小姐', phone: '13600004444', community: '融创·壹号院', area: 89, houseType: '两室一厅', budget: '15-20万', decorStyle: '日式', source: '小红书' },
-        portrait: { familyStructure: '单身', decisionMaker: '本人', urgency: '不急，先了解', concerns: ['价格', '风格效果'] },
-        customerLevel: 'B',
-        levelReason: '89㎡两室+预算15-20万+不急装修，意向一般',
-        nextFollow: '1周后',
-        promise: null,
-        callSummary: '赵小姐，融创壹号院89㎡两室一厅，单身，预算15-20万，喜欢日式风格。从小红书看到的，暂时不急，先了解一下。'
-      },
-      {
-        phone: '13500005555',
-        name: null,
-        basicInfo: { phone: '13500005555' },
-        portrait: {},
-        customerLevel: '无效',
-        levelReason: '电话接通后表示打错了，非目标客户',
-        nextFollow: null,
-        promise: null,
-        callSummary: '电话接通，对方表示不需要装修服务，疑似非目标客户。'
+        promise: '明天上午10点到店看方案，带户型图',
+        callSummary: '周女士，绿城桂花园200㎡四室两厅，医生，夫妻带两个孩子。预算60-80万含软装，法式轻奢风格。房子已交房想尽快开工，是老客户张总介绍的。约了明天上午10点到店，会带户型图过来。',
+        transcript: '客服：您好周女士，我是声纳装饰的小严，张总介绍您过来的是吧？\n周女士：对，张总家就是你们装的，我看了效果很好。\n客服：谢谢张总的推荐！请问您的房子是在哪个小区呢？\n周女士：绿城桂花园，200平，四室两厅。\n客服：好大的房子！请问现在是什么状态？\n周女士：已经交房了，想尽快开工。我和我老公都是医生，平时比较忙，所以希望找一家靠谱的一次性搞定。\n客服：完全理解。您对风格有什么偏好吗？\n周女士：我喜欢法式轻奢的感觉，要有设计感但不要太浮夸。家里两个孩子，收纳一定要做好。还有材料一定要环保，这个我很在意。\n客服：明白了，环保材料是我们的强项，我们用的都是E0级以上的板材。预算方面您大概考虑多少？\n周女士：60到80万吧，含软装。\n客服：这个预算200平做法式轻奢完全可以做得很精致。要不您明天方便的话来店里看看？我让设计师提前准备一些法式风格的案例。\n周女士：好，明天上午10点可以吗？我把户型图带过来。\n客服：太好了，我们明天见！',
+        stage1Scores: {
+          is_valid: true,
+          lead_quality: { score: 9.0, grade: 'S' },
+          agent_attitude: { score: 8.5, grade: 'A' }
+        },
+        stage2: {
+          summary: '优秀的首通电话！客服充分利用了老客户转介绍的信任基础，快速建立关系。需求挖掘全面，成功获取了所有关键信息。价值塑造到位，在客户提到环保时精准回应。最关键的是成功邀约到店，并让客户主动带户型图，说明客户意向极高。唯一可改进的是可以多问一些软装偏好的细节。',
+          scores: {
+            overall: 8.8,
+            scene: '首通·老客户转介绍·高意向邀约',
+            opening: { score: 9.0, comment: '利用转介绍关系开场，信任感强' },
+            needs_discovery: { score: 9.0, comment: '户型、预算、风格、时间、家庭情况全部获取' },
+            value_building: { score: 8.5, comment: '环保材料精准回应，但可以多展开差异化优势' },
+            objection_handling: { score: 8.0, comment: '客户无明显异议，处理得当' },
+            invitation: { score: 9.5, comment: '成功邀约到店，客户主动带户型图，极高意向' },
+            retention: { score: 8.5, comment: '约定明确时间，有设计师准备案例的承诺' },
+            lead_quality: { score: 9.0 },
+            gold_quote: '「环保材料是我们的强项，我们用的都是E0级以上的板材」——精准回应客户核心关注点，建立专业信任',
+            suggest: '明天到店准备：1. 3-5个法式轻奢案例（200㎡左右）2. E0级环保材料样板 3. 收纳方案参考 4. 张总家的实景照片（增强信任）5. 提前和设计师沟通客户需求'
+          },
+          redFlag: false
+        }
       }
     ];
 
@@ -558,6 +571,27 @@ router.post('/seed/confirm-cards', authenticate, async (req, res) => {
         }
       });
 
+      // Stage 1: 转写 + 基础评分
+      await prisma.analysisResult.create({
+        data: {
+          id: uuidv4(),
+          recordingId: recording.id,
+          stage: 'stage1',
+          lineType: 'outbound',
+          modelName: 'gemini-test',
+          provider: 'google',
+          transcript: card.transcript || card.callSummary,
+          summary: card.callSummary,
+          scores: card.stage1Scores || {
+            is_valid: true,
+            lead_quality: { score: 7, grade: 'B' },
+            agent_attitude: { score: 7.5, grade: 'B' }
+          },
+          metadata: { callStage: 'cold_call' }
+        }
+      });
+
+      // Confirm Card: 待确认卡片
       await prisma.analysisResult.create({
         data: {
           id: uuidv4(),
@@ -579,6 +613,25 @@ router.post('/seed/confirm-cards', authenticate, async (req, res) => {
           }
         }
       });
+
+      // Stage 2: 深度报告（金牌教练）
+      if (card.stage2) {
+        await prisma.analysisResult.create({
+          data: {
+            id: uuidv4(),
+            recordingId: recording.id,
+            stage: 'stage2',
+            lineType: 'outbound',
+            modelName: 'gemini-test',
+            provider: 'google',
+            summary: card.stage2.summary,
+            scores: card.stage2.scores,
+            redFlag: card.stage2.redFlag || false,
+            redFlagDetail: card.stage2.redFlagDetail || null
+          }
+        });
+      }
+
       results.push({ phone: card.phone, recordingId: recording.id });
     }
 
