@@ -1318,11 +1318,22 @@ async function submitConfirmCard(recordingId) {
     });
 
     if (result.success) {
-      // 从列表中移除
+      // 从列表中移除（带动画）
       pendingConfirmCards = pendingConfirmCards.filter(c => c.id !== recordingId);
-      document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`).remove();
+      const card = document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`);
+      if (card) {
+        card.style.transition = 'all 0.4s ease';
+        card.style.transform = 'translateX(100%)';
+        card.style.opacity = '0';
+        card.style.maxHeight = card.offsetHeight + 'px';
+        setTimeout(() => {
+          card.style.maxHeight = '0';
+          card.style.padding = '0';
+          card.style.margin = '0';
+        }, 200);
+        setTimeout(() => card.remove(), 500);
+      }
       updateConfirmBadge();
-      alert('✅ 确认成功！客户信息已更新');
       // 刷新客户列表
       if (window.loadCustomers) await loadCustomers();
     } else {
@@ -1353,9 +1364,20 @@ async function markCardInvalid(recordingId) {
 
     if (result.success) {
       pendingConfirmCards = pendingConfirmCards.filter(c => c.id !== recordingId);
-      document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`).remove();
+      const card = document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`);
+      if (card) {
+        card.style.transition = 'all 0.4s ease';
+        card.style.transform = 'translateX(-100%)';
+        card.style.opacity = '0';
+        card.style.maxHeight = card.offsetHeight + 'px';
+        setTimeout(() => {
+          card.style.maxHeight = '0';
+          card.style.padding = '0';
+          card.style.margin = '0';
+        }, 200);
+        setTimeout(() => card.remove(), 500);
+      }
       updateConfirmBadge();
-      alert('已标记为无效客户');
     } else {
       alert(result.error || '操作失败');
     }

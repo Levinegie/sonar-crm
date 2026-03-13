@@ -286,20 +286,23 @@ router.post('/', authenticate, tenantScope, async (req, res) => {
 router.put('/:id', authenticate, tenantScope, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, community, area, houseType, budget, level, status, portrait, tags } = req.body;
+    const { name, community, area, houseType, budget, level, status, portrait, portraitPct, tags, nextFollowAt, pinned } = req.body;
 
     const customer = await prisma.customer.update({
       where: { id, tenantId: req.tenantId },
       data: {
         ...(name && { name }),
         ...(community && { community }),
-        ...(area && { area }),
+        ...(area !== undefined && { area: typeof area === 'number' ? area : parseFloat(area) || null }),
         ...(houseType && { houseType }),
         ...(budget && { budget }),
         ...(level && { level }),
         ...(status && { status }),
         ...(portrait && { portrait }),
-        ...(tags && { tags })
+        ...(portraitPct !== undefined && { portraitPct: parseInt(portraitPct) || 0 }),
+        ...(tags && { tags }),
+        ...(nextFollowAt !== undefined && { nextFollowAt: nextFollowAt ? new Date(nextFollowAt) : null }),
+        ...(pinned !== undefined && { pinned })
       }
     });
 
