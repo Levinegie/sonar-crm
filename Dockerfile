@@ -18,5 +18,6 @@ RUN npx prisma generate
 # 暴露端口
 EXPOSE 3000
 
-# 启动应用
-CMD ["node", "src/index.js"]
+# 启动脚本（先同步数据库结构再启动应用）
+RUN chmod +x start.sh
+CMD ["sh", "start.sh"]
