@@ -273,7 +273,7 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     <div class="nav-group">
       <div class="nav-group-label">工作台</div>
       <a class="nav-link active" onclick="showStaffView('todo',this)"><span class="ni">📋</span>今日待办<span class="nav-badge">8</span></a>
-      <a class="nav-link" onclick="showStaffView('confirm',this)"><span class="ni">✅</span>待确认卡片<span class="nav-badge">3</span></a>
+      <a class="nav-link" onclick="showStaffView('confirm',this)"><span class="ni">✅</span>待确认卡片<span class="nav-badge" id="confirm-count">0</span></a>
       <a class="nav-link" onclick="showStaffView('search',this)"><span class="ni">🔍</span>搜索查重</a>
     </div>
     <div class="nav-group">
@@ -1158,12 +1158,22 @@ async function loadConfirmCards() {
     const data = await api('/api/recordings/pending/confirm');
     if (data.success && data.data) {
       pendingConfirmCards = data.data;
+      updateConfirmBadge();
       return true;
     }
   } catch (e) {
     console.error('Load confirm cards error:', e);
   }
   return false;
+}
+
+function updateConfirmBadge() {
+  const badge = document.getElementById('confirm-count');
+  if (badge) {
+    const count = pendingConfirmCards.length;
+    badge.textContent = count;
+    badge.style.display = count > 0 ? '' : 'none';
+  }
 }
 
 // 渲染待确认卡片
@@ -1207,7 +1217,7 @@ function renderConfirmCards() {
       </div>
 
       <!-- 基础信息 -->
-      <div class="confirm-section-label">📋 基础信息</div>
+      <div class="confirm-section-label">📋 基础信息（AI 预填，可修改）</div>
       <div class="confirm-fields">
         <div class="confirm-field">
           <label>客户姓名</label>
@@ -1248,7 +1258,7 @@ function renderConfirmCards() {
         <div class="confirm-field">
           <label>客户等级</label>
           <select id="confirm-level-${card.id}">
-            ${levelOptions.map(l => `<option value="${l}" ${card.customerLevel === l ? 'selected' : ''}>${l === 'invalid' ? '无效' : l + '级'}</option>`).join('')}
+            ${levelOptions.map(l => `<option value="${l}" ${card.customerLevel === l ? 'selected' : ''}>${l === '无效' ? '无效' : l + '级'}</option>`).join('')}
           </select>
         </div>
         <div class="confirm-field">
@@ -1259,7 +1269,7 @@ function renderConfirmCards() {
         </div>
         <div class="confirm-field">
           <label>承诺事项</label>
-          <input id="confirm-promise-${card.id}" value="${card.promise || ''}" placeholder="如：下周二带方案上门">
+          <input id="confirm-promise-${card.id}" value="${card.promise || ''}" placeholder="AI未识别到承诺事项，可手动填写">
         </div>
       </div>
 
@@ -1310,6 +1320,7 @@ async function submitConfirmCard(recordingId) {
       // 从列表中移除
       pendingConfirmCards = pendingConfirmCards.filter(c => c.id !== recordingId);
       document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`).remove();
+      updateConfirmBadge();
       alert('✅ 确认成功！客户信息已更新');
       // 刷新客户列表
       if (window.loadCustomers) await loadCustomers();
@@ -1342,6 +1353,7 @@ async function markCardInvalid(recordingId) {
     if (result.success) {
       pendingConfirmCards = pendingConfirmCards.filter(c => c.id !== recordingId);
       document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`).remove();
+      updateConfirmBadge();
       alert('已标记为无效客户');
     } else {
       alert(result.error || '操作失败');
