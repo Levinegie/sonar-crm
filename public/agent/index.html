@@ -1717,174 +1717,217 @@ function doSearch(val) {
 let currentDetailTab = 0;
 let currentCustomerId = null;
 
-function openDetail(id) {
+async function openDetail(id) {
   const c = customers.find(x=>x.id===id);
   if(!c) return;
   currentDetailTab = 0;
   currentCustomerId = id;
 
   document.getElementById('detail-header-info').innerHTML = `
-    <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">${c.name}</div>
+    <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">${c.name || '未知客户'}</div>
     <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.phone} · ${c.area}</div>`;
 
-  // 更新钉子按钮状态
   updatePinButton(c.pinned || false);
 
-  const callLogs = {
-    1:[
-      {n:1,date:'2026-02-18',dur:'4分12秒',score:'6.8',text:'首通，客户主动介绍了基本情况：300㎡自建房，询问过价格，客服转移话题。承诺加微信发案例。',hasReport:true},
-      {n:2,date:'2026-02-22',dur:'8分35秒',score:'7.5',text:'聊了护墙板工艺和防潮处理。约好下周带他去看在建工地。',hasReport:true},
-      {n:3,date:'2026-02-25',dur:'11分20秒',score:'8.2',text:'确认到店时间为下周二下午2点，承诺携带详细预算方案。客户还在对比另一家公司。',hasReport:true},
-    ],
-    4:[
-      {n:1,date:'2026-02-15',dur:'6分28秒',score:'7.2',text:'首通，了解到客户要装180㎡商品房，新中式风格，预算30万。',hasReport:true},
-      {n:2,date:'2026-02-20',dur:'9分15秒',score:'8.0',text:'深度沟通，客户提出全包含软装需求，客服详细介绍软装合作品牌。',hasReport:true},
-      {n:3,date:'2026-02-24',dur:'5分10秒',score:'7.8',text:'确认到店时间，今日到店中。',hasReport:true},
-    ],
-    13:[
-      {n:1,date:'2026-02-10',dur:'5分50秒',score:'7.5',text:'首通，韩总105㎡轻奢风，预算16万，非常在意施工质量。',hasReport:true},
-      {n:2,date:'2026-02-14',dur:'12分20秒',score:'8.8',text:'核心通话：以「同小区邻居案例」切入，成功打消价格顾虑，约定周末到店。',hasReport:true},
-      {n:3,date:'2026-02-17',dur:'3分40秒',score:'8.5',text:'到店后确认细节，当天签订16.8万全包合同，成交！',hasReport:true},
-    ],
-  };
-  const logs = callLogs[id]||[{n:1,date:'2026-02-26',dur:'3分22秒',score:'7.0',text:'首通，了解基本情况，客户表达了装修意向。',hasReport:true}];
+  // 先用本地数据渲染概览，同时异步加载详情
+  renderDetailTabs(c, [], null);
+  document.querySelectorAll('.detail-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
 
-  const aiTexts = {
-    1:'【基于画像】王明是个体老板，做事爽快但重结果，有智能家居偏好。本次核心：确认到店时间 + 预告方案亮点。他在对比多家，建议强调「我们的全屋智能方案」制造差异化。承诺事项：记得携带详细预算方案。',
-    4:'刘芳今日已到店，正在方案谈判阶段。请与设计师同步：新中式风格、全包含软装、预算30万，不超预算。家里有两个孩子和老人，设计要兼顾实用性。',
-    default:'基于历史通话分析：建议本次重点补充画像信息，了解客户职业和家庭情况，为后续跟进提供更精准的建议。',
-  };
+  // 异步加载完整详情（录音、分析结果）
+  try {
+    const detail = await api(`/api/customers/${id}`);
+    if (detail.success && detail.data) {
+      const d = detail.data;
+      // 更新画像数据
+      if (d.portrait) c.portrait = d.portrait;
+      c.portraitPct = d.portraitPct || 0;
+      // 构建通话记录
+      const recordings = (d.recordings || []).map((r, i) => ({
+        n: i + 1,
+        date: r.callTime ? formatDate(r.callTime) : formatDate(r.createdAt),
+        dur: r.duration ? formatDuration(r.duration) : '--',
+        summary: r.analysisResults?.[0]?.summary || '暂无分析摘要',
+        scores: r.analysisResults?.[0]?.scores || {},
+        stage: r.analysisResults?.[0]?.stage || '',
+        customerCard: r.analysisResults?.[0]?.customerCard || null,
+        metadata: r.analysisResults?.[0]?.metadata || {}
+      }));
+      // 找最新的深度报告（stage2）
+      let latestReport = null;
+      for (const r of (d.recordings || [])) {
+        for (const ar of (r.analysisResults || [])) {
+          if (ar.stage === 'stage2' && ar.scores) {
+            latestReport = ar;
+          }
+        }
+      }
+      renderDetailTabs(c, recordings, latestReport);
+    }
+  } catch (e) {
+    console.error('Load detail error:', e);
+  }
+}
 
-  // 深度报告内容（第3通 / 最新一通）
-  const reportData = {
-    scene:'跟进·价格异议·竞争对手比较',
-    lineScore:'7.5分（有明确需求，已完成多次接触，成交概率中高）',
-    staffScore:'8.2分',
-    dims:[
-      {name:'开场白',score:7.5,color:'#3b82f6'},
-      {name:'需求挖掘',score:8.0,color:'#06b6d4'},
-      {name:'价值塑造',score:8.5,color:'#8b5cf6'},
-      {name:'异议处理',score:7.0,color:'#f59e0b'},
-      {name:'邀约能力',score:9.0,color:'#10b981'},
-      {name:'私域留存',score:7.5,color:'#ef4444'},
-    ],
-    summary:'本通电话客服在价值塑造和邀约推进上表现突出，成功确认到店时间。异议处理上略显被动，当客户提到「还在对比另一家」时，可以更主动地强化差异化优势。',
-    goldQuote:'「我们的护墙板防潮工艺是行业独有的三层处理工艺，这一点是我们和其他公司最大的不同。」',
-    suggest:'下次跟进建议：准备好「工艺对比表」和同小区案例照片，到店前微信提前发一份预算框架，让客户有心理预期。',
-  };
+function formatDuration(seconds) {
+  if (!seconds) return '--';
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}分${s}秒`;
+}
 
-  document.getElementById('detail-body').innerHTML = `
-    <!-- Tab 0: 概览 -->
+function renderDetailTabs(c, recordings, report) {
+  const portrait = c.portrait || {};
+
+  // 概览 Tab
+  const overviewHtml = `
     <div class="detail-tab-content active" id="dtab-0">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <span class="badge ${levelMap[c.level]}">${c.level}级</span>
-        <span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span>
+        <span class="badge ${levelMap[c.level]||''}">${c.level}级</span>
+        <span class="badge ${(statusMap[c.status]||['',''])[1]}">${(statusMap[c.status]||['未知'])[0]}</span>
         <span class="badge badge-calls">共${c.calls}通</span>
-      </div>
-      <div class="ai-suggestion">
-        <div class="title">🤖 AI 本次通话建议</div>
-        ${aiTexts[id]||aiTexts.default}
       </div>
       <div style="margin-top:14px">
         <div class="info-grid">
-          <div class="info-item"><div class="label">小区</div><div class="val">${c.area}</div></div>
-          <div class="info-item"><div class="label">面积</div><div class="val">${c.size}</div></div>
-          <div class="info-item"><div class="label">装修预算</div><div class="val">${c.budget}</div></div>
-          <div class="info-item"><div class="label">意向风格</div><div class="val">${c.style}</div></div>
-          <div class="info-item"><div class="label">下次跟进</div><div class="val" style="color:var(--red)">${c.next}</div></div>
-          <div class="info-item"><div class="label">归属客服</div><div class="val">${c.agent}</div></div>
+          <div class="info-item"><div class="label">小区</div><div class="val">${c.area || '未知'}</div></div>
+          <div class="info-item"><div class="label">户型</div><div class="val">${c.size || '未知'}</div></div>
+          <div class="info-item"><div class="label">装修预算</div><div class="val">${c.budget || '未知'}</div></div>
+          <div class="info-item"><div class="label">意向风格</div><div class="val">${portrait.stylePreference || c.style || '未知'}</div></div>
+          <div class="info-item"><div class="label">下次跟进</div><div class="val" style="color:var(--red)">${c.next || '未设置'}</div></div>
+          <div class="info-item"><div class="label">归属客服</div><div class="val">${c.agent || '未分配'}</div></div>
         </div>
-        ${c.promise?`<div style="margin-top:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;font-size:12px;color:#9a3412"><strong>📌 承诺记录：</strong>${c.promise}</div>`:''}
       </div>
       <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-100)">
         <button class="btn btn-primary btn-sm" onclick="alert('📞 拨打 ${c.phone}')">📞 拨打</button>
         <button class="btn btn-outline btn-sm" onclick="alert('生成设计师交接简报')">📄 简报</button>
         <button class="btn btn-outline btn-sm" onclick="alert('标记死单并进入公海')">❌ 死单</button>
       </div>
-    </div>
+    </div>`;
 
-    <!-- Tab 1: 客户画像 -->
+  // 画像 Tab
+  const pctVal = c.portraitPct || 0;
+  const emptyFields = portraitFields.filter(f => !portrait[f.key] || portrait[f.key] === '暂无');
+  const portraitHtml = `
     <div class="detail-tab-content" id="dtab-1">
       <div class="portrait-completeness">
         <div class="pc-header">
           <div class="pc-title">客户画像完整度</div>
-          <div class="pc-pct">${c.portraitPct}%</div>
+          <div class="pc-pct">${pctVal}%</div>
         </div>
-        <div class="pc-bar"><div class="pc-fill" style="width:${c.portraitPct}%"></div></div>
-        <div class="pc-hint">${c.portraitPct>=70?'✅ 画像较完整，AI建议准确度高':'⚠️ 画像待补充，建议下次通话重点挖掘：'+
-          portraitFields.filter(f=>!c.portrait[f.key]||c.portrait[f.key]==='暂无').map(f=>f.label).slice(0,3).join('、')}</div>
+        <div class="pc-bar"><div class="pc-fill" style="width:${pctVal}%"></div></div>
+        <div class="pc-hint">${pctVal >= 70 ? '✅ 画像较完整，AI建议准确度高' : '⚠️ 画像待补充，建议下次通话重点挖掘：' + emptyFields.map(f=>f.label).slice(0,3).join('、')}</div>
       </div>
       <div class="portrait-grid">
-        ${portraitFields.map(f=>{
-          const val = c.portrait[f.key];
-          const isEmpty = !val || val==='暂无';
-          const isNew = c.portrait.newFields && c.portrait.newFields.includes(f.key);
-          return `<div class="portrait-item ${isEmpty?'empty':'filled'}">
-            <div class="p-label">${f.label}${isNew?'<span class="new-field-badge">新</span>':''}</div>
-            ${isEmpty?'<div class="p-empty">暂未识别</div>':'<div class="p-val">${val}</div><div class="p-source">✓ AI识别</div>'}
+        ${portraitFields.map(f => {
+          const val = portrait[f.key];
+          const isEmpty = !val || val === '暂无';
+          return `<div class="portrait-item ${isEmpty ? 'empty' : 'filled'}">
+            <div class="p-label">${f.label}</div>
+            ${isEmpty ? '<div class="p-empty">暂未识别</div>' : `<div class="p-val">${val}</div><div class="p-source">✓ AI识别</div>`}
           </div>`;
         }).join('')}
       </div>
-    </div>
+    </div>`;
 
-    <!-- Tab 2: 通话记录 -->
-    <div class="detail-tab-content" id="dtab-2">
-      <div class="call-log">
-        ${logs.map(l=>`
-          <div class="call-item">
-            <div class="call-item-header">
-              <div class="call-item-title">第${l.n}通 · ${l.date} · ${l.dur}</div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span class="call-score ${parseFloat(l.score)>=8?'score-high':parseFloat(l.score)>=7?'score-mid':'score-low'}">${l.score}分</span>
-                <button class="btn btn-outline btn-sm" onclick="switchDetailTab(3)">深度报告 →</button>
+  // 通话记录 Tab
+  let callsHtml;
+  if (recordings.length === 0) {
+    callsHtml = `
+      <div class="detail-tab-content" id="dtab-2">
+        <div style="text-align:center;padding:40px 20px;color:var(--gray-400)">
+          <div style="font-size:36px;margin-bottom:12px">📞</div>
+          <div>暂无通话记录</div>
+        </div>
+      </div>`;
+  } else {
+    callsHtml = `
+      <div class="detail-tab-content" id="dtab-2">
+        <div class="call-log">
+          ${recordings.map(l => {
+            const scoreVal = l.scores?.lead_quality?.score || l.scores?.overall || 0;
+            const scoreClass = scoreVal >= 8 ? 'score-high' : scoreVal >= 7 ? 'score-mid' : 'score-low';
+            return `
+            <div class="call-item">
+              <div class="call-item-header">
+                <div class="call-item-title">第${l.n}通 · ${l.date} · ${l.dur}</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  ${scoreVal ? `<span class="call-score ${scoreClass}">${scoreVal}分</span>` : ''}
+                  <button class="btn btn-outline btn-sm" onclick="switchDetailTab(3)">深度报告 →</button>
+                </div>
               </div>
-            </div>
-            <div class="call-item-body">${l.text}</div>
-          </div>`).join('')}
-      </div>
-    </div>
+              <div class="call-item-body">${l.summary}</div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  }
 
-    <!-- Tab 3: 深度报告 -->
-    <div class="detail-tab-content" id="dtab-3">
-      <div style="font-size:12px;color:var(--gray-400);margin-bottom:12px">以下为最新一通（第${logs.length}通）的金牌教练深度报告</div>
-      <div class="report-panel">
-        <div class="report-title">🏅 金牌教练深度报告</div>
-        <div class="report-section">
-          <div class="report-section-title">场景判定</div>
-          <p>${reportData.scene}</p>
+  // 深度报告 Tab
+  let reportHtml;
+  if (!report || !report.scores) {
+    reportHtml = `
+      <div class="detail-tab-content" id="dtab-3">
+        <div style="text-align:center;padding:40px 20px;color:var(--gray-400)">
+          <div style="font-size:36px;margin-bottom:12px">🤖</div>
+          <div>暂无深度报告</div>
+          <div style="font-size:12px;margin-top:6px">上传录音并完成AI分析后，将自动生成金牌教练深度报告</div>
         </div>
-        <div class="report-section">
-          <div class="report-section-title">线索质量评分</div>
-          <p>${reportData.lineScore}</p>
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">客服综合评分 · ${reportData.staffScore}</div>
-          ${reportData.dims.map(d=>`
-            <div class="score-row">
-              <div class="score-dim">${d.name}</div>
-              <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${d.score*10}%;background:${d.color}"></div></div>
-              <div class="score-num">${d.score}</div>
-            </div>`).join('')}
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">通话总结</div>
-          <p>${reportData.summary}</p>
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">金句萃取</div>
-          <div class="report-quote">${reportData.goldQuote}</div>
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">下次跟进建议</div>
-          <p>${reportData.suggest}</p>
-        </div>
-      </div>
-    </div>
-  `;
+      </div>`;
+  } else {
+    const scores = report.scores || {};
+    const dims = [
+      {name:'开场白', key:'opening', color:'#3b82f6'},
+      {name:'需求挖掘', key:'needs_discovery', color:'#06b6d4'},
+      {name:'价值塑造', key:'value_building', color:'#8b5cf6'},
+      {name:'异议处理', key:'objection_handling', color:'#f59e0b'},
+      {name:'邀约能力', key:'invitation', color:'#10b981'},
+      {name:'私域留存', key:'retention', color:'#ef4444'},
+    ];
+    const overallScore = scores.overall || scores.staff_score || '--';
+    const lineScore = scores.lead_quality?.score || scores.line_score || '--';
 
-  document.querySelectorAll('.detail-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
-  document.getElementById('detail-panel').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
+    reportHtml = `
+      <div class="detail-tab-content" id="dtab-3">
+        <div style="font-size:12px;color:var(--gray-400);margin-bottom:12px">最新一通的金牌教练深度报告</div>
+        <div class="report-panel">
+          <div class="report-title">🏅 金牌教练深度报告</div>
+          <div class="report-section">
+            <div class="report-section-title">场景判定</div>
+            <p>${scores.scene || report.metadata?.scene || '通话分析'}</p>
+          </div>
+          <div class="report-section">
+            <div class="report-section-title">线索质量评分</div>
+            <p>${lineScore}分</p>
+          </div>
+          <div class="report-section">
+            <div class="report-section-title">客服综合评分 · ${overallScore}分</div>
+            ${dims.map(d => {
+              const s = scores[d.key]?.score || scores[d.key] || 0;
+              return s ? `<div class="score-row">
+                <div class="score-dim">${d.name}</div>
+                <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${s*10}%;background:${d.color}"></div></div>
+                <div class="score-num">${s}</div>
+              </div>` : '';
+            }).join('')}
+          </div>
+          ${report.summary ? `<div class="report-section">
+            <div class="report-section-title">通话总结</div>
+            <p>${report.summary}</p>
+          </div>` : ''}
+          ${scores.gold_quote ? `<div class="report-section">
+            <div class="report-section-title">金句萃取</div>
+            <div class="report-quote">${scores.gold_quote}</div>
+          </div>` : ''}
+          ${scores.suggest || scores.next_action ? `<div class="report-section">
+            <div class="report-section-title">下次跟进建议</div>
+            <p>${scores.suggest || scores.next_action}</p>
+          </div>` : ''}
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('detail-body').innerHTML = overviewHtml + portraitHtml + callsHtml + reportHtml;
 }
 
 function switchDetailTab(idx) {
