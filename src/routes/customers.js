@@ -165,9 +165,9 @@ router.post('/:id/claim', authenticate, tenantScope, async (req, res) => {
   try {
     const { id } = req.params;
 
-    // 检查客户是否在公海
+    // 检查客户是否在公海（含死单公海）
     const customer = await prisma.customer.findFirst({
-      where: { id, tenantId: req.tenantId, seaStatus: 'in_sea' }
+      where: { id, tenantId: req.tenantId, seaStatus: { in: ['in_sea', 'invalid'] } }
     });
 
     if (!customer) {

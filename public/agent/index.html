@@ -272,13 +272,13 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 <div class="role-switch">
   <div class="logo">声纳 <span style="font-weight:400;opacity:0.6">· 客服工作台</span></div>
   <div style="display:flex;align-items:center;gap:16px;">
-    <div style="color:rgba(255,255,255,0.6);font-size:12px" id="user-info" style="display:none">
+    <div id="user-info" style="display:none;color:rgba(255,255,255,0.6);font-size:12px">
       <span id="current-user">客服</span> · <span onclick="doLogout()" style="cursor:pointer;opacity:0.7">退出</span>
     </div>
     <div id="login-btn" style="color:rgba(255,255,255,0.6);font-size:12px">
       <span onclick="showLoginModal()" style="cursor:pointer;opacity:0.7">登录</span>
     </div>
-    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.2.0</div>
+    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.4.0</div>
   </div>
 </div>
 
@@ -404,6 +404,7 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     </div>
     <div class="nav-group">
       <div class="nav-group-label">学习</div>
+      <a class="nav-link" onclick="showStaffView('goldcalls',this)"><span class="ni">🎖️</span>金牌通话分析</a>
       <a class="nav-link" onclick="showStaffView('cases',this)"><span class="ni">🏆</span>优秀案例库</a>
     </div>
   </nav>
@@ -644,6 +645,12 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
           <tbody id="dead-sea-body"></tbody></table>
         </div>
       </div>
+    </div>
+
+    <!-- 金牌通话分析 -->
+    <div class="view" id="staff-goldcalls">
+      <div class="page-header"><div><div class="page-title">金牌通话分析</div><div class="page-sub">通话时长超过200秒的深度分析，点击查看完整报告</div></div></div>
+      <div class="page-body" id="goldcalls-body"></div>
     </div>
 
     <!-- 案例库 -->
@@ -1088,7 +1095,7 @@ const agents = [
   {name:'李晓东',avatar:'李',color:'#8b5cf6',done:15,target:60,score:78,portraitAvg:69},
   {name:'张小红',avatar:'张',color:'#10b981',done:14,target:60,score:75,portraitAvg:44},
 ];
-const forbiddenWords = ['保证最低价','绝对不增项','市场最低','100%保证'];
+let forbiddenWords = [];
 
 // 画像字段映射
 const portraitFields = [
@@ -2278,6 +2285,92 @@ async function claimDeadSea(id, btn) {
   }
 }
 
+// ══ 金牌通话分析 ══
+const mockGoldCalls = [
+  {id:'g1',name:'王明',area:'学仕里',phone:'135****6093',duration:326,date:'2026-03-12',callNum:3,level:'S',
+   score:8.9,summary:'客户是个体老板，本次通话成功确认到店时间。客服精准把握客户心理，用差异化方案打动客户。',
+   highlights:['精准挖掘客户需求','有效处理价格异议','成功推进到店邀约'],
+   report:'本次通话表现优秀。开场简洁有力，30秒内切入主题。中段客户提出价格顾虑时，客服没有直接降价，而是用「同小区邻居案例」建立信任，再用「到店看实景」降低决策门槛。收尾明确约定到店时间和陪同人员，执行力强。建议：可以在介绍方案时多用数字量化优势。'},
+  {id:'g2',name:'周婷',area:'碧桂园二期',phone:'158****6985',duration:412,date:'2026-03-11',callNum:3,level:'S',
+   score:9.2,summary:'医生客户，注重专业性。客服全程保持顾问姿态，用工艺检测报告和质保体系打动客户，成功约定量房。',
+   highlights:['顾问式沟通','专业数据支撑','量房邀约成功'],
+   report:'教科书级别的高端客户沟通。客服准确识别医生客户的决策特点——重逻辑、重数据、重专业性。全程没有用促销话术，而是用「工艺检测报告」「第三方质检」等专业内容建立信任。客户主动提出量房需求，属于被动成交的最佳状态。值得全员学习的案例。'},
+  {id:'g3',name:'郑欣',area:'光山碧桂园',phone:'159****7906',duration:285,date:'2026-03-10',callNum:2,level:'A',
+   score:8.5,summary:'夫妻客户，丈夫是医生。客服用数据说话，推进邀约到店看实景，策略执行到位。',
+   highlights:['数据化沟通','夫妻决策引导','到店推进'],
+   report:'客服很好地执行了针对医生客户的沟通策略。预算参考表提前发送，本次通话直接讨论方案细节，效率很高。在引导夫妻共同决策方面处理得当——先获得丈夫认可，再建议「带太太一起到店看实景」。改进点：可以更早确认装修时间节点。'},
+  {id:'g4',name:'李雪梅',area:'碧桂园',phone:'137****2079',duration:248,date:'2026-03-09',callNum:2,level:'A',
+   score:8.1,summary:'客户非常在意收纳，客服精准推荐全屋收纳设计方案，用同类案例图片打动客户。',
+   highlights:['需求精准匹配','案例图片辅助','收纳方案亮点'],
+   report:'客服对客户的核心需求（收纳）把握准确。发送的同类案例图片起到了关键作用，客户看完后明显兴趣提升。话术亮点：「您家128㎡做到30个收纳柜体，每个空间都不浪费」——用具体数字让客户有画面感。不足：结尾邀约到店的话术偏弱，可以更果断。'},
+  {id:'g5',name:'刘芳',area:'中粮福临',phone:'152****3252',duration:380,date:'2026-03-08',callNum:3,level:'S',
+   score:9.0,summary:'180㎡大户型客户，已到店。客服用全屋智能方案制造差异化，客户当场交定金。',
+   highlights:['大户型专业方案','智能家居差异化','当场交定'],
+   report:'大户型高预算客户的标杆案例。客服在前两通已经充分了解客户需求，本次到店接待准备充分。亮点：提前准备了3套不同风格的方案，让客户有选择感而非被推销感。智能家居方案是决定性因素——客户说「这是唯一一家把智能和装修结合讲清楚的」。成交关键：专业+差异化。'},
+];
+
+function renderGoldCalls() {
+  const container = document.getElementById('goldcalls-body');
+  if (!container) return;
+
+  // 真实模式下从录音数据筛选时长>200秒的
+  const calls = mockGoldCalls;
+
+  container.innerHTML = calls.length === 0
+    ? '<div style="text-align:center;padding:60px;color:var(--gray-400)"><div style="font-size:48px;margin-bottom:16px">🎖️</div><div>暂无金牌通话，通话时长超过200秒的优质通话将出现在这里</div></div>'
+    : `<div style="display:flex;flex-direction:column;gap:12px">${calls.map(c => `
+      <div class="chart-card" style="cursor:pointer;transition:box-shadow 0.15s" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''" onclick="showGoldCallDetail('${c.id}')">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:15px;font-weight:600;color:var(--navy)">${c.name} <span style="font-size:12px;color:var(--gray-400);font-weight:400">· ${c.area}</span></div>
+            <div style="font-size:12px;color:var(--gray-400);margin-top:4px">${c.date} · 第${c.callNum}通 · ${Math.floor(c.duration/60)}分${c.duration%60}秒</div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <span class="badge ${levelMap[c.level]||''}">${c.level}级</span>
+            <span style="background:linear-gradient(135deg,#f59e0b,#f97316);color:white;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700">${c.score}分</span>
+          </div>
+        </div>
+        <div style="margin-top:10px;font-size:13px;color:var(--gray-600);line-height:1.6">${c.summary}</div>
+        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${c.highlights.map(h => `<span style="background:var(--amber-pale);color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px">${h}</span>`).join('')}</div>
+      </div>`).join('')}</div>`;
+}
+
+function showGoldCallDetail(id) {
+  const c = mockGoldCalls.find(x => x.id === id);
+  if (!c) return;
+
+  // 用详情面板展示深度报告
+  document.getElementById('detail-header-info').innerHTML = `
+    <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">🎖️ ${c.name} · 金牌通话</div>
+    <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.area} · ${c.date} · 第${c.callNum}通 · ${Math.floor(c.duration/60)}分${c.duration%60}秒</div>`;
+
+  document.getElementById('detail-body').innerHTML = `
+    <div style="padding:16px">
+      <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">
+        <span class="badge ${levelMap[c.level]||''}">${c.level}级</span>
+        <span style="background:linear-gradient(135deg,#f59e0b,#f97316);color:white;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:700">${c.score}分</span>
+        <span class="badge badge-calls">第${c.callNum}通</span>
+      </div>
+      <div style="background:var(--blue-pale);border-radius:10px;padding:14px;margin-bottom:16px">
+        <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:6px">通话摘要</div>
+        <div style="font-size:13px;color:var(--gray-700);line-height:1.6">${c.summary}</div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:8px">亮点标签</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">${c.highlights.map(h => `<span style="background:var(--amber-pale);color:#92400e;padding:4px 10px;border-radius:6px;font-size:12px">${h}</span>`).join('')}</div>
+      </div>
+      <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">🤖 AI 深度分析报告</div>
+        <div style="font-size:13px;color:var(--gray-700);line-height:1.8;white-space:pre-wrap">${c.report}</div>
+      </div>
+    </div>`;
+
+  // 隐藏 tabs，只显示报告
+  document.getElementById('detail-tabs').style.display = 'none';
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+}
+
 // ══ 案例库 ══
 function renderCases() {
   document.getElementById('cases-body').innerHTML = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
@@ -2320,8 +2413,171 @@ function doSearch(val) {
 let currentDetailTab = 0;
 let currentCustomerId = null;
 
+// 编辑画像字段
+function editPortraitField(customerId, key, label, el) {
+  // 已经在编辑中就不重复
+  if (el.querySelector('input')) return;
+  const c = customers.find(x => String(x.id) === String(customerId));
+  if (!c) return;
+  const portrait = c.portrait || {};
+  const currentVal = portrait[key] || '';
+
+  el.innerHTML = `
+    <div class="p-label">${label}</div>
+    <input type="text" value="${currentVal === '暂无' ? '' : currentVal}" placeholder="输入${label}"
+      style="width:100%;padding:4px 8px;border:1px solid var(--blue-light);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif;outline:none"
+      onkeydown="if(event.key==='Enter')this.blur()"
+      onblur="savePortraitField('${customerId}','${key}','${label}',this.value,this.closest('.portrait-item'))">`;
+  const input = el.querySelector('input');
+  input.focus();
+  input.onclick = function(e) { e.stopPropagation(); };
+}
+
+async function savePortraitField(customerId, key, label, value, el) {
+  const c = customers.find(x => String(x.id) === String(customerId));
+  if (!c) return;
+  if (!c.portrait) c.portrait = {};
+  const trimmed = value.trim();
+
+  if (trimmed) {
+    c.portrait[key] = trimmed;
+    c.portrait['_manual_' + key] = true;
+    el.className = 'portrait-item filled';
+    el.style.cursor = 'pointer';
+    el.innerHTML = `<div class="p-label">${label}</div><div class="p-val">${trimmed}</div><div class="p-source">✓ 手动填写</div>`;
+  } else {
+    delete c.portrait[key];
+    el.className = 'portrait-item empty';
+    el.style.cursor = 'pointer';
+    el.innerHTML = `<div class="p-label">${label}</div><div class="p-empty">点击填写</div>`;
+  }
+
+  // 更新完整度
+  const filled = portraitFields.filter(f => c.portrait[f.key] && c.portrait[f.key] !== '暂无').length;
+  const pct = Math.round((filled / portraitFields.length) * 100);
+  c.portraitPct = pct;
+  const pctDisplay = document.getElementById('portrait-pct-display');
+  const pctBar = document.getElementById('portrait-pct-bar');
+  if (pctDisplay) pctDisplay.textContent = pct + '%';
+  if (pctBar) pctBar.style.width = pct + '%';
+
+  if (useMockData) { showToast('画像已更新', 'success'); return; }
+  try {
+    await api(`/api/customers/${customerId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ portrait: c.portrait, portraitPct: pct })
+    });
+    showToast('画像已更新', 'success');
+  } catch (e) {
+    showToast('保存失败', 'error');
+  }
+}
+
+// 生成设计师交接简报
+function generateBriefing(id) {
+  const c = customers.find(x => String(x.id) === String(id));
+  if (!c) return;
+  const portrait = c.portrait || {};
+  const statusLabel = (statusMap[c.status] || ['未知'])[0];
+  const levelStr = c.level ? c.level + '级' : '未知';
+
+  let lines = [];
+  lines.push(`【客户交接简报】`);
+  lines.push(`生成时间：${new Date().toLocaleString('zh-CN')}`);
+  lines.push(`─────────────────────`);
+  lines.push(`姓名：${c.name || '未知'}`);
+  lines.push(`电话：${c.phone || '未知'}`);
+  lines.push(`小区：${c.area || '未知'}`);
+  lines.push(`户型：${c.size || portrait.houseType || '未知'}`);
+  lines.push(`面积：${c.community || '未知'}`);
+  lines.push(`装修预算：${c.budget || portrait.budgetDetail || '未知'}`);
+  lines.push(`客户级别：${levelStr}`);
+  lines.push(`跟进状态：${statusLabel}`);
+  lines.push(`归属客服：${c.agent || '未分配'}`);
+  if (c.nextFollowAt || c.nextRaw) lines.push(`下次跟进：${c.nextFollowAt || c.nextRaw}`);
+  lines.push(``);
+  lines.push(`【客户画像】`);
+  lines.push(`完整度：${c.portraitPct || 0}%`);
+  portraitFields.forEach(f => {
+    const val = portrait[f.key];
+    if (val && val !== '暂无') lines.push(`${f.label}：${val}`);
+  });
+  lines.push(``);
+  lines.push(`【备注】`);
+  lines.push(`请根据以上信息准备设计方案，如有疑问请联系客服确认。`);
+
+  const text = lines.join('\n');
+
+  // 弹出简报面板
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9999;display:flex;align-items:center;justify-content:center';
+  overlay.onclick = e => { if (e.target === overlay) overlay.remove(); };
+  overlay.innerHTML = `
+    <div style="background:white;border-radius:16px;padding:24px;width:90%;max-width:420px;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <div style="font-size:16px;font-weight:700;color:var(--navy)">📄 设计师交接简报</div>
+        <button onclick="this.closest('div[style*=fixed]').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400)">✕</button>
+      </div>
+      <pre style="white-space:pre-wrap;word-break:break-all;font-size:13px;line-height:1.8;color:var(--gray-600);background:var(--gray-50);padding:16px;border-radius:10px;font-family:'Noto Sans SC',sans-serif;margin:0">${text}</pre>
+      <button id="copy-briefing-btn" onclick="copyBriefing(this)" style="margin-top:16px;width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">📋 复制简报</button>
+    </div>`;
+  document.body.appendChild(overlay);
+
+  // 把文本存到按钮上方便复制
+  overlay.querySelector('#copy-briefing-btn').dataset.text = text;
+}
+
+function copyBriefing(btn) {
+  const text = btn.dataset.text;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✅ 已复制到剪贴板';
+      setTimeout(() => { btn.textContent = '📋 复制简报'; }, 2000);
+    });
+  } else {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+    btn.textContent = '✅ 已复制到剪贴板';
+    setTimeout(() => { btn.textContent = '📋 复制简报'; }, 2000);
+  }
+}
+
+// 保存客户字段
+async function saveCustomerField(id, field, value) {
+  // 更新本地数据
+  const c = customers.find(x => String(x.id) === String(id));
+  if (c) {
+    if (field === 'level') c.level = value;
+    if (field === 'status') c.status = value;
+    if (field === 'nextFollowAt') { c.next = value ? new Date(value).toLocaleDateString() : '未设置'; c.nextRaw = value; }
+  }
+  if (useMockData) {
+    showToast('已更新', 'success');
+    renderCustomerTable();
+    return;
+  }
+  try {
+    const body = {};
+    body[field] = value || null;
+    const data = await api(`/api/customers/${id}`, { method: 'PUT', body: JSON.stringify(body) });
+    if (data.success) {
+      showToast('已更新', 'success');
+      renderCustomerTable();
+    } else {
+      showToast(data.message || '更新失败', 'error');
+    }
+  } catch (e) {
+    showToast('更新失败', 'error');
+  }
+}
+
 async function openDetail(id) {
-  const c = customers.find(x=>x.id===id);
+  const c = customers.find(x=> String(x.id) === String(id));
   if(!c) return;
   currentDetailTab = 0;
   currentCustomerId = id;
@@ -2388,26 +2644,32 @@ function renderDetailTabs(c, recordings, report) {
   const portrait = c.portrait || {};
 
   // 概览 Tab
+  const statusOptions = [['pending','待跟进'],['valid','有效客户'],['following','跟进中'],['invited','已邀约'],['visited','已到店'],['deposit','已交定'],['signed','已签单']].map(([k,v]) => `<option value="${k}" ${c.status===k?'selected':''}>${v}</option>`).join('');
+  const levelOptions = ['S','A','B','C'].map(l => `<option value="${l}" ${c.level===l?'selected':''}>${l}级</option>`).join('');
+  const selectStyle = 'padding:6px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-weight:600;font-family:\"Noto Sans SC\",sans-serif;cursor:pointer;background:white';
   const overviewHtml = `
     <div class="detail-tab-content" id="dtab-0">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <span class="badge ${levelMap[c.level]||''}">${c.level}级</span>
-        <span class="badge ${(statusMap[c.status]||['',''])[1]}">${(statusMap[c.status]||['未知'])[0]}</span>
-        <span class="badge badge-calls">共${c.calls}通</span>
-      </div>
-      <div style="margin-top:14px">
-        <div class="info-grid">
-          <div class="info-item"><div class="label">小区</div><div class="val">${c.area || '未知'}</div></div>
-          <div class="info-item"><div class="label">户型</div><div class="val">${c.size || '未知'}</div></div>
-          <div class="info-item"><div class="label">装修预算</div><div class="val">${c.budget || '未知'}</div></div>
-          <div class="info-item"><div class="label">意向风格</div><div class="val">${portrait.stylePreference || c.style || '未知'}</div></div>
-          <div class="info-item"><div class="label">下次跟进</div><div class="val" style="color:var(--red)">${c.next || '未设置'}</div></div>
-          <div class="info-item"><div class="label">归属客服</div><div class="val">${c.agent || '未分配'}</div></div>
+      <div class="info-grid">
+        <div class="info-item"><div class="label">小区</div><div class="val">${c.area || '未知'}</div></div>
+        <div class="info-item"><div class="label">户型</div><div class="val">${c.size || '未知'}</div></div>
+        <div class="info-item"><div class="label">装修预算</div><div class="val">${c.budget || '未知'}</div></div>
+        <div class="info-item"><div class="label">意向风格</div><div class="val">${portrait.stylePreference || c.style || '未知'}</div></div>
+        <div class="info-item">
+          <div class="label">下次跟进</div>
+          <div class="val"><input type="date" id="edit-next" value="${c.nextRaw || ''}" onchange="saveCustomerField('${c.id}','nextFollowAt',this.value)" style="border:1px solid var(--gray-200);border-radius:6px;padding:3px 8px;font-size:12px;font-family:'Noto Sans SC',sans-serif;color:var(--red);cursor:pointer"></div>
         </div>
+        <div class="info-item"><div class="label">归属客服</div><div class="val">${c.agent || '未分配'}</div></div>
       </div>
-      <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-100)">
-        <button class="btn btn-primary btn-sm" onclick="alert('📞 拨打 ${c.phone}')">📞 拨打</button>
-        <button class="btn btn-outline btn-sm" onclick="alert('生成设计师交接简报')">📄 简报</button>
+      <div style="display:flex;gap:8px;align-items:flex-end;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-100)">
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">客户级别</div>
+          <select id="edit-level" onchange="saveCustomerField('${c.id}','level',this.value)" style="${selectStyle};width:100%">${levelOptions}</select>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">跟进状态</div>
+          <select id="edit-status" onchange="saveCustomerField('${c.id}','status',this.value)" style="${selectStyle};width:100%">${statusOptions}</select>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="generateBriefing('${c.id}')">📄 简报</button>
         <button class="btn btn-outline btn-sm" onclick="alert('标记死单并进入公海')">❌ 死单</button>
       </div>
     </div>`;
@@ -2420,18 +2682,18 @@ function renderDetailTabs(c, recordings, report) {
       <div class="portrait-completeness">
         <div class="pc-header">
           <div class="pc-title">客户画像完整度</div>
-          <div class="pc-pct">${pctVal}%</div>
+          <div class="pc-pct" id="portrait-pct-display">${pctVal}%</div>
         </div>
-        <div class="pc-bar"><div class="pc-fill" style="width:${pctVal}%"></div></div>
-        <div class="pc-hint">${pctVal >= 70 ? '✅ 画像较完整，AI建议准确度高' : '⚠️ 画像待补充，建议下次通话重点挖掘：' + emptyFields.map(f=>f.label).slice(0,3).join('、')}</div>
+        <div class="pc-bar"><div class="pc-fill" id="portrait-pct-bar" style="width:${pctVal}%"></div></div>
+        <div class="pc-hint">${pctVal >= 70 ? '✅ 画像较完整，AI建议准确度高' : '⚠️ 画像待补充，点击空白字段可手动填写'}</div>
       </div>
       <div class="portrait-grid">
         ${portraitFields.map(f => {
           const val = portrait[f.key];
           const isEmpty = !val || val === '暂无';
-          return `<div class="portrait-item ${isEmpty ? 'empty' : 'filled'}">
+          return `<div class="portrait-item ${isEmpty ? 'empty' : 'filled'}" id="portrait-item-${f.key}" onclick="editPortraitField('${c.id}','${f.key}','${f.label}',this)" style="cursor:pointer">
             <div class="p-label">${f.label}</div>
-            ${isEmpty ? '<div class="p-empty">暂未识别</div>' : `<div class="p-val">${val}</div><div class="p-source">✓ AI识别</div>`}
+            ${isEmpty ? '<div class="p-empty">点击填写</div>' : `<div class="p-val">${val}</div><div class="p-source">✓ ${portrait['_manual_'+f.key] ? '手动填写' : 'AI识别'}</div>`}
           </div>`;
         }).join('')}
       </div>
@@ -2539,11 +2801,12 @@ function closeDetail() {
   currentCustomerId = null;
   document.getElementById('detail-panel').classList.remove('open');
   document.getElementById('overlay').classList.remove('show');
+  document.getElementById('detail-tabs').style.display = '';
 }
 
 // ══ 重点客户功能 ══
 function togglePin(id) {
-  const c = customers.find(x=>x.id===id);
+  const c = customers.find(x=>String(x.id)===String(id));
   if(!c) return;
   c.pinned = !c.pinned;
   updatePinButton(c.pinned);
@@ -2692,10 +2955,11 @@ function renderBoss() {
 function renderForbiddenWords() {
   const el = document.getElementById('forbidden-words');
   if(!el) return;
-  el.innerHTML = forbiddenWords.map(w=>`<span style="background:var(--red-pale);color:var(--red);font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${w}<span style="cursor:pointer;opacity:0.6" onclick="removeFW('${w}')">✕</span></span>`).join('');
+  el.innerHTML = forbiddenWords.map(w=>`<span style="background:var(--red-pale);color:var(--red);font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${typeof w === 'string' ? w : w.word}</span>`).join('');
 }
-function removeFW(w){const i=forbiddenWords.indexOf(w);if(i>-1){forbiddenWords.splice(i,1);renderForbiddenWords();}}
-function addForbiddenWord(){const el=document.getElementById('new-word');const v=el.value.trim();if(v&&!forbiddenWords.includes(v)){forbiddenWords.push(v);renderForbiddenWords();el.value='';}}
+async function loadForbiddenWords(){try{const d=await api('/api/config/forbidden-words');if(d.success){forbiddenWords=d.data||[];renderForbiddenWords();}}catch(e){console.error('Load forbidden words failed:',e);}}
+function removeFW(){}
+function addForbiddenWord(){}
 
 // ══ 视图切换 ══
 function showStaffView(id, el) {
@@ -3148,6 +3412,7 @@ async function init() {
     document.getElementById('user-info').style.display = 'block';
     // 加载真实数据
     const [c, s, cc, ds] = await Promise.all([loadCustomers(), loadSeaCustomers(), loadConfirmCards(), loadDeadSeaCustomers()]);
+    loadForbiddenWords();
     if (!c) window.customers = mockCustomers;
     if (!s) window.seaCustomers = mockSeaCustomers;
     if (!ds) deadSeaCustomers = mockDeadSeaCustomers;
@@ -3160,6 +3425,9 @@ async function init() {
     }
     // 未登录，使用 mock 数据演示
     useMockData = true;
+    document.getElementById('login-btn').style.display = 'none';
+    document.getElementById('user-info').style.display = 'block';
+    document.getElementById('current-user').textContent = '演示模式';
     window.customers = mockCustomers;
     window.seaCustomers = mockSeaCustomers;
     deadSeaCustomers = mockDeadSeaCustomers;
@@ -3250,6 +3518,7 @@ async function init() {
   renderPinnedCustomers();
   renderSea();
   renderDeadSea();
+  renderGoldCalls();
   renderCases();
 }
 init();

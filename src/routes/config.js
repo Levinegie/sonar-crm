@@ -120,7 +120,7 @@ router.put('/system', authenticate, authorize('admin'), tenantScope, async (req,
 });
 
 // 获取违禁词列表
-router.get('/forbidden-words', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
+router.get('/forbidden-words', authenticate, authorize('admin', 'boss', 'agent'), tenantScope, async (req, res) => {
   try {
     const words = await prisma.forbiddenWord.findMany({
       where: { tenantId: req.tenantId },
@@ -134,7 +134,7 @@ router.get('/forbidden-words', authenticate, authorize('admin', 'boss'), tenantS
 });
 
 // 添加违禁词
-router.post('/forbidden-words', authenticate, authorize('admin'), tenantScope, async (req, res) => {
+router.post('/forbidden-words', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
   try {
     const { word, category = 'general', description } = req.body;
 
@@ -158,9 +158,9 @@ router.post('/forbidden-words', authenticate, authorize('admin'), tenantScope, a
 });
 
 // 删除违禁词
-router.delete('/forbidden-words/:id', authenticate, authorize('admin'), tenantScope, async (req, res) => {
+router.delete('/forbidden-words/:id', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
   try {
-    await prisma.forbiddenWord.delete({
+    await prisma.forbiddenWord.deleteMany({
       where: { id: req.params.id, tenantId: req.tenantId }
     });
 

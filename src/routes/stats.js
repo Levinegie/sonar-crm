@@ -6,7 +6,7 @@ const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { Prisma } = require('@prisma/client');
 const { success, error } = require('../utils/helpers');
-const { authenticate, tenantScope } = require('../middleware/auth');
+const { authenticate, tenantScope, authorize } = require('../middleware/auth');
 const dayjs = require('dayjs');
 
 const router = express.Router();
@@ -76,9 +76,9 @@ router.get('/dashboard', authenticate, tenantScope, async (req, res) => {
       })
     ]);
 
-    // 客服排行
+    // 客服排行（admin 和 boss 都能看）
     let agentStats = [];
-    if (!isAgent && req.user.role === 'admin') {
+    if (!isAgent && (req.user.role === 'admin' || req.user.role === 'boss')) {
       const agents = await prisma.user.findMany({
         where: { tenantId: req.tenantId, role: 'agent', isActive: true },
         select: {
@@ -253,6 +253,250 @@ router.get('/roi', authenticate, tenantScope, async (req, res) => {
     res.json(success(result));
   } catch (err) {
     res.status(500).json(error('获取渠道数据失败', 500));
+  }
+});
+
+// 老板看板 - 客服表现详情
+router.get('/agent-performance', authenticate, tenantScope, async (req, res) => {
+  try {
+    if (req.user.role === 'agent') {
+      return res.status(403).json(error('无权限', 403));
+    }
+
+    const today = dayjs().startOf('day');
+    const monthStart = today.startOf('month').toDate();
+    const todayStart = today.toDate();
+    const todayEnd = today.endOf('day').toDate();
+
+    const agents = await prisma.user.findMany({
+      where: { tenantId: req.tenantId, role: 'agent', isActive: true },
+      select: { id: true, name: true, avatar: true }
+    });
+
+    const result = [];
+    for (const agent of agents) {
+      const [todayCalls, monthCalls, customerCount, signedCount, visitedCount] = await Promise.all([
+        prisma.recording.count({
+          where: { tenantId: req.tenantId, agentId: agent.id, callTime: { gte: todayStart, lte: todayEnd }, isValid: true }
+        }),
+        prisma.recording.count({
+          where: { tenantId: req.tenantId, agentId: agent.id, callTime: { gte: monthStart, lte: todayEnd }, isValid: true }
+        }),
+        prisma.customer.count({ where: { tenantId: req.tenantId, agentId: agent.id } }),
+        prisma.customer.count({ where: { tenantId: req.tenantId, agentId: agent.id, status: 'signed' } }),
+        prisma.customer.count({ where: { tenantId: req.tenantId, agentId: agent.id, status: 'visited' } }),
+      ]);
+
+      result.push({
+        id: agent.id,
+        name: agent.name,
+        avatar: agent.avatar,
+        todayCalls,
+        monthCalls,
+        customerCount,
+        signedCount,
+        visitedCount,
+      });
+    }
+
+    res.json(success(result));
+  } catch (err) {
+    console.error('Agent performance error:', err);
+    res.status(500).json(error('获取客服表现失败', 500));
+  }
+});
+
+// 老板看板 - 规则设置读取/保存
+router.get('/boss-settings', authenticate, tenantScope, async (req, res) => {
+  try {
+    if (req.user.role === 'agent') {
+      return res.status(403).json(error('无权限', 403));
+    }
+
+    const configs = await prisma.tenantConfig.findMany({
+      where: { tenantId: req.tenantId, category: 'boss_rules' }
+    });
+
+    const settings = {};
+    configs.forEach(c => { settings[c.key] = c.value; });
+
+    // 返回默认值
+    res.json(success({
+      daily_call_min: settings.daily_call_min || '60',
+      followup_cycle_days: settings.followup_cycle_days || '3',
+      sea_recovery_days: settings.sea_recovery_days || '6',
+      order_mode: settings.order_mode || 'active',
+      per_person_target: settings.per_person_target || '100',
+    }));
+  } catch (err) {
+    res.status(500).json(error('获取规则设置失败', 500));
+  }
+});
+
+router.put('/boss-settings', authenticate, tenantScope, async (req, res) => {
+  try {
+    if (req.user.role === 'agent') {
+      return res.status(403).json(error('无权限', 403));
+    }
+
+    const keys = ['daily_call_min', 'followup_cycle_days', 'sea_recovery_days', 'order_mode', 'per_person_target'];
+    for (const key of keys) {
+      if (req.body[key] !== undefined) {
+        await prisma.tenantConfig.upsert({
+          where: { tenantId_key: { tenantId: req.tenantId, key } },
+          update: { value: String(req.body[key]) },
+          create: { tenantId: req.tenantId, key, value: String(req.body[key]), category: 'boss_rules' }
+        });
+      }
+    }
+
+    res.json(success(null, '规则已保存'));
+  } catch (err) {
+    console.error('Save boss settings error:', err);
+    res.status(500).json(error('保存规则失败', 500));
+  }
+});
+
+// 请假申请 - 列表（boss/admin 看全部，agent 看自己的）
+router.get('/leave-requests', authenticate, tenantScope, async (req, res) => {
+  try {
+    const isAgent = req.user.role === 'agent';
+    const where = {
+      tenantId: req.tenantId,
+      ...(isAgent && { userId: req.user.id })
+    };
+
+    const list = await prisma.leaveRequest.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    });
+
+    // 附加用户名
+    const userIds = [...new Set(list.map(l => l.userId))];
+    const users = await prisma.user.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true }
+    });
+    const userMap = {};
+    users.forEach(u => { userMap[u.id] = u.name; });
+
+    const result = list.map(l => ({
+      ...l,
+      userName: userMap[l.userId] || '未知'
+    }));
+
+    res.json(success(result));
+  } catch (err) {
+    res.status(500).json(error('获取请假列表失败', 500));
+  }
+});
+
+// 请假申请 - 提交（agent）
+router.post('/leave-requests', authenticate, tenantScope, async (req, res) => {
+  try {
+    const { type = 'leave', startDate, endDate, reason } = req.body;
+    if (!startDate || !endDate) {
+      return res.status(400).json(error('请选择起止日期', 400));
+    }
+
+    const leave = await prisma.leaveRequest.create({
+      data: {
+        tenantId: req.tenantId,
+        userId: req.user.id,
+        type,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        reason
+      }
+    });
+
+    res.json(success(leave, '申请已提交'));
+  } catch (err) {
+    res.status(500).json(error('提交申请失败', 500));
+  }
+});
+
+// 请假申请 - 审批（boss/admin）
+router.put('/leave-requests/:id', authenticate, tenantScope, async (req, res) => {
+  try {
+    if (req.user.role === 'agent') {
+      return res.status(403).json(error('无权限', 403));
+    }
+
+    const { status } = req.body;
+    if (!['approved', 'rejected'].includes(status)) {
+      return res.status(400).json(error('状态无效', 400));
+    }
+
+    const leave = await prisma.leaveRequest.findFirst({
+      where: { id: req.params.id, tenantId: req.tenantId }
+    });
+    if (!leave) return res.status(404).json(error('申请不存在', 404));
+
+    const updated = await prisma.leaveRequest.update({
+      where: { id: req.params.id },
+      data: { status, reviewedBy: req.user.id, reviewedAt: new Date() }
+    });
+
+    res.json(success(updated, status === 'approved' ? '已批准' : '已拒绝'));
+  } catch (err) {
+    res.status(500).json(error('审批失败', 500));
+  }
+});
+
+// 违禁词预警列表
+router.get('/violations', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: { tenantId: req.tenantId, type: 'violation' },
+      orderBy: { createdAt: 'desc' },
+      take: 100
+    });
+
+    // 收集 agentId 和 recordingId
+    const agentIds = new Set();
+    const recordingIds = new Set();
+    const parsed = notifications.map(n => {
+      let data = {};
+      try { data = JSON.parse(n.content); } catch {}
+      if (data.agentId) agentIds.add(data.agentId);
+      if (data.recordingId) recordingIds.add(data.recordingId);
+      return { ...n, parsed: data };
+    });
+
+    // 批量查询客服名和录音信息
+    const [users, recordings] = await Promise.all([
+      prisma.user.findMany({
+        where: { id: { in: [...agentIds] } },
+        select: { id: true, name: true }
+      }),
+      prisma.recording.findMany({
+        where: { id: { in: [...recordingIds] } },
+        select: { id: true, callTime: true, customerPhone: true }
+      })
+    ]);
+
+    const userMap = {};
+    users.forEach(u => { userMap[u.id] = u.name; });
+    const recMap = {};
+    recordings.forEach(r => { recMap[r.id] = r; });
+
+    const result = parsed.map(n => ({
+      id: n.id,
+      agentName: userMap[n.parsed.agentId] || '未知',
+      words: (n.parsed.words || []).map(w => w.word),
+      wordDetails: n.parsed.words || [],
+      recordingId: n.parsed.recordingId,
+      callTime: recMap[n.parsed.recordingId]?.callTime || n.createdAt,
+      customerPhone: recMap[n.parsed.recordingId]?.customerPhone || '',
+      createdAt: n.createdAt
+    }));
+
+    res.json(success(result));
+  } catch (err) {
+    console.error('Get violations error:', err);
+    res.status(500).json(error('获取违禁词预警失败', 500));
   }
 });
 

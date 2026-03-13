@@ -45,6 +45,7 @@ router.get('/agents', authenticate, tenantScope, async (req, res) => {
           isActive: true,
           lastLoginAt: true,
           maxCustomers: true,
+          leaveUntil: true,
           createdAt: true,
           _count: { select: { customers: true } }
         }
@@ -198,6 +199,48 @@ router.post('/cancel-leave', authenticate, tenantScope, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json(error('取消请假失败', 500));
+  }
+});
+
+// 老板停单（代替客服设置 leaveUntil）
+router.post('/:id/pause-tasks', authenticate, authorize('boss', 'admin'), tenantScope, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { days } = req.body;
+    if (!days || days < 1 || days > 30) {
+      return res.status(400).json(error('天数无效（1~30）', 400));
+    }
+
+    const leaveUntil = new Date();
+    leaveUntil.setDate(leaveUntil.getDate() + days);
+    leaveUntil.setHours(23, 59, 59, 999);
+
+    await prisma.user.update({
+      where: { id, tenantId: req.tenantId },
+      data: { leaveUntil }
+    });
+
+    res.json(success({ leaveUntil }, '已停单'));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(error('停单失败', 500));
+  }
+});
+
+// 老板恢复接单（清除 leaveUntil）
+router.post('/:id/resume-tasks', authenticate, authorize('boss', 'admin'), tenantScope, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    await prisma.user.update({
+      where: { id, tenantId: req.tenantId },
+      data: { leaveUntil: null }
+    });
+
+    res.json(success(null, '已恢复接单'));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(error('恢复失败', 500));
   }
 });
 

@@ -2,9 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const cron = require('node-cron');
 
 // 加载环境变量
 dotenv.config();
+
+const { ensureTable, generateDailyTasks } = require('./services/daily-tasks');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +33,7 @@ app.use('/api/config', require('./routes/config'));
 app.use('/api/tenants', require('./routes/tenants'));
 app.use('/api/oss', require('./routes/oss'));
 app.use('/api/stats', require('./routes/stats'));
+app.use('/api/tasks', require('./routes/tasks'));
 
 // 健康检查
 app.get('/api/health', (req, res) => {
@@ -51,10 +55,24 @@ app.use((err, req, res, next) => {
 });
 
 // 启动服务器
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`🚀 声纳 CRM 服务已启动`);
   console.log(`📍 API 地址: http://localhost:${PORT}/api`);
   console.log(`🎛️  管理后台: http://localhost:${PORT}/admin`);
+
+  // 启动时确保 daily_tasks 表存在
+  await ensureTable();
+
+  // 每天凌晨 00:00（Asia/Shanghai）自动生成每日任务
+  cron.schedule('0 0 * * *', async () => {
+    console.log('[Cron] 开始生成每日任务...');
+    try {
+      await generateDailyTasks();
+    } catch (e) {
+      console.error('[Cron] 生成每日任务失败:', e);
+    }
+  }, { timezone: 'Asia/Shanghai' });
+  console.log('[Cron] 每日任务定时器已注册 (00:00 Asia/Shanghai)');
 });
 
 module.exports = app;

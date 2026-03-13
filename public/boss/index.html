@@ -91,8 +91,8 @@ tr:last-child td{border-bottom:none;}
 <div class="topbar">
   <div class="logo">声纳 <span style="font-weight:400;opacity:0.6">· 老板看板</span></div>
   <div style="display:flex;align-items:center;gap:16px;">
-    <div style="color:rgba(255,255,255,0.6);font-size:12px" id="user-info" style="display:none">
-      <span id="current-user">老板</span> · <span onclick="doLogout()" style="cursor:pointer;opacity:0.7">退出</span>
+    <div style="color:rgba(255,255,255,0.6);font-size:12px;display:none" id="user-info">
+      <span onclick="doLogout()" style="cursor:pointer;opacity:0.7">退出</span>
     </div>
     <div id="login-btn" style="color:rgba(255,255,255,0.6);font-size:12px">
       <span onclick="showLogin()" style="cursor:pointer;opacity:0.7">登录</span>
@@ -265,7 +265,6 @@ function doLogout() { localStorage.removeItem('sonar_token'); token = null; curr
 function afterLogin() {
   document.getElementById('login-btn').style.display = 'none';
   document.getElementById('user-info').style.display = 'block';
-  document.getElementById('current-user').textContent = currentUser?.name || '老板';
   const p = document.getElementById('sidebar-profile');
   if (currentUser) {
     p.querySelector('.name').textContent = currentUser.name;
@@ -291,7 +290,7 @@ function showView(id, el) {
 
 // 加载所有数据
 async function loadAll() {
-  await Promise.all([loadDashboard(), loadCustomers(), loadAgents(), loadSettings(), loadLeaveRequests()]);
+  await Promise.all([loadDashboard(), loadCustomers(), loadAgents(), loadSettings(), loadLeaveRequests(), loadAgentList(), loadViolations()]);
   renderDashboard();
   renderAgentPerformance();
   renderROI();
@@ -342,6 +341,18 @@ function renderDashboard() {
     return `<div class="funnel-row"><div class="funnel-label">${r[0]}</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${w}%;background:${colors[i]}"><span>${r[1]}</span>${i>0?`<span class="rate">${r[2]} ${rate}%</span>`:''}</div></div><div class="funnel-count">${r[1]}</div></div>`;
   }).join('');
 
+  // 线索到店率醒目指标
+  const visitedAndSigned = (f.visited || 0) + (f.signed || 0);
+  const totalLeads = rows[0][1] || 1;
+  const leadToStoreRate = Math.round(visitedAndSigned / totalLeads * 100);
+  const rateColor = leadToStoreRate >= 25 ? 'var(--green)' : leadToStoreRate >= 15 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('funnel-body').insertAdjacentHTML('afterend',
+    document.getElementById('funnel-highlight') ? '' :
+    `<div id="funnel-highlight" style="margin-top:16px;background:linear-gradient(135deg,#eff6ff,#f0fdf4);border:1.5px solid ${rateColor};border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px">
+      <div style="font-size:36px;font-weight:800;color:${rateColor}">${leadToStoreRate}%</div>
+      <div><div style="font-size:14px;font-weight:700;color:var(--navy)">线索到店率</div><div style="font-size:12px;color:var(--gray-500);margin-top:2px">（已到店 ${f.visited} + 已签单 ${f.signed}）/ 新线索 ${rows[0][1]} = ${leadToStoreRate}%</div></div>
+    </div>`);
+
   // 客服排名
   const stats = d.agentStats || [];
   const agentColors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444'];
@@ -369,6 +380,9 @@ function renderAgentPerformance() {
   const target = parseInt(settings.daily_call_min || '60');
   // 用 mock 6维评分（真实数据需要 AI 分析结果聚合，暂用 mock）
   const mockDims = {
+    '严妍': [8.5, 8.2, 7.8, 7.0, 8.8, 7.5],
+    '李晓东': [7.0, 7.5, 8.5, 8.2, 7.0, 8.0],
+    '王美琪': [7.8, 6.8, 7.0, 8.5, 7.2, 8.8],
     default: [7.5, 7.8, 7.2, 7.0, 7.5, 7.0]
   };
   const dimNames = ['开场白','需求挖掘','价值塑造','异议处理','邀约能力','私域留存'];
@@ -497,14 +511,51 @@ function renderCustomers() {
 }
 
 // ══ 违禁词预警 ══
+let violationsList = [];
+
+async function loadViolations() {
+  try {
+    const d = await api('/api/stats/violations');
+    if (d.success) violationsList = d.data || [];
+  } catch(e) { console.error('Load violations failed:', e); }
+}
+
 function renderViolations() {
-  document.getElementById('violations-body').innerHTML = `
-    <div style="max-width:640px">
-      <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:20px;text-align:center;color:var(--gray-400)">
-        <div style="font-size:32px;margin-bottom:8px">✅</div>
-        <div style="font-size:14px">暂无违禁词预警记录</div>
-        <div style="font-size:12px;margin-top:4px">系统会自动检测通话中的违禁词并在此展示</div>
-      </div>
+  const el = document.getElementById('violations-body');
+  if (!violationsList.length) {
+    el.innerHTML = `
+      <div style="max-width:640px">
+        <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:20px;text-align:center;color:var(--gray-400)">
+          <div style="font-size:32px;margin-bottom:8px">✅</div>
+          <div style="font-size:14px">暂无违禁词预警记录</div>
+          <div style="font-size:12px;margin-top:4px">系统会自动检测通话中的违禁词并在此展示</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="max-width:800px">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="background:var(--gray-50);text-align:left">
+            <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200)">客服</th>
+            <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200)">违禁词</th>
+            <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200)">通话时间</th>
+            <th style="padding:10px 12px;border-bottom:1px solid var(--gray-200)">详情</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${violationsList.map(v => `
+            <tr style="border-bottom:1px solid var(--gray-100)">
+              <td style="padding:10px 12px;font-weight:500">${v.agentName}</td>
+              <td style="padding:10px 12px">${v.words.map(w => `<span style="background:var(--red-pale);color:var(--red);font-size:12px;font-weight:600;padding:2px 8px;border-radius:12px;margin-right:4px">${w}</span>`).join('')}</td>
+              <td style="padding:10px 12px;color:var(--gray-500)">${new Date(v.callTime).toLocaleString('zh-CN')}</td>
+              <td style="padding:10px 12px">${(v.wordDetails||[]).map(d => `<div style="font-size:12px;color:var(--gray-500);margin-bottom:2px">"…${d.context}…"</div>`).join('')}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
     </div>`;
 }
 
@@ -618,6 +669,27 @@ function renderLeave() {
 
   document.getElementById('leave-body').innerHTML = `
     <div style="max-width:700px">
+      <!-- 停单管理 -->
+      <div class="chart-card" style="margin-bottom:20px">
+        <div class="chart-title">停单管理</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+          <select id="pause-agent" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
+            <option value="">选择客服</option>
+            ${agentList.map(a => `<option value="${a.id}">${a.name}</option>`).join('')}
+          </select>
+          <select id="pause-days" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
+            ${[1,2,3,5,7,14,30].map(d => `<option value="${d}">${d}天</option>`).join('')}
+          </select>
+          <button class="btn btn-primary btn-sm" onclick="pauseAgent(document.getElementById('pause-agent').value, document.getElementById('pause-days').value)">停单</button>
+        </div>
+        ${(()=>{
+          const paused = agentList.filter(a => a.leaveUntil && new Date(a.leaveUntil) > new Date());
+          if (paused.length === 0) return '<div style="color:var(--gray-400);font-size:12px">当前无停单客服</div>';
+          return '<table style="border:1px solid var(--gray-200);border-radius:8px;overflow:hidden"><thead><tr><th>客服</th><th>恢复时间</th><th>操作</th></tr></thead><tbody>' +
+            paused.map(a => '<tr><td><strong>' + a.name + '</strong></td><td>' + new Date(a.leaveUntil).toLocaleDateString() + '</td><td><button class="btn btn-outline btn-sm" onclick="resumeAgent(\'' + a.id + '\')">恢复</button></td></tr>').join('') +
+            '</tbody></table>';
+        })()}
+      </div>
       ${leaveList.length === 0 ? '<div style="text-align:center;padding:40px;color:var(--gray-400)">暂无请假申请</div>' :
       `<table style="background:white;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden">
         <thead><tr><th>客服</th><th>类型</th><th>起止日期</th><th>原因</th><th>状态</th><th>操作</th></tr></thead>
@@ -648,6 +720,26 @@ async function reviewLeave(id, status) {
   }
   const d = await api('/api/stats/leave-requests/' + id, { method:'PUT', body: JSON.stringify({status}) });
   if (d.success) { await loadLeaveRequests(); } else { alert(d.error || '操作失败'); }
+}
+
+// ══ 停单管理 ══
+async function loadAgentList() {
+  try {
+    const d = await api('/api/users/agents?pageSize=100');
+    if (d.success) agentList = (d.data?.list || d.data || []).filter(a => a.role === 'agent');
+  } catch(e) {}
+  renderLeave();
+}
+
+async function pauseAgent(agentId, days) {
+  if (!agentId || !days) return alert('请选择客服和天数');
+  const d = await api('/api/users/' + agentId + '/pause-tasks', { method:'POST', body: JSON.stringify({days: parseInt(days)}) });
+  if (d.success) { await loadAgentList(); } else { alert(d.error || '停单失败'); }
+}
+
+async function resumeAgent(agentId) {
+  const d = await api('/api/users/' + agentId + '/resume-tasks', { method:'POST' });
+  if (d.success) { await loadAgentList(); } else { alert(d.error || '恢复失败'); }
 }
 
 // ══ 经营报告 ══
@@ -696,6 +788,29 @@ async function init() {
     afterLogin();
   } else {
     // 未登录，填充 mock 数据
+    dashData = {
+      todayCalls: 187,
+      totalCustomers: 156,
+      validCustomers: 89,
+      signedCustomers: 12,
+      inSeaCount: 23,
+      funnel: { total: 68, pending: 18, valid: 22, invited: 14, visited: 10, signed: 4 },
+      agentStats: [
+        { name: '严妍', todayCalls: 72, _count: { customers: 48 } },
+        { name: '李晓东', todayCalls: 65, _count: { customers: 41 } },
+        { name: '王美琪', todayCalls: 50, _count: { customers: 35 } },
+      ]
+    };
+    agentPerf = [
+      { name: '严妍', todayCalls: 72, monthCalls: 1580, customerCount: 48, signedCount: 5 },
+      { name: '李晓东', todayCalls: 65, monthCalls: 1420, customerCount: 41, signedCount: 4 },
+      { name: '王美琪', todayCalls: 50, monthCalls: 1100, customerCount: 35, signedCount: 3 },
+    ];
+    violationsList = [
+      { agentName: '李晓东', words: ['绝对', '保证'], callTime: new Date(Date.now() - 2*3600000).toISOString(), wordDetails: [{ context: '我们绝对能帮您省下30%的装修费用' }, { context: '保证三个月内完工' }] },
+      { agentName: '王美琪', words: ['最便宜'], callTime: new Date(Date.now() - 5*3600000).toISOString(), wordDetails: [{ context: '我们家是全城最便宜的' }] },
+      { agentName: '严妍', words: ['承诺'], callTime: new Date(Date.now() - 26*3600000).toISOString(), wordDetails: [{ context: '我承诺给您打八折' }] },
+    ];
     leaveList = [
       {id:'mock-l1',userName:'严妍',type:'leave',startDate:new Date().toISOString(),endDate:new Date(Date.now()+3*86400000).toISOString(),reason:'家中有事',status:'pending'},
       {id:'mock-l2',userName:'李晓东',type:'leave',startDate:new Date(Date.now()+86400000).toISOString(),endDate:new Date(Date.now()+2*86400000).toISOString(),reason:'身体不适',status:'pending'},

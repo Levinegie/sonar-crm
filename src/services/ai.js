@@ -172,7 +172,7 @@ async function analyzeRecording(recordingId) {
     const stage1Result = await runStage1Analysis({ ...recording, ossUrl: signedUrl }, existingCustomer);
 
     // 5. 保存第一阶段结果
-    await prisma.analysisResult.create({
+    const stage1Record = await prisma.analysisResult.create({
       data: {
         recordingId,
         customerId: existingCustomer?.id,
@@ -186,6 +186,11 @@ async function analyzeRecording(recordingId) {
         metadata: stage1Result.metadata
       }
     });
+
+    // 5.5 违禁词检测
+    if (stage1Result.isValid && stage1Result.transcript) {
+      await checkForbiddenWords(stage1Result.transcript, recording.tenantId, recordingId, recording.agentId, stage1Record.id);
+    }
 
     // 6. 判断是否有效通话
     if (!stage1Result.isValid) {
@@ -752,6 +757,71 @@ ${transcript}
       callSummary: '分析失败：' + error.message,
       rawOutput: ''
     };
+  }
+}
+
+/**
+ * 违禁词检测
+ * 在 transcript 中匹配租户的违禁词，命中则写入 Notification 并标记 redFlag
+ */
+async function checkForbiddenWords(transcript, tenantId, recordingId, agentId, stage1ResultId) {
+  try {
+    // 查询该租户的所有 active 违禁词（含全局的 tenantId=null）
+    const words = await prisma.forbiddenWord.findMany({
+      where: {
+        OR: [
+          { tenantId },
+          { tenantId: null }
+        ],
+        isActive: true
+      }
+    });
+
+    if (!words.length) return;
+
+    const matched = [];
+    for (const fw of words) {
+      if (transcript.includes(fw.word)) {
+        // 提取上下文（前后各 20 字）
+        const idx = transcript.indexOf(fw.word);
+        const start = Math.max(0, idx - 20);
+        const end = Math.min(transcript.length, idx + fw.word.length + 20);
+        const context = transcript.slice(start, end);
+        matched.push({ word: fw.word, category: fw.category, context });
+      }
+    }
+
+    if (!matched.length) return;
+
+    console.log(`Forbidden words detected in recording ${recordingId}:`, matched.map(m => m.word));
+
+    // 写入 Notification
+    await prisma.notification.create({
+      data: {
+        tenantId,
+        userId: agentId,
+        type: 'violation',
+        title: '违禁词预警',
+        content: JSON.stringify({
+          recordingId,
+          agentId,
+          words: matched
+        }),
+        link: `/recordings/${recordingId}`
+      }
+    });
+
+    // 更新 stage1 AnalysisResult 的 redFlag
+    await prisma.analysisResult.update({
+      where: { id: stage1ResultId },
+      data: {
+        redFlag: true,
+        redFlagDetail: `检测到违禁词：${matched.map(m => m.word).join('、')}`
+      }
+    });
+  } catch (err) {
+    console.error('Forbidden word check failed:', err);
+    // 不阻断主流程
   }
 }
 
