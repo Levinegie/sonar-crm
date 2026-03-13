@@ -330,10 +330,10 @@ router.get('/:id', authenticate, tenantScope, async (req, res) => {
       include: {
         agent: { select: { id: true, name: true } },
         recordings: {
-          take: 10,
+          take: 20,
           orderBy: { callTime: 'desc' },
           include: {
-            analysisResults: { take: 1, orderBy: { createdAt: 'desc' } }
+            analysisResults: { orderBy: { createdAt: 'asc' } }
           }
         },
         followUps: {

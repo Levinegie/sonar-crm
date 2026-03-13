@@ -834,8 +834,8 @@ async function loadCustomers() {
         phone: c.phone,
         area: c.community || '',
         budget: c.budget || '',
-        size: c.houseType || '',
-        style: '',
+        size: c.houseType || (c.area ? c.area + '㎡' : ''),
+        style: c.portrait?.stylePreference || '',
         agent: c.agentName || currentUser?.name || '',
         calls: c.callCount || 0,
         status: c.status || 'pending',
@@ -844,7 +844,8 @@ async function loadCustomers() {
         lastCall: c.lastCallAt || '',
         portraitPct: c.portraitPct || 0,
         pinned: c.pinned || false,
-        portrait: c.portrait || {}
+        portrait: c.portrait || {},
+        promise: c.portrait?.promise || ''
       }));
       return true;
     }
@@ -1744,24 +1745,28 @@ async function openDetail(id) {
       if (d.portrait) c.portrait = d.portrait;
       c.portraitPct = d.portraitPct || 0;
       // 构建通话记录
-      const recordings = (d.recordings || []).map((r, i) => ({
-        n: i + 1,
-        date: r.callTime ? formatDate(r.callTime) : formatDate(r.createdAt),
-        dur: r.duration ? formatDuration(r.duration) : '--',
-        summary: r.analysisResults?.[0]?.summary || '暂无分析摘要',
-        scores: r.analysisResults?.[0]?.scores || {},
-        stage: r.analysisResults?.[0]?.stage || '',
-        customerCard: r.analysisResults?.[0]?.customerCard || null,
-        metadata: r.analysisResults?.[0]?.metadata || {}
-      }));
+      const recordings = (d.recordings || []).map((r, i) => {
+        const results = r.analysisResults || [];
+        const stage1 = results.find(a => a.stage === 'stage1');
+        const confirmCard = results.find(a => a.stage === 'confirm_card');
+        const stage2 = results.find(a => a.stage === 'stage2');
+        // 摘要优先取 confirm_card > stage2 > stage1
+        const summary = confirmCard?.summary || stage2?.summary || stage1?.summary || '暂无分析摘要';
+        // 评分取 stage1 的 scores
+        const scores = stage1?.scores || {};
+        return {
+          n: i + 1,
+          date: r.callTime ? formatDate(r.callTime) : formatDate(r.createdAt),
+          dur: r.duration ? formatDuration(r.duration) : '--',
+          summary,
+          scores,
+          stage2Result: stage2
+        };
+      });
       // 找最新的深度报告（stage2）
       let latestReport = null;
-      for (const r of (d.recordings || [])) {
-        for (const ar of (r.analysisResults || [])) {
-          if (ar.stage === 'stage2' && ar.scores) {
-            latestReport = ar;
-          }
-        }
+      for (const r of recordings) {
+        if (r.stage2Result) latestReport = r.stage2Result;
       }
       renderDetailTabs(c, recordings, latestReport);
     }
