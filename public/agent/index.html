@@ -1142,11 +1142,221 @@ const forbiddenWords = ['保证最低价','绝对不增项','市场最低','100%
 
 // 画像字段映射
 const portraitFields = [
-  {key:'building',label:'楼盘情况'},{key:'purpose',label:'房屋用途'},{key:'houseState',label:'房屋现状'},
-  {key:'family',label:'家庭成员'},{key:'profession',label:'客户职业'},{key:'habit',label:'生活习惯'},
-  {key:'awareness',label:'了解程度'},{key:'position',label:'装修定位'},{key:'budget_detail',label:'装修预算'},
-  {key:'focus',label:'客户关注点'},{key:'designer',label:'设计师要求'},
+  {key:'houseType',label:'房屋类型'},{key:'houseUsage',label:'房屋用途'},{key:'houseState',label:'房屋现状'},
+  {key:'familyMembers',label:'家庭成员'},{key:'profession',label:'客户职业'},{key:'habits',label:'生活习惯'},
+  {key:'awareness',label:'了解程度'},{key:'position',label:'装修定位'},{key:'budgetDetail',label:'装修预算'},
+  {key:'timeline',label:'装修时间'},{key:'focusPoints',label:'关注点'},
+  {key:'stylePreference',label:'风格偏好'},
 ];
+
+// ══ 待确认卡片 ══
+let pendingConfirmCards = [];
+
+// 加载待确认卡片
+async function loadConfirmCards() {
+  try {
+    const data = await api('/api/recordings/pending/confirm');
+    if (data.success && data.data) {
+      pendingConfirmCards = data.data;
+      return true;
+    }
+  } catch (e) {
+    console.error('Load confirm cards error:', e);
+  }
+  return false;
+}
+
+// 渲染待确认卡片
+function renderConfirmCards() {
+  const container = document.getElementById('confirm-body');
+
+  if (pendingConfirmCards.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--gray-400)">
+        <div style="font-size:48px;margin-bottom:16px">✅</div>
+        <div style="font-size:15px;font-weight:500;color:var(--gray-500)">暂无待确认的通话</div>
+        <div style="font-size:13px;margin-top:6px">上传录音后，AI 会自动分析并生成待确认卡片</div>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = pendingConfirmCards.map(card => {
+    const isNewCustomer = card.isNewCustomer;
+    const basicInfo = card.basicInfo || {};
+    const portrait = card.portrait || {};
+    const levelOptions = ['S', 'A', 'B', 'C', '无效'];
+    const followOptions = ['明天', '后天', '3天后', '1周后'];
+
+    return `
+    <div class="confirm-card-wrap" data-id="${card.id}">
+      <div class="confirm-card-header">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--navy)">
+            ${basicInfo.customerName || '未知客户'} · ${isNewCustomer ? '首通电话' : '跟进电话'}
+          </div>
+          <div style="font-size:12px;color:var(--gray-400);margin-top:2px">
+            ${card.customerPhoneMasked} · ${formatDate(card.callTime || new Date())}
+          </div>
+        </div>
+        <span class="badge badge-new">待确认</span>
+      </div>
+
+      <div class="confirm-card-ai">
+        🤖 <strong>AI 识别摘要：</strong>${card.callSummary || '暂无'}
+        ${card.levelReason ? `<br><span style="opacity:0.8">等级判断理由：${card.levelReason}</span>` : ''}
+      </div>
+
+      <!-- 基础信息 -->
+      <div class="confirm-section-label">📋 基础信息</div>
+      <div class="confirm-fields">
+        <div class="confirm-field">
+          <label>客户姓名</label>
+          <input id="confirm-name-${card.id}" value="${basicInfo.customerName || ''}" placeholder="请输入姓名">
+        </div>
+        <div class="confirm-field">
+          <label>电话号码</label>
+          <input id="confirm-phone-${card.id}" value="${basicInfo.customerPhone || card.customerPhoneMasked?.replace(/\*/g, '0') || ''}" placeholder="请输入电话">
+        </div>
+        <div class="confirm-field">
+          <label>小区名称</label>
+          <input id="confirm-community-${card.id}" value="${basicInfo.community || ''}" placeholder="请输入小区">
+        </div>
+        <div class="confirm-field">
+          <label>房屋面积</label>
+          <input id="confirm-area-${card.id}" value="${basicInfo.area || ''}" placeholder="如 120" style="width:80px"> ㎡
+        </div>
+        <div class="confirm-field">
+          <label>预算金额</label>
+          <input id="confirm-budget-${card.id}" value="${basicInfo.budget || ''}" placeholder="如 25万">
+        </div>
+      </div>
+
+      <!-- 客户画像 -->
+      <div class="confirm-section-label">👤 客户画像（AI 预填，可修改）</div>
+      <div class="portrait-confirm-grid">
+        ${portraitFields.map(f => `
+          <div class="portrait-confirm-item">
+            <div class="pc-label">${f.label}</div>
+            <input id="confirm-${f.key}-${card.id}" value="${portrait[f.key] || ''}" placeholder="未识别，可填写">
+          </div>
+        `).join('')}
+      </div>
+
+      <!-- 客户等级和跟进 -->
+      <div class="confirm-section-label">⭐ 客户等级与跟进</div>
+      <div class="confirm-fields">
+        <div class="confirm-field">
+          <label>客户等级</label>
+          <select id="confirm-level-${card.id}">
+            ${levelOptions.map(l => `<option value="${l}" ${card.customerLevel === l ? 'selected' : ''}>${l === 'invalid' ? '无效' : l + '级'}</option>`).join('')}
+          </select>
+        </div>
+        <div class="confirm-field">
+          <label>下次跟进</label>
+          <select id="confirm-next-${card.id}">
+            ${followOptions.map(f => `<option value="${f}" ${card.nextFollow === f ? 'selected' : ''}>${f}</option>`).join('')}
+          </select>
+        </div>
+        <div class="confirm-field">
+          <label>承诺事项</label>
+          <input id="confirm-promise-${card.id}" value="${card.promise || ''}" placeholder="如：下周二带方案上门">
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-primary" onclick="submitConfirmCard('${card.id}')">确认提交</button>
+        <button class="btn" style="background:var(--red-pale);color:var(--red);border:none" onclick="markCardInvalid('${card.id}')">标记无效</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// 提交确认卡片
+async function submitConfirmCard(recordingId) {
+  const level = document.getElementById(`confirm-level-${recordingId}`).value;
+
+  // 如果选择无效，调用无效标记
+  if (level === '无效') {
+    await markCardInvalid(recordingId);
+    return;
+  }
+
+  const data = {
+    customerName: document.getElementById(`confirm-name-${recordingId}`).value,
+    customerPhone: document.getElementById(`confirm-phone-${recordingId}`).value,
+    community: document.getElementById(`confirm-community-${recordingId}`).value,
+    area: document.getElementById(`confirm-area-${recordingId}`).value,
+    budget: document.getElementById(`confirm-budget-${recordingId}`).value,
+    customerLevel: level,
+    nextFollow: document.getElementById(`confirm-next-${recordingId}`).value,
+    promise: document.getElementById(`confirm-promise-${recordingId}`).value,
+    portrait: {}
+  };
+
+  // 收集画像字段
+  portraitFields.forEach(f => {
+    const val = document.getElementById(`confirm-${f.key}-${recordingId}`).value;
+    if (val) data.portrait[f.key] = val;
+  });
+
+  try {
+    const result = await api(`/api/recordings/${recordingId}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+
+    if (result.success) {
+      // 从列表中移除
+      pendingConfirmCards = pendingConfirmCards.filter(c => c.id !== recordingId);
+      document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`).remove();
+      alert('✅ 确认成功！客户信息已更新');
+      // 刷新客户列表
+      if (window.loadCustomers) await loadCustomers();
+    } else {
+      alert(result.error || '确认失败');
+    }
+  } catch (e) {
+    console.error('Submit confirm error:', e);
+    alert('确认失败，请重试');
+  }
+}
+
+// 标记为无效
+async function markCardInvalid(recordingId) {
+  if (!confirm('确定标记为无效客户？该客户将进入无效公海。')) return;
+
+  const phone = document.getElementById(`confirm-phone-${recordingId}`).value;
+  const name = document.getElementById(`confirm-name-${recordingId}`).value;
+
+  try {
+    const result = await api(`/api/recordings/${recordingId}/confirm`, {
+      method: 'POST',
+      body: JSON.stringify({
+        customerPhone: phone,
+        customerName: name,
+        markInvalid: true
+      })
+    });
+
+    if (result.success) {
+      pendingConfirmCards = pendingConfirmCards.filter(c => c.id !== recordingId);
+      document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`).remove();
+      alert('已标记为无效客户');
+    } else {
+      alert(result.error || '操作失败');
+    }
+  } catch (e) {
+    console.error('Mark invalid error:', e);
+    alert('操作失败，请重试');
+  }
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const date = new Date(d);
+  return date.toLocaleDateString();
+}
 
 // ══ 今日待办 ══
 function renderTodo() {
@@ -1196,70 +1406,6 @@ function renderTodo() {
       <div class="todo-actions">
         <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();alert('📞 正在拨打 ${t.phone}…')">📞 拨打</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail(${t.id})">查看详情</button>
-      </div>
-    </div>`).join('');
-}
-
-// ══ 待确认卡片 ══
-function renderConfirmCards() {
-  const cards = [
-    {id:3, callNum:1, name:'张伟', phone:'138****4983', area:'光山新城', budget:'12万', size:'96㎡', style:'北欧风', level:'B', next:'后天',
-     portraitNew:{building:'光山新城·96㎡·商品房', purpose:'自住', houseState:'毛坯', budget_detail:'12万', time:'3个月后', designer:'北欧风'},
-     aiNote:'第1通电话。AI识别到：客户3个月后交房，主要需求是毛坯改造，北欧风格。职业、家庭成员、关注点未识别到，请手动补充。'},
-    {id:7, callNum:2, name:'孙磊', phone:'155****4490', area:'宝龙城', budget:'15万', size:'110㎡', style:'现代简约', level:'A', next:'明天',
-     portraitNew:{profession:'工程师（本通新识别）', awareness:'对比多家（本通新识别）', focus:'工程质量'},
-     aiNote:'第2通电话。本通新识别到：孙磊是工程师，正在对比多家公司，非常关注工程质量。画像完整度从 50% 提升至 65%，请确认。'},
-    {id:5, callNum:2, name:'陈建国', phone:'151****6026', area:'信阳春天', budget:'8万', size:'72㎡', style:'日系', level:'B', next:'3天后',
-     portraitNew:{family:'单身（本通新识别）', position:'小公司（本通新识别）'},
-     aiNote:'第2通电话。本通新识别到：单身，倾向小公司或游击队价格。画像完整度从 30% 提升至 45%，请确认。'},
-  ];
-
-  document.getElementById('confirm-body').innerHTML = cards.map(c=>`
-    <div class="confirm-card-wrap">
-      <div class="confirm-card-header">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:var(--navy)">${c.name} · 第${c.callNum}通</div>
-          <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.phone} · ${new Date().toLocaleDateString()}</div>
-        </div>
-        <span class="badge badge-new">待确认</span>
-      </div>
-      <div class="confirm-card-ai">🤖 ${c.aiNote}</div>
-
-      ${c.callNum===1?`
-      <div class="confirm-section-label">📋 基础信息（必填）</div>
-      <div class="confirm-fields">
-        <div class="confirm-field"><label>客户姓名 *</label><input value="${c.name}"></div>
-        <div class="confirm-field"><label>小区名称 *</label><input value="${c.area}"></div>
-        <div class="confirm-field"><label>重要级别 *</label><select><option>S级</option><option>A级</option><option ${c.level==='B'?'selected':''}>B级</option><option>C级</option></select></div>
-        <div class="confirm-field"><label>下次跟进</label><input value="${c.next}"></div>
-      </div>
-      <div class="confirm-section-label">👤 客户画像（AI预填，可修改补充）</div>
-      <div class="portrait-confirm-grid">
-        ${Object.entries(c.portraitNew).map(([k,v])=>{
-          const f = portraitFields.find(x=>x.key===k);
-          return f?`<div class="portrait-confirm-item"><div class="pc-label">${f.label}</div><input value="${v}"></div>`:'';
-        }).join('')}
-        ${portraitFields.filter(f=>!Object.keys(c.portraitNew).includes(f.key)).map(f=>`
-          <div class="portrait-confirm-item"><div class="pc-label">${f.label}</div><input placeholder="暂未识别，可手动填写"></div>
-        `).join('')}
-      </div>`:`
-      <div class="confirm-section-label">⬆️ 本通新增画像字段 <span class="new-field-badge">NEW</span></div>
-      <div class="portrait-confirm-grid">
-        ${Object.entries(c.portraitNew).map(([k,v])=>{
-          const f = portraitFields.find(x=>x.key===k);
-          return f?`<div class="portrait-confirm-item" style="border:1px solid #fde68a;background:var(--amber-pale)"><div class="pc-label">${f.label} <span class="new-field-badge">新</span></div><input value="${v.replace('（本通新识别）','')}"></div>`:'';
-        }).join('')}
-      </div>
-      <div class="confirm-section-label">⏰ 跟进信息</div>
-      <div class="confirm-fields">
-        <div class="confirm-field"><label>重要级别</label><select><option>S级</option><option ${c.level==='A'?'selected':''}>A级</option><option ${c.level==='B'?'selected':''}>B级</option><option>C级</option></select></div>
-        <div class="confirm-field"><label>下次跟进</label><input value="${c.next}"></div>
-      </div>`}
-
-      <div style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn btn-primary" onclick="this.closest('.confirm-card-wrap').remove();alert('✅ 已确认！画像已更新')">确认提交</button>
-        <button class="btn btn-outline" onclick="alert('已暂缓，24小时后再次提醒')">暂缓</button>
-        <button class="btn" style="background:var(--red-pale);color:var(--red);border:none" onclick="this.closest('.confirm-card-wrap').remove();alert('已标记无效')">标记无效</button>
       </div>
     </div>`).join('');
 }
@@ -1438,19 +1584,83 @@ function applyBossFilter() {
 }
 
 // ══ 公海 ══
+let currentSeaTab = 'normal'; // 'normal' 或 'invalid'
+let invalidSeaCustomers = [];
+
+// 加载无效公海客户
+async function loadInvalidSeaCustomers() {
+  try {
+    const data = await api('/api/customers/invalid-sea');
+    if (data.success && data.data?.list) {
+      invalidSeaCustomers = data.data.list.map(c => ({
+        id: c.id,
+        name: c.name || '未知',
+        area: c.community || '',
+        budget: c.budget || '',
+        calls: c.callCount || 0,
+        daysAgo: c.daysAgo || 0,
+        reason: c.reason || '标记无效'
+      }));
+      return true;
+    }
+  } catch (e) {
+    console.error('Load invalid sea error:', e);
+  }
+  return false;
+}
+
 function renderSea() {
-  document.getElementById('sea-body').innerHTML = seaCustomers.map(c=>`
+  const body = document.getElementById('sea-body');
+  const list = currentSeaTab === 'invalid' ? invalidSeaCustomers : seaCustomers;
+
+  if (list.length === 0) {
+    body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400)">
+      ${currentSeaTab === 'invalid' ? '暂无无效客户' : '暂无公海客户'}
+    </td></tr>`;
+    return;
+  }
+
+  body.innerHTML = list.map(c => `
     <tr>
-      <td><strong>${c.name}</strong></td><td>${c.area}</td><td>${c.budget}</td>
+      <td><strong>${c.name}</strong></td>
+      <td>${c.area || ''}</td>
+      <td>${c.budget || ''}</td>
       <td><span class="badge badge-calls">共${c.calls}通</span></td>
       <td style="font-size:12px;color:var(--gray-500)">${c.reason}</td>
-      <td><button class="btn btn-primary btn-sm" onclick="claimSea(${c.id},this)">抢单</button></td>
+      <td><button class="btn btn-primary btn-sm" onclick="claimSea('${c.id}',this)">抢单</button></td>
     </tr>`).join('');
 }
-function claimSea(id,btn) {
-  const phones=['135****2233','138****9988','150****7766','186****4421'];
-  btn.closest('tr').cells[5].innerHTML=`<span style="font-size:12px;font-weight:600;color:var(--green)">✅ 已抢到：${phones[Math.floor(Math.random()*phones.length)]}</span>`;
-  btn.closest('tr').style.background='var(--green-pale)';
+
+function switchSeaTab(tab) {
+  currentSeaTab = tab;
+  // 更新 tab 样式
+  document.querySelectorAll('#sea-tabs .filter-tab').forEach((t, i) => {
+    t.classList.toggle('active', (tab === 'normal' && i === 0) || (tab === 'invalid' && i === 1));
+  });
+  renderSea();
+}
+
+async function claimSea(id, btn) {
+  try {
+    const result = await api(`/api/customers/${id}/claim`, { method: 'POST' });
+    if (result.success) {
+      // 获取完整电话
+      const phone = result.data.phone || '已抢到';
+      btn.closest('tr').cells[5].innerHTML = `<span style="font-size:12px;font-weight:600;color:var(--green)">✅ 已抢到：${phone}</span>`;
+      btn.closest('tr').style.background = 'var(--green-pale)';
+      // 从列表中移除
+      if (currentSeaTab === 'invalid') {
+        invalidSeaCustomers = invalidSeaCustomers.filter(c => c.id !== id);
+      } else {
+        seaCustomers = seaCustomers.filter(c => c.id !== id);
+      }
+    } else {
+      alert(result.error || '抢单失败');
+    }
+  } catch (e) {
+    console.error('Claim sea error:', e);
+    alert('抢单失败，请重试');
+  }
 }
 
 // ══ 案例库 ══
@@ -2071,14 +2281,16 @@ async function init() {
     document.getElementById('login-btn').style.display = 'none';
     document.getElementById('user-info').style.display = 'block';
     // 加载真实数据
-    const [c, s] = await Promise.all([loadCustomers(), loadSeaCustomers()]);
+    const [c, s, cc] = await Promise.all([loadCustomers(), loadSeaCustomers(), loadConfirmCards()]);
     if (!c) window.customers = mockCustomers;
     if (!s) window.seaCustomers = mockSeaCustomers;
+    // cc 是待确认卡片，已经存入 pendingConfirmCards
   } else {
     // 未登录，使用 mock 数据演示
     useMockData = true;
     window.customers = mockCustomers;
     window.seaCustomers = mockSeaCustomers;
+    pendingConfirmCards = []; // 未登录时没有待确认卡片
   }
 
   // 渲染页面

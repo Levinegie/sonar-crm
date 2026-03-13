@@ -204,33 +204,271 @@ router.delete('/:id', authenticate, tenantScope, async (req, res) => {
 // 获取待确认卡片列表
 router.get('/pending/confirm', authenticate, tenantScope, async (req, res) => {
   try {
+    // 查找状态为 pending_confirm 的录音
     const recordings = await prisma.recording.findMany({
       where: {
         tenantId: req.tenantId,
-        agentId: req.user.role === 'agent' ? req.user.id : undefined,
-        analysisStatus: 'completed',
-        isValid: true
+        analysisStatus: 'pending_confirm',
+        isValid: true,
+        // 客服只能看到自己的
+        ...(req.user.role === 'agent' && { agentId: req.user.id })
       },
-      take: 20,
       orderBy: { analyzedAt: 'desc' },
       include: {
-        customer: true,
+        customer: {
+          select: { id: true, name: true, phone: true, community: true, level: true }
+        },
+        agent: { select: { id: true, name: true } },
         analysisResults: {
-          where: { stage: 'stage1' },
+          where: { stage: 'confirm_card' },
           take: 1
         }
       }
     });
 
-    // 过滤出需要确认的
-    const pendingConfirm = recordings.filter(r =>
-      r.analysisResults.length > 0 &&
-      r.analysisResults[0].customerCard
-    );
+    // 组装返回数据
+    const pendingCards = recordings.map(r => {
+      const confirmResult = r.analysisResults[0];
+      const card = confirmResult?.customerCard || {};
 
-    res.json(success(pendingConfirm));
+      return {
+        id: r.id,
+        callTime: r.callTime,
+        customerPhone: r.customerPhone,
+        customerPhoneMasked: r.customerPhone ? r.customerPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : null,
+        agentName: r.agent?.name,
+
+        // 是否为新客户
+        isNewCustomer: card.isNewCustomer !== false,
+        existingCustomerId: card.existingCustomerId,
+
+        // AI 识别的基础信息
+        basicInfo: card.basicInfo || {},
+        // AI 识别的画像
+        portrait: card.portrait || {},
+        // AI 判断的客户等级
+        customerLevel: card.customerLevel || 'C',
+        levelReason: card.levelReason || '',
+        // 下次跟进时间
+        nextFollow: card.nextFollow || '明天',
+        // 承诺事项
+        promise: card.promise || null,
+        // 通话摘要
+        callSummary: card.callSummary || '',
+
+        // 原始分析结果 ID（用于确认时更新）
+        analysisResultId: confirmResult?.id
+      };
+    });
+
+    res.json(success(pendingCards));
   } catch (err) {
+    console.error('Get pending confirm error:', err);
     res.status(500).json(error('获取待确认列表失败', 500));
+  }
+});
+
+// 确认卡片 - 提交确认
+router.post('/:id/confirm', authenticate, tenantScope, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      // 基础信息
+      customerName,
+      customerPhone,
+      community,
+      area,
+      budget,
+      // 画像信息
+      portrait,
+      // 客户等级
+      customerLevel,
+      // 下次跟进时间
+      nextFollow,
+      // 承诺事项
+      promise,
+      // 是否标记为无效
+      markInvalid
+    } = req.body;
+
+    // 获取录音记录
+    const recording = await prisma.recording.findFirst({
+      where: { id, tenantId: req.tenantId },
+      include: {
+        analysisResults: {
+          where: { stage: 'confirm_card' },
+          take: 1
+        }
+      }
+    });
+
+    if (!recording) {
+      return res.status(404).json(error('录音不存在', 404));
+    }
+
+    if (recording.analysisStatus !== 'pending_confirm') {
+      return res.status(400).json(error('该录音已确认或状态异常', 400));
+    }
+
+    // 如果标记为无效
+    if (markInvalid || customerLevel === 'invalid') {
+      // 创建或更新客户（标记为无效）
+      const phone = customerPhone || recording.customerPhone;
+      if (phone) {
+        const existingCustomer = await prisma.customer.findFirst({
+          where: { tenantId: req.tenantId, phone }
+        });
+
+        if (existingCustomer) {
+          // 更新为无效状态
+          await prisma.customer.update({
+            where: { id: existingCustomer.id },
+            data: {
+              level: 'invalid',
+              status: 'invalid',
+              seaStatus: 'invalid',
+              agentId: null  // 释放归属
+            }
+          });
+        } else {
+          // 创建无效客户
+          await prisma.customer.create({
+            data: {
+              tenantId: req.tenantId,
+              phone,
+              phoneMasked: phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2'),
+              name: customerName || '无效客户',
+              level: 'invalid',
+              status: 'invalid',
+              seaStatus: 'invalid',
+              source: '录音识别'
+            }
+          });
+        }
+      }
+
+      // 更新录音状态
+      await prisma.recording.update({
+        where: { id },
+        data: { analysisStatus: 'confirmed_invalid' }
+      });
+
+      return res.json(success(null, '已标记为无效客户'));
+    }
+
+    // 正常确认流程
+    const phone = customerPhone || recording.customerPhone;
+
+    // 计算下次跟进时间
+    let nextFollowAt = new Date();
+    switch (nextFollow) {
+      case '后天':
+        nextFollowAt.setDate(nextFollowAt.getDate() + 2);
+        break;
+      case '3天后':
+        nextFollowAt.setDate(nextFollowAt.getDate() + 3);
+        break;
+      case '1周后':
+        nextFollowAt.setDate(nextFollowAt.getDate() + 7);
+        break;
+      default: // 明天
+        nextFollowAt.setDate(nextFollowAt.getDate() + 1);
+    }
+
+    // 查找或创建客户
+    let customer = await prisma.customer.findFirst({
+      where: { tenantId: req.tenantId, phone }
+    });
+
+    if (customer) {
+      // 更新现有客户
+      const updateData = {
+        name: customerName || customer.name,
+        community: community || customer.community,
+        area: area || customer.area,
+        budget: budget || customer.budget,
+        level: customerLevel || customer.level,
+        nextFollowAt,
+        lastCallAt: recording.callTime,
+        callCount: { increment: 1 }
+      };
+
+      // 合并画像
+      if (portrait) {
+        updateData.portrait = {
+          ...(customer.portrait || {}),
+          ...portrait
+        };
+        // 计算画像完整度
+        const filledFields = Object.values(updateData.portrait).filter(v => v && v !== '暂无').length;
+        const totalFields = 12;
+        updateData.portraitPct = Math.round((filledFields / totalFields) * 100);
+      }
+
+      // 如果有承诺，存入 portrait
+      if (promise) {
+        updateData.portrait = {
+          ...(updateData.portrait || customer.portrait || {}),
+          promise
+        };
+      }
+
+      customer = await prisma.customer.update({
+        where: { id: customer.id },
+        data: updateData
+      });
+
+    } else {
+      // 创建新客户
+      const portraitData = portrait || {};
+      if (promise) portraitData.promise = promise;
+
+      // 计算画像完整度
+      const filledFields = Object.values(portraitData).filter(v => v && v !== '暂无').length;
+      const totalFields = 12;
+      const portraitPct = Math.round((filledFields / totalFields) * 100);
+
+      customer = await prisma.customer.create({
+        data: {
+          tenantId: req.tenantId,
+          phone,
+          phoneMasked: phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2'),
+          name: customerName || '未命名客户',
+          community,
+          area: area ? parseFloat(area) : null,
+          budget,
+          level: customerLevel || 'C',
+          status: 'pending',
+          agentId: recording.agentId || req.user.id,
+          source: '录音识别',
+          portrait: portraitData,
+          portraitPct,
+          nextFollowAt,
+          lastCallAt: recording.callTime,
+          callCount: 1,
+          claimedAt: new Date()
+        }
+      });
+    }
+
+    // 更新录音状态
+    await prisma.recording.update({
+      where: { id },
+      data: {
+        analysisStatus: 'confirmed',
+        customerId: customer.id
+      }
+    });
+
+    res.json(success({
+      customerId: customer.id,
+      customerName: customer.name,
+      customerLevel: customer.level
+    }, '确认成功'));
+
+  } catch (err) {
+    console.error('Confirm card error:', err);
+    res.status(500).json(error('确认失败', 500));
   }
 });
 

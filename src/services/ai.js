@@ -111,6 +111,12 @@ async function analyzeAudioWithGemini(ossUrl, systemPrompt) {
 /**
  * 主分析函数
  * 被录音上传时调用
+ *
+ * 新流程：
+ * 1. 第一阶段：录音转写 + 基础分析
+ * 2. 待确认识别：提取客户信息生成确认卡片
+ * 3. 第二阶段：深度诊断（金牌教练）
+ * 4. 等待客服确认后再创建/更新客户
  */
 async function analyzeRecording(recordingId) {
   console.log(`Starting analysis for recording: ${recordingId}`);
@@ -131,28 +137,32 @@ async function analyzeRecording(recordingId) {
       data: { analysisStatus: 'processing' }
     });
 
-    // 3. 获取客户信息（如果存在）
-    let customer = null;
+    // 3. 查找是否已有客户（用于判断是首通还是跟进）
+    let existingCustomer = null;
     if (recording.customerPhone) {
-      customer = await prisma.customer.findFirst({
+      const phone = recording.customerPhone.replace(/\D/g, '');
+      existingCustomer = await prisma.customer.findFirst({
         where: {
           tenantId: recording.tenantId,
-          phone: { contains: recording.customerPhone.replace(/\D/g, '').slice(-11) }
+          phone: phone.length >= 11 ? phone : { contains: phone }
         }
       });
     }
 
-    // 4. 第一阶段分析：使用 Gemini 直接分析音频
-    const lineType = customer ? 'line_b' : 'line_a';
-    const stage1Result = await runStage1Analysis(recording, customer);
+    const lineType = existingCustomer ? 'line_b' : 'line_a';
+    const callStage = existingCustomer ? 'follow_up' : 'cold_call';
+
+    // 4. 第一阶段分析：录音转写 + 基础评分
+    console.log('Stage 1: Audio transcription and basic analysis...');
+    const stage1Result = await runStage1Analysis(recording, existingCustomer);
 
     // 5. 保存第一阶段结果
-    const stage1Saved = await prisma.analysisResult.create({
+    await prisma.analysisResult.create({
       data: {
         recordingId,
-        customerId: customer?.id,
+        customerId: existingCustomer?.id,
         stage: 'stage1',
-        lineType: stage1Result.callStage === 'cold_call' ? 'line_a' : 'line_b',
+        lineType,
         modelName: AI_MODEL,
         provider: 'gemini',
         transcript: stage1Result.transcript,
@@ -162,7 +172,7 @@ async function analyzeRecording(recordingId) {
       }
     });
 
-    // 6. 判断是否有效
+    // 6. 判断是否有效通话
     if (!stage1Result.isValid) {
       await prisma.recording.update({
         where: { id: recordingId },
@@ -172,92 +182,73 @@ async function analyzeRecording(recordingId) {
           analyzedAt: new Date()
         }
       });
+      console.log('Recording marked as invalid');
       return;
     }
 
-    // 7. 如果有效，继续第二阶段分析
-    const stage2Result = await runStage2Analysis(recording, stage1Result, lineType);
+    // 7. 【新增】待确认卡片识别
+    console.log('Confirm Card: Extracting customer info...');
+    const confirmCard = await runConfirmCardAnalysis(stage1Result.transcript);
 
-    // 8. 保存第二阶段结果
+    // 8. 【新增】保存待确认卡片（作为分析结果的一个特殊 stage）
     await prisma.analysisResult.create({
       data: {
         recordingId,
-        customerId: customer?.id,
+        customerId: existingCustomer?.id,
+        stage: 'confirm_card',
+        lineType,
+        modelName: AI_MODEL,
+        provider: 'gemini',
+        rawOutput: JSON.stringify(confirmCard),
+        customerCard: {
+          basicInfo: confirmCard.basicInfo,
+          portrait: confirmCard.portrait,
+          customerLevel: confirmCard.customerLevel,
+          levelReason: confirmCard.levelReason,
+          nextFollow: confirmCard.nextFollow,
+          promise: confirmCard.promise,
+          callSummary: confirmCard.callSummary,
+          isNewCustomer: !existingCustomer,
+          existingCustomerId: existingCustomer?.id || null
+        },
+        summary: confirmCard.callSummary
+      }
+    });
+
+    // 9. 继续第二阶段分析：深度诊断（金牌教练）
+    console.log('Stage 2: Deep analysis...');
+    const stage2Result = await runStage2Analysis(recording, stage1Result, lineType);
+
+    // 10. 保存第二阶段结果
+    await prisma.analysisResult.create({
+      data: {
+        recordingId,
+        customerId: existingCustomer?.id,
         stage: 'stage2',
         lineType,
         modelName: AI_MODEL,
         provider: 'gemini',
         rawOutput: stage2Result.rawOutput,
         scores: stage2Result.scores,
-        customerCard: stage2Result.customerCard,
         summary: stage2Result.summary,
         redFlag: stage2Result.redFlag,
         redFlagDetail: stage2Result.redFlagDetail
       }
     });
 
-    // 9. 更新录音状态
+    // 11. 更新录音状态 - 标记为"待确认"
     await prisma.recording.update({
       where: { id: recordingId },
       data: {
         isValid: true,
-        callStage: stage1Result.callStage,
-        analysisStatus: 'completed',
-        customerId: customer?.id,
+        callStage,
+        analysisStatus: 'pending_confirm',  // 新状态：等待客服确认
+        customerId: existingCustomer?.id,
         analyzedAt: new Date()
       }
     });
 
-    // 10. 如果是新客户，创建客户记录
-    if (!customer && recording.customerPhone && stage2Result.customerCard) {
-      const phone = recording.customerPhone.replace(/\D/g, '');
-      await prisma.customer.create({
-        data: {
-          tenantId: recording.tenantId,
-          phone,
-          phoneMasked: phone.slice(0, 3) + '****' + phone.slice(-4),
-          name: stage2Result.customerCard.customer_name,
-          agentId: recording.agentId,
-          source: '录音自动创建',
-          portrait: stage2Result.customerCard
-        }
-      });
-    }
-
-    // 11. 更新客户信息
-    if (customer && stage2Result.customerCard) {
-      const updateData = {};
-
-      if (stage2Result.customerCard.customer_name) {
-        updateData.name = stage2Result.customerCard.customer_name;
-      }
-
-      // 合并画像
-      updateData.portrait = {
-        ...customer.portrait,
-        ...stage2Result.customerCard
-      };
-
-      // 更新级别
-      if (stage2Result.scores?.lead_quality) {
-        const score = stage2Result.scores.lead_quality;
-        if (score >= 8.5) updateData.level = 'S';
-        else if (score >= 7) updateData.level = 'A';
-        else if (score >= 5) updateData.level = 'B';
-        else updateData.level = 'C';
-      }
-
-      await prisma.customer.update({
-        where: { id: customer.id },
-        data: {
-          ...updateData,
-          callCount: { increment: 1 },
-          lastCallAt: recording.callTime
-        }
-      });
-    }
-
-    console.log(`Analysis completed for recording: ${recordingId}`);
+    console.log(`Analysis completed, waiting for confirmation: ${recordingId}`);
 
   } catch (err) {
     console.error(`Analysis failed for recording ${recordingId}:`, err);
@@ -540,6 +531,190 @@ function getStage2Prompt(lineType) {
   }
 }
 
+/**
+ * 待确认卡片识别提示词
+ * 从录音转写中提取结构化信息，生成待确认卡片
+ */
+function getConfirmCardPrompt() {
+  return `你是一位专业的家装客服助手。你的任务是从通话录音转写中提取客户信息，生成待确认卡片。
+
+请仔细分析通话内容，提取以下信息：
+
+## 基础信息（有就填写，没有就填 null）
+- customer_name: 客户姓名
+- customer_phone: 客户电话号码
+- community: 小区名称
+- area: 房屋面积（数字，单位平方米）
+- budget: 预算金额（如"25万"）
+
+## 客户画像（从对话中推断，没有就填 null）
+- house_type: 房屋类型（商品房/自建房/别墅/二手房）
+- house_usage: 房屋用途（���住/出租/办公）
+- house_state: 房屋现状（毛坯/简装/精装翻新）
+- family_members: 家庭成员（如"夫妻+1孩"、"三代同堂"）
+- profession: 客户职业
+- habits: 生活习惯或特殊需求
+- awareness: 了解程度（小白/百家咨询/有装修经验）
+- position: 装修定位（一线品牌/中等品牌/小公司/游击队）
+- budget_detail: 预算细节（如"25万全包"）
+- timeline: 装修时间节点（如"3个月后交房"）
+- focus_points: 客户关注点（工程质量/工期/价格/材料/设计）
+- style_preference: 风格偏好或设计师要求
+
+## 客户等级判断（重要！）
+根据以下标准判断客户等级：
+- S级: 别墅/大户型(180㎡+) + 高预算(30万+) + 明确需求
+- A级: 有明确装修需求 + 预算合理 + 有时间节点
+- B级: 有意向但需求模糊/预算偏低
+- C级: 意向弱/只是问问/没有明确需求
+- 无效: 外卖/推销/打错电话/完全不相关/态度恶劣明确拒绝
+
+## 下次跟进时间
+- next_follow: 如果对话中提到具体跟进时间，提取出来
+- 选项: 明天/后天/3天后/1周后
+- 如果没提到，默认填"明天"
+
+## 承诺事项
+- promise: 客服在对话中承诺的事情（如"下周二带方案上门"、"发案例给您"）
+
+请严格按照以下 JSON 格式输出：
+{
+  "basic_info": {
+    "customer_name": "张先生",
+    "customer_phone": "13812345678",
+    "community": "万科城市花园",
+    "area": 120,
+    "budget": "25-30万"
+  },
+  "portrait": {
+    "house_type": "商品房",
+    "house_usage": "自住",
+    "house_state": "毛坯",
+    "family_members": "夫妻+1孩",
+    "profession": "工程师",
+    "habits": null,
+    "awareness": "百家咨询",
+    "position": "一线品牌",
+    "budget_detail": "25万全包",
+    "timeline": "3个月后交房",
+    "focus_points": "工程质量、工期",
+    "style_preference": "现代简约"
+  },
+  "customer_level": "A",
+  "level_reason": "客户有明确装修需求，预算合理，3个月后交房时间明确",
+  "next_follow": "后天",
+  "promise": "发同类案例给客户",
+  "call_summary": "客户咨询装修，120平三房，预算25万左右，3个月后交房，正在对比多家公司，关注工程质量和工期"
+}`;
+}
+
+/**
+ * 解析待确认卡片输出
+ */
+function parseConfirmCardOutput(output) {
+  try {
+    // 尝试提取 JSON
+    const jsonMatch = output.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+
+      return {
+        basicInfo: {
+          customerName: parsed.basic_info?.customer_name || null,
+          customerPhone: parsed.basic_info?.customer_phone || null,
+          community: parsed.basic_info?.community || null,
+          area: parsed.basic_info?.area || null,
+          budget: parsed.basic_info?.budget || null
+        },
+        portrait: {
+          houseType: parsed.portrait?.house_type || null,
+          houseUsage: parsed.portrait?.house_usage || null,
+          houseState: parsed.portrait?.house_state || null,
+          familyMembers: parsed.portrait?.family_members || null,
+          profession: parsed.portrait?.profession || null,
+          habits: parsed.portrait?.habits || null,
+          awareness: parsed.portrait?.awareness || null,
+          position: parsed.portrait?.position || null,
+          budgetDetail: parsed.portrait?.budget_detail || null,
+          timeline: parsed.portrait?.timeline || null,
+          focusPoints: parsed.portrait?.focus_points || null,
+          stylePreference: parsed.portrait?.style_preference || null
+        },
+        customerLevel: parsed.customer_level || 'C',
+        levelReason: parsed.level_reason || '',
+        nextFollow: parsed.next_follow || '明天',
+        promise: parsed.promise || null,
+        callSummary: parsed.call_summary || '',
+        rawOutput: output
+      };
+    }
+  } catch (e) {
+    console.error('Parse confirm card output failed:', e);
+  }
+
+  // 默认返回
+  return {
+    basicInfo: {
+      customerName: null,
+      customerPhone: null,
+      community: null,
+      area: null,
+      budget: null
+    },
+    portrait: {},
+    customerLevel: 'C',
+    levelReason: '',
+    nextFollow: '明天',
+    promise: null,
+    callSummary: '',
+    rawOutput: output
+  };
+}
+
+/**
+ * 执行待确认卡片识别
+ * @param {string} transcript - 第一阶段分析得到的转写文本
+ * @returns {Promise<object>} - 待确认卡片数据
+ */
+async function runConfirmCardAnalysis(transcript) {
+  const prompt = getConfirmCardPrompt();
+
+  const messages = [
+    {
+      role: 'system',
+      content: prompt
+    },
+    {
+      role: 'user',
+      content: `请分析以下通话录音转写，提取客户信息生成待确认卡片：
+
+${transcript}
+
+请严格按照 JSON 格式输出分析结果。`
+    }
+  ];
+
+  try {
+    const rawOutput = await callGemini(messages);
+    const result = parseConfirmCardOutput(rawOutput);
+    return result;
+  } catch (error) {
+    console.error('Confirm card analysis failed:', error);
+    // 返回默认空卡片
+    return {
+      basicInfo: {},
+      portrait: {},
+      customerLevel: 'C',
+      levelReason: '',
+      nextFollow: '明天',
+      promise: null,
+      callSummary: '分析失败：' + error.message,
+      rawOutput: ''
+    };
+  }
+}
+
 module.exports = {
-  analyzeRecording
+  analyzeRecording,
+  runConfirmCardAnalysis
 };

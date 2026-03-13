@@ -117,6 +117,45 @@ router.get('/sea', authenticate, tenantScope, async (req, res) => {
   }
 });
 
+// 获取无效公海客户列表
+router.get('/invalid-sea', authenticate, tenantScope, async (req, res) => {
+  try {
+    const { page = 1, pageSize = 20, keyword } = req.query;
+
+    const where = {
+      tenantId: req.tenantId,
+      seaStatus: 'invalid',
+      ...(keyword && {
+        OR: [
+          { name: { contains: keyword } },
+          { community: { contains: keyword } }
+        ]
+      })
+    };
+
+    const [list, total] = await Promise.all([
+      prisma.customer.findMany({
+        where,
+        skip: (page - 1) * pageSize,
+        take: parseInt(pageSize),
+        orderBy: { seaAt: 'desc' }
+      }),
+      prisma.customer.count({ where })
+    ]);
+
+    const sanitizedList = list.map(c => ({
+      ...c,
+      phone: c.phone ? maskPhone(c.phone) : null,
+      daysAgo: c.seaAt ? Math.floor((Date.now() - new Date(c.seaAt)) / 86400000) : 0,
+      reason: c.seaReason || '标记无效'
+    }));
+
+    res.json(success(paginate(sanitizedList, total, page, pageSize)));
+  } catch (err) {
+    res.status(500).json(error('获取无效公海客户失败', 500));
+  }
+});
+
 // 抢单
 router.post('/:id/claim', authenticate, tenantScope, async (req, res) => {
   try {
