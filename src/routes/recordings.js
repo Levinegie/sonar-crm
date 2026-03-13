@@ -385,12 +385,12 @@ router.post('/:id/confirm', authenticate, tenantScope, async (req, res) => {
       const updateData = {
         name: customerName || customer.name,
         community: community || customer.community,
-        area: area || customer.area,
+        area: area ? parseFloat(area) : customer.area,
         budget: budget || customer.budget,
         level: customerLevel || customer.level,
         nextFollowAt,
         lastCallAt: recording.callTime,
-        callCount: { increment: 1 }
+        callCount: (customer.callCount || 0) + 1
       };
 
       // 合并画像
@@ -468,7 +468,7 @@ router.post('/:id/confirm', authenticate, tenantScope, async (req, res) => {
 
   } catch (err) {
     console.error('Confirm card error:', err);
-    res.status(500).json(error('确认失败', 500));
+    res.status(500).json(error('确认失败: ' + err.message, 500));
   }
 });
 
