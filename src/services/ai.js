@@ -827,5 +827,6 @@ async function checkForbiddenWords(transcript, tenantId, recordingId, agentId, s
 
 module.exports = {
   analyzeRecording,
-  runConfirmCardAnalysis
+  runConfirmCardAnalysis,
+  callGemini
 };

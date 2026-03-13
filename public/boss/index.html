@@ -212,7 +212,13 @@ tr:last-child td{border-bottom:none;}
 
     <!-- 经营报告 -->
     <div class="view" id="view-report">
-      <div class="page-header"><div><div class="page-title">经营报告</div><div class="page-sub">每月自动生成</div></div></div>
+      <div class="page-header">
+        <div><div class="page-title">经营报告</div><div class="page-sub">AI 智能经营分析</div></div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="month" id="report-month" class="btn btn-outline" style="padding:6px 12px;font-size:13px">
+          <button class="btn btn-primary" onclick="generateReport()" id="report-gen-btn">生成 AI 报告</button>
+        </div>
+      </div>
       <div class="page-body" style="max-width:900px" id="report-body"></div>
     </div>
   </main>
@@ -290,7 +296,7 @@ function showView(id, el) {
 
 // 加载所有数据
 async function loadAll() {
-  await Promise.all([loadDashboard(), loadCustomers(), loadAgents(), loadSettings(), loadLeaveRequests(), loadAgentList(), loadViolations()]);
+  await Promise.all([loadDashboard(), loadCustomers(), loadAgents(), loadSettings(), loadLeaveRequests(), loadAgentList(), loadViolations(), loadReport()]);
   renderDashboard();
   renderAgentPerformance();
   renderROI();
@@ -743,42 +749,103 @@ async function resumeAgent(agentId) {
 }
 
 // ══ 经营报告 ══
-function renderReport() {
-  document.getElementById('report-body').innerHTML = `
-    <div style="background:white;border:1px solid var(--gray-200);border-radius:16px;overflow:hidden;margin-bottom:28px">
-      <div style="background:linear-gradient(135deg,#4c1d95,#8b5cf6);padding:24px 28px;color:white;display:flex;align-items:center;justify-content:space-between">
-        <div>
-          <div style="font-size:11px;opacity:0.6;letter-spacing:1px;margin-bottom:6px">当前月份</div>
-          <div style="font-family:'Noto Serif SC',serif;font-size:22px;font-weight:700">${new Date().getFullYear()}年 ${new Date().getMonth()+1}月 经营报告</div>
-        </div>
+const mockReport = {
+  summary: '本月整体经营表现稳健，通话量达到 1580 通，有效通话率 78%，签单 12 单。客户转化漏斗中，邀约到店环节转化率偏低（64%），建议加强邀约话术培训。严妍表现突出，签单数领先，李晓东通话量高但签单转化有提升空间。抖音渠道获客效果显著，建议加大投放。',
+  highlights: ['有效通话率 78%，环比提升 5 个百分点', '严妍本月签单 5 单，转化率团队最高', '抖音渠道获客占比 35%，成本最低'],
+  concerns: ['邀约到店转化率仅 64%，低于行业均值 75%', '违禁词预警 3 次，需加强合规培训'],
+  funnel_analysis: '本月新增客户 68 个，有效客户 22 个（32%），邀约 14 个（64%），到店 10 个（71%），签单 4 个（40%）。主要瓶颈在"待跟进→有效"环节，建议优化首通话术，提高线索筛选效率。',
+  agent_analysis: '严妍综合表现最优，通话量和签单数均领先；李晓东通话量高但签单转化偏低，建议加强逼单技巧辅导；王美琪通话量偏少，需关注工作饱和度。',
+  channel_analysis: '抖音渠道贡献 35% 客户，获客成本最低；百度渠道客户质量较高但成本偏高；自然流量占比 15%，建议维护好口碑转介绍体系。',
+  suggestions: ['针对邀约话术开展专项培训，目标将到店率提升至 75%', '加大抖音渠道投放预算 20%，同时优化百度关键词降低成本', '为李晓东安排一对一逼单技巧辅导，提升签单转化率']
+};
+let reportData = null;
+
+async function loadReport() {
+  const monthInput = document.getElementById('report-month');
+  if (!monthInput.value) {
+    const now = new Date();
+    monthInput.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }
+  const month = monthInput.value;
+  if (!month) return;
+  try {
+    const d = await api('/api/stats/monthly-report?month=' + month);
+    if (d.success) { reportData = d.data; }
+  } catch(e) {}
+}
+
+async function generateReport() {
+  const month = document.getElementById('report-month').value;
+  if (!month) return;
+  const btn = document.getElementById('report-gen-btn');
+  btn.disabled = true; btn.textContent = '生成中...';
+  try {
+    const d = await api('/api/stats/monthly-report/generate', { method:'POST', body: JSON.stringify({ month }) });
+    if (d.success) { reportData = d.data; renderReport(); }
+    else { alert(d.error || '生成失败'); }
+  } catch(e) { alert('生成失败'); }
+  btn.disabled = false; btn.textContent = '生成 AI 报告';
+}
+
+function renderReportContent(r) {
+  return `
+    <div style="background:white;border:1px solid var(--gray-200);border-radius:16px;overflow:hidden;margin-bottom:20px">
+      <div style="background:linear-gradient(135deg,#4c1d95,#8b5cf6);padding:20px 24px;color:white">
+        <div style="font-size:11px;opacity:0.6;letter-spacing:1px;margin-bottom:4px">AI 经营分析</div>
+        <div style="font-family:'Noto Serif SC',serif;font-size:20px;font-weight:700">${reportData?.month || ''} 经营报告</div>
       </div>
-      <div style="padding:16px 28px;background:var(--amber-pale);border-bottom:1px solid #fde68a;display:flex;align-items:center;gap:10px">
-        <span style="font-size:18px">⏳</span>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:#92400e">本月报告将于月末自动生成</div>
-          <div style="font-size:12px;color:#a16207;margin-top:2px">系统将基于本月所有通话分析数据、客户转化数据、渠道投放数据自动生成经营分析报告</div>
-        </div>
+      <div style="padding:20px 24px">
+        <div style="font-size:14px;line-height:1.8;color:var(--gray-700);margin-bottom:20px">${r.summary || ''}</div>
+        ${r.highlights?.length ? `<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;color:var(--green);margin-bottom:8px">✅ 亮点</div>${r.highlights.map(h => `<div style="font-size:13px;color:var(--gray-600);padding:4px 0;padding-left:16px;position:relative"><span style="position:absolute;left:0">•</span>${h}</div>`).join('')}</div>` : ''}
+        ${r.concerns?.length ? `<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:600;color:var(--amber);margin-bottom:8px">⚠️ 关注</div>${r.concerns.map(c => `<div style="font-size:13px;color:var(--gray-600);padding:4px 0;padding-left:16px;position:relative"><span style="position:absolute;left:0">•</span>${c}</div>`).join('')}</div>` : ''}
       </div>
     </div>
-    <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px">报告数据来源</div>
-    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px">
-      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📊 转化数据</div>
-        <div style="font-size:12px;color:var(--gray-500);line-height:1.8">线索总量、有效率、邀约率、到店率、成单率，按渠道和客服维度拆分</div>
+    <div style="display:grid;grid-template-columns:1fr;gap:16px;margin-bottom:20px">
+      ${['funnel_analysis','agent_analysis','channel_analysis'].map(key => {
+        const labels = { funnel_analysis:'漏斗分析', agent_analysis:'客服表现', channel_analysis:'渠道分析' };
+        const icons = { funnel_analysis:'📊', agent_analysis:'👥', channel_analysis:'📡' };
+        return r[key] ? `<div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px"><div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">${icons[key]} ${labels[key]}</div><div style="font-size:13px;color:var(--gray-600);line-height:1.8">${r[key]}</div></div>` : '';
+      }).join('')}
+    </div>
+    ${r.suggestions?.length ? `<div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px"><div style="font-size:13px;font-weight:600;color:var(--blue);margin-bottom:10px">💡 经营建议</div>${r.suggestions.map((s,i) => `<div style="font-size:13px;color:var(--gray-600);padding:5px 0;padding-left:20px;position:relative"><span style="position:absolute;left:0;font-weight:600;color:var(--blue)">${i+1}.</span>${s}</div>`).join('')}</div>` : ''}`;
+}
+
+function renderReportStats(s) {
+  return `
+    <div style="background:white;border:1px solid var(--gray-200);border-radius:16px;overflow:hidden;margin-bottom:20px">
+      <div style="background:linear-gradient(135deg,#4c1d95,#8b5cf6);padding:20px 24px;color:white">
+        <div style="font-family:'Noto Serif SC',serif;font-size:20px;font-weight:700">${reportData?.month || ''} 数据摘要</div>
       </div>
-      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">🤖 AI 分析</div>
-        <div style="font-size:12px;color:var(--gray-500);line-height:1.8">客服6维评分趋势、通话质量分析、客户画像洞察、成交特征提取</div>
-      </div>
-      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">💰 渠道 ROI</div>
-        <div style="font-size:12px;color:var(--gray-500);line-height:1.8">各渠道投入产出比、获客成本、成单成本对比，优化投放建议</div>
-      </div>
-      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">💡 经营建议</div>
-        <div style="font-size:12px;color:var(--gray-500);line-height:1.8">基于数据的下月经营策略建议、客服辅导重点、投放调整方向</div>
+      <div style="padding:20px 24px">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+          <div style="text-align:center;padding:12px;background:var(--blue-pale);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--blue)">${s.totalCalls}</div><div style="font-size:11px;color:var(--gray-500)">总通话</div></div>
+          <div style="text-align:center;padding:12px;background:var(--green-pale);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--green)">${s.validCalls}</div><div style="font-size:11px;color:var(--gray-500)">有效通话</div></div>
+          <div style="text-align:center;padding:12px;background:var(--purple-pale);border-radius:10px"><div style="font-size:22px;font-weight:700;color:var(--purple)">${s.funnel?.signed || 0}</div><div style="font-size:11px;color:var(--gray-500)">签单数</div></div>
+        </div>
+        <div style="font-size:12px;color:var(--gray-500);text-align:center;padding:12px;background:var(--amber-pale);border-radius:8px">尚未生成 AI 报告，点击上方"生成 AI 报告"按钮开始分析</div>
       </div>
     </div>`;
+}
+
+function renderReport() {
+  const monthInput = document.getElementById('report-month');
+  if (!monthInput.value) {
+    const now = new Date();
+    monthInput.value = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  }
+  // 绑定月份切换
+  monthInput.onchange = () => { if (token) loadReport(); };
+
+  const body = document.getElementById('report-body');
+  if (reportData?.reportContent) {
+    body.innerHTML = renderReportContent(reportData.reportContent);
+    document.getElementById('report-gen-btn').textContent = '重新生成';
+  } else if (reportData?.stats) {
+    body.innerHTML = renderReportStats(reportData.stats);
+  } else {
+    // mock / 未登录
+    body.innerHTML = renderReportContent(mockReport);
+  }
 }
 
 // ══ 初始化 ══
@@ -815,6 +882,7 @@ async function init() {
       {id:'mock-l1',userName:'严妍',type:'leave',startDate:new Date().toISOString(),endDate:new Date(Date.now()+3*86400000).toISOString(),reason:'家中有事',status:'pending'},
       {id:'mock-l2',userName:'李晓东',type:'leave',startDate:new Date(Date.now()+86400000).toISOString(),endDate:new Date(Date.now()+2*86400000).toISOString(),reason:'身体不适',status:'pending'},
     ];
+    reportData = { month: new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0'), reportContent: mockReport };
     // 未登录也渲染空状态
     renderDashboard();
     renderAgentPerformance();
