@@ -27,6 +27,7 @@ app.use('/api/customers', require('./routes/customers'));
 app.use('/api/recordings', require('./routes/recordings'));
 app.use('/api/analysis', require('./routes/analysis'));
 app.use('/api/config', require('./routes/config'));
+app.use('/api/tenants', require('./routes/tenants'));
 app.use('/api/oss', require('./routes/oss'));
 app.use('/api/stats', require('./routes/stats'));
 

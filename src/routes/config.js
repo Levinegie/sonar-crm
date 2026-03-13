@@ -5,17 +5,28 @@
 
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
+const axios = require('axios');
 const { success, error } = require('../utils/helpers');
-const { authenticate, authorize, tenantScope } = require('../middleware/auth');
+const { authenticate, authorize, tenantScope, platformOnly } = require('../middleware/auth');
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// 获取 AI 配置列表
+// 获取 AI 配置列表（平台管理员可通过 ?tenantId= 查看其他租户）
 router.get('/ai', authenticate, authorize('admin'), tenantScope, async (req, res) => {
   try {
+    let targetTenantId = req.tenantId;
+
+    // 平台管理员可查看指定租户的配置
+    if (req.query.tenantId) {
+      const userTenant = await prisma.tenant.findUnique({ where: { id: req.user.tenantId } });
+      if (userTenant?.slug === 'default') {
+        targetTenantId = req.query.tenantId;
+      }
+    }
+
     const configs = await prisma.aIConfig.findMany({
-      where: { tenantId: req.tenantId },
+      where: { tenantId: targetTenantId },
       orderBy: { name: 'asc' }
     });
 
@@ -31,16 +42,25 @@ router.get('/ai', authenticate, authorize('admin'), tenantScope, async (req, res
   }
 });
 
-// 更新 AI 配置
+// 更新 AI 配置（平台管理员可更新任意租户的配置）
 router.put('/ai/:id', authenticate, authorize('admin'), tenantScope, async (req, res) => {
   try {
     const { id } = req.params;
     const { model, apiUrl, apiKey, systemPrompt, isActive, priority } = req.body;
 
+    // 验证配置归属：平台管理员可编辑任意配置，普通管理员只能编辑自己租户的
+    const existing = await prisma.aIConfig.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json(error('配置不存在', 404));
+
+    const userTenant = await prisma.tenant.findUnique({ where: { id: req.user.tenantId } });
+    if (userTenant?.slug !== 'default' && existing.tenantId !== req.tenantId) {
+      return res.status(403).json(error('无权修改此配置', 403));
+    }
+
     const updateData = {};
     if (model) updateData.model = model;
     if (apiUrl) updateData.apiUrl = apiUrl;
-    if (systemPrompt) updateData.systemPrompt = systemPrompt;
+    if (systemPrompt !== undefined) updateData.systemPrompt = systemPrompt;
     if (isActive !== undefined) updateData.isActive = isActive;
     if (priority) updateData.priority = priority;
 
@@ -50,7 +70,7 @@ router.put('/ai/:id', authenticate, authorize('admin'), tenantScope, async (req,
     }
 
     const config = await prisma.aIConfig.update({
-      where: { id, tenantId: req.tenantId },
+      where: { id },
       data: updateData
     });
 
@@ -176,6 +196,56 @@ router.post('/channels', authenticate, authorize('admin'), tenantScope, async (r
     res.json(success(channel, '添加成功'));
   } catch (err) {
     res.status(500).json(error('添加渠道失败', 500));
+  }
+});
+
+// =====================================================
+// AI 模型测试端点
+// =====================================================
+router.post('/ai/test', authenticate, authorize('admin'), async (req, res) => {
+  try {
+    const { message, configId } = req.body;
+
+    if (!message || !configId) {
+      return res.status(400).json(error('请提供测试消息和配置 ID', 400));
+    }
+
+    const config = await prisma.aIConfig.findUnique({ where: { id: configId } });
+    if (!config) {
+      return res.status(404).json(error('配置不存在', 404));
+    }
+
+    if (!config.apiKey || !config.apiUrl) {
+      return res.status(400).json(error('该配置缺少 API Key 或 API URL', 400));
+    }
+
+    const messages = [
+      ...(config.systemPrompt ? [{ role: 'system', content: config.systemPrompt }] : []),
+      { role: 'user', content: message }
+    ];
+
+    const response = await axios.post(
+      `${config.apiUrl}/v1/chat/completions`,
+      {
+        model: config.model,
+        messages,
+        temperature: 0.7,
+        max_tokens: 2048
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.apiKey}`
+        },
+        timeout: 30000
+      }
+    );
+
+    const reply = response.data?.choices?.[0]?.message?.content || '无响应';
+    res.json(success({ reply, model: config.model, provider: config.provider }));
+  } catch (err) {
+    console.error('AI test error:', err.response?.data || err.message);
+    res.status(500).json(error('测试失败: ' + (err.response?.data?.error?.message || err.message), 500));
   }
 });
 

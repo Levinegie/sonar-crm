@@ -43,6 +43,20 @@ router.post('/login', async (req, res) => {
       return res.status(403).json(error('账号已被禁用', 403));
     }
 
+    // 检查租户到期时间
+    if (user.tenant.expiresAt && new Date(user.tenant.expiresAt) < new Date()) {
+      return res.status(403).json(error('租户已到期，请联系平台管理员续期', 403));
+    }
+
+    // 检查 IP 白名单
+    if (user.tenant.allowedIps) {
+      const clientIp = req.ip?.replace('::ffff:', '') || '';
+      const allowed = user.tenant.allowedIps.split(',').map(ip => ip.trim()).filter(Boolean);
+      if (allowed.length > 0 && !allowed.includes(clientIp)) {
+        return res.status(403).json(error('当前 IP 不在允许范围内', 403));
+      }
+    }
+
     // 检查是否被锁定
     if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
       return res.status(403).json(error(`账号已被锁定，请 ${formatMinutes(user.lockedUntil)} 后再试`, 403));

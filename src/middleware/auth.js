@@ -146,11 +146,29 @@ function sanitizeBody(body) {
   return sanitized;
 }
 
+// =====================================================
+// 平台管理员校验（仅 default 租户的 admin）
+// =====================================================
+async function platformOnly(req, res, next) {
+  try {
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.user.tenantId }
+    });
+    if (!tenant || tenant.slug !== 'default' || req.user.role !== 'admin') {
+      return res.status(403).json(error('仅平台管理员可访问', 403));
+    }
+    next();
+  } catch (err) {
+    return res.status(500).json(error('权限校验失败', 500));
+  }
+}
+
 module.exports = {
   generateToken,
   authenticate,
   authorize,
   tenantScope,
   loginRateLimit,
-  auditLog
+  auditLog,
+  platformOnly
 };

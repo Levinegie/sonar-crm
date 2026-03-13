@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>声纳 CRM - 管理后台</title>
+<title>声纳 CRM - 平台管理</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -25,13 +25,19 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--gray-50);color:var(-
 .login-sub{text-align:center;color:var(--gray-400);font-size:13px;margin-bottom:32px}
 .form-group{margin-bottom:20px}
 .form-group label{display:block;font-size:13px;font-weight:500;color:var(--gray-600);margin-bottom:6px}
-.form-group input,.form-group select{width:100%;padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s}
-.form-group input:focus{border-color:var(--blue)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:'Noto Sans SC',sans-serif;width:100%}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px 14px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;outline:none;transition:border-color 0.2s;font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:inherit}
 .btn-primary{background:var(--blue);color:white}
 .btn-primary:hover{background:#1d4ed8}
 .btn-outline{background:transparent;color:var(--gray-600);border:1px solid var(--gray-200)}
 .btn-outline:hover{background:var(--gray-50)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:4px 8px;font-size:11px}
+.btn-green{background:var(--green);color:white}
+.btn-red{background:var(--red);color:white}
+.btn-amber{background:var(--amber);color:white}
+.btn-full{width:100%}
 
 /* 后台布局 */
 .app{display:none;min-height:100vh}
@@ -49,7 +55,7 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--gray-50);color:var(-
 .nav-link{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;color:var(--gray-500);font-size:13px;font-weight:400;transition:all 0.15s;border-left:3px solid transparent}
 .nav-link:hover{color:var(--gray-800);background:var(--gray-50)}
 .nav-link.active{color:var(--blue);background:var(--blue-pale);border-left-color:var(--blue);font-weight:500}
-.main{margin-left:var(--sidebar);margin-top:56px;padding:24px;min-height:calc(100vh - 56px)}
+.main{margin-left:var(--sidebar);margin-top:56px;padding:24px;min-height:calc(100vh - 56px);width:calc(100% - var(--sidebar))}
 
 /* 页面标题 */
 .page-header{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
@@ -77,27 +83,11 @@ tr:hover td{background:var(--gray-50)}
 
 /* 标签 */
 .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
-.badge-s{background:#fef2f2;color:#dc2626}
-.badge-a{background:#fffbeb;color:#d97706}
-.badge-b{background:#f0fdf4;color:#16a34a}
-.badge-c{background:var(--gray-100);color:var(--gray-500)}
-.badge-new{background:#eff6ff;color:#2563eb}
-.badge-pending{background:#fefce8;color:#ca8a04}
-.badge-valid{background:#f0fdf4;color:#16a34a}
-.badge-invited{background:#fdf4ff;color:#9333ea}
-.badge-visited{background:#fff7ed;color:#ea580c}
-.badge-signed{background:#dcfce7;color:#15803d}
-.badge-dead{background:var(--gray-100);color:var(--gray-400)}
-.badge-sea{background:#fef2f2;color:#dc2626}
+.badge-active{background:var(--green-pale);color:#16a34a}
+.badge-disabled{background:var(--gray-100);color:var(--gray-400)}
+.badge-expiring{background:var(--amber-pale);color:#d97706}
 
-/* 按钮 */
-.btn-sm{padding:6px 12px;font-size:12px}
-.btn-xs{padding:4px 8px;font-size:11px}
-.btn-green{background:var(--green);color:white}
-.btn-red{background:var(--red);color:white}
-.btn-purple{background:var(--purple);color:white}
-
-/* 表单 */
+/* 弹窗 */
 .modal{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;z-index:2000}
 .modal.active{display:flex}
 .modal-content{background:white;border-radius:12px;padding:24px;width:90%;max-width:600px;max-height:90vh;overflow-y:auto}
@@ -107,66 +97,77 @@ tr:hover td{background:var(--gray-50)}
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
 
 /* 配置卡片 */
-.config-card{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;margin-bottom:16px}
-.config-card-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
-.config-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--gray-100)}
+.config-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;margin-top:16px}
+.config-card{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px}
+.config-card-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.config-card-desc{font-size:12px;color:var(--gray-400);margin-bottom:12px}
+.config-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)}
 .config-row:last-child{border-bottom:none}
-.config-label{font-size:13px;color:var(--gray-700)}
-.config-value{font-size:13px;color:var(--gray-500)}
+.config-label{font-size:12px;color:var(--gray-500)}
+.config-value{font-size:12px;color:var(--gray-700);font-weight:500}
+.prompt-preview{font-size:12px;color:var(--gray-500);margin-top:8px;padding:8px;background:var(--gray-50);border-radius:6px;max-height:60px;overflow:hidden;white-space:pre-wrap;word-break:break-all}
+
+/* 测试窗口 */
+.test-panel{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;margin-top:20px}
+.test-panel h3{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px}
+.test-output{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:16px;min-height:120px;max-height:300px;overflow-y:auto;font-size:13px;color:var(--gray-700);white-space:pre-wrap;word-break:break-all;margin-top:12px}
 
 /* 开关 */
-.toggle{position:relative;width:44px;height:24px;background:var(--gray-200);border-radius:12px;cursor:pointer;transition:background 0.2s}
+.toggle{position:relative;width:44px;height:24px;background:var(--gray-200);border-radius:12px;cursor:pointer;transition:background 0.2s;display:inline-block}
 .toggle.active{background:var(--green)}
 .toggle::after{content:'';position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:transform 0.2s}
 .toggle.active::after{transform:translateX(20px)}
 
-/* 漏斗 */
-.funnel{display:flex;flex-direction:column;gap:8px}
-.funnel-row{display:flex;align-items:center;gap:12px}
-.funnel-label{font-size:12px;color:var(--gray-500);width:70px;flex-shrink:0}
-.funnel-bar-wrap{flex:1;background:var(--gray-100);border-radius:4px;height:26px;overflow:hidden}
-.funnel-bar{height:100%;border-radius:4px;display:flex;align-items:center;padding-left:10px}
-.funnel-bar span{font-size:11px;font-weight:700;color:white}
-.funnel-bar .rate{font-size:10px;color:rgba(255,255,255,0.7)}
-.funnel-count{font-size:12px;color:var(--gray-500);width:30px;text-align:right;flex-shrink:0}
+/* 选择器行 */
+.selector-row{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.selector-row label{font-size:13px;color:var(--gray-600);font-weight:500;white-space:nowrap}
+.selector-row select{padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;min-width:200px}
 
 /* 加载 */
 .loading{text-align:center;padding:40px;color:var(--gray-400)}
 .spinner{width:24px;height:24px;border:3px solid var(--gray-200);border-top-color:var(--blue);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* 响应式 */
+/* 隐藏视图 */
+.view{display:none}
+.view.active{display:block}
+
+/* toast */
+.toast{position:fixed;top:20px;right:20px;padding:12px 20px;border-radius:8px;color:white;font-size:13px;z-index:9999;opacity:0;transition:opacity 0.3s}
+.toast.show{opacity:1}
+.toast-success{background:var(--green)}
+.toast-error{background:var(--red)}
+
 @media(max-width:768px){
   .sidebar{display:none}
-  .main{margin-left:0}
+  .main{margin-left:0;width:100%}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
 }
+/* PLACEHOLDER_STYLES */
 </style>
 </head>
 <body>
-
 <!-- 登录页 -->
 <div class="login-page" id="loginPage">
   <div class="login-card">
     <div class="login-logo">声纳<span>CRM</span></div>
-    <div class="login-sub">智能客服管理平台</div>
+    <div class="login-sub">平台管理后台</div>
     <div class="form-group">
       <label>用户名</label>
       <input type="text" id="loginUsername" placeholder="请输入用户名">
     </div>
     <div class="form-group">
       <label>密码</label>
-      <input type="password" id="loginPassword" placeholder="请输入密码">
+      <input type="password" id="loginPassword" placeholder="请输入密码" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btn btn-primary" onclick="doLogin()">登录</button>
+    <button class="btn btn-primary btn-full" onclick="doLogin()">登录</button>
   </div>
 </div>
 
 <!-- 管理后台 -->
 <div class="app" id="app">
-  <!-- 顶部导航 -->
   <div class="topbar">
-    <div class="topbar-logo">声纳<span>CRM</span></div>
+    <div class="topbar-logo">声纳<span>CRM</span> · 平台管理</div>
     <div class="topbar-user">
       <div class="avatar" id="userAvatar">管</div>
       <div>
@@ -176,562 +177,520 @@ tr:hover td{background:var(--gray-50)}
     </div>
   </div>
 
-  <!-- 侧边栏 -->
   <nav class="sidebar">
     <div class="nav-group">
       <div class="nav-group-label">概览</div>
-      <a class="nav-link active" data-view="dashboard" onclick="showView('dashboard',this)">
-        <span>📊</span>数据概览
-      </a>
+      <a class="nav-link active" onclick="showView('dashboard',this)">📊 数据概览</a>
     </div>
     <div class="nav-group">
-      <div class="nav-group-label">客户管理</div>
-      <a class="nav-link" data-view="customers" onclick="showView('customers',this)">
-        <span>👥</span>我的客户
-      </a>
-      <a class="nav-link" data-view="sea" onclick="showView('sea',this)">
-        <span>🌊</span>公海客户
-      </a>
-    </div>
-    <div class="nav-group">
-      <div class="nav-group-label">录音管理</div>
-      <a class="nav-link" data-view="recordings" onclick="showView('recordings',this)">
-        <span>📞</span>通话录音
-      </a>
-      <a class="nav-link" data-view="pending" onclick="showView('pending',this)">
-        <span>📋</span>待确认卡片
-      </a>
-    </div>
-    <div class="nav-group">
-      <div class="nav-group-label">系统设置</div>
-      <a class="nav-link" data-view="users" onclick="showView('users',this)">
-        <span>👤</span>用户管理
-      </a>
-      <a class="nav-link" data-view="ai-config" onclick="showView('ai-config',this)">
-        <span>🤖</span>AI 配置
-      </a>
-      <a class="nav-link" data-view="settings" onclick="showView('settings',this)">
-        <span>⚙️</span>系统配置
-      </a>
+      <div class="nav-group-label">管理</div>
+      <a class="nav-link" onclick="showView('tenants',this)">🏢 租户管理</a>
+      <a class="nav-link" onclick="showView('prompts',this)">📝 提示词管理</a>
+      <a class="nav-link" onclick="showView('models',this)">🤖 模型配置</a>
     </div>
   </nav>
 
-  <!-- 主内容区 -->
   <main class="main" id="mainContent">
-    <!-- 仪表盘 -->
-    <div class="view" id="view-dashboard">
-      <div class="page-header">
-        <div>
-          <div class="page-title">数据概览</div>
-          <div class="page-sub" id="dashboardDate">今日数据 · 实时更新</div>
-        </div>
-      </div>
+    <!-- 数据概览 -->
+    <div class="view active" id="view-dashboard">
+      <div class="page-header"><div><div class="page-title">数据概览</div><div class="page-sub">平台运营数据</div></div></div>
       <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">今日通话</div>
-          <div class="stat-val" id="statTodayCalls">-</div>
-          <div class="stat-sub">有效通话</div>
-          <div class="stat-icon">📞</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">客户总数</div>
-          <div class="stat-val" id="statTotalCustomers">-</div>
-          <div class="stat-sub">有效客户</div>
-          <div class="stat-icon">👥</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">公海客户</div>
-          <div class="stat-val" id="statSeaCustomers">-</div>
-          <div class="stat-sub">可抢单</div>
-          <div class="stat-icon">🌊</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">待确认</div>
-          <div class="stat-val" id="statPending">-</div>
-          <div class="stat-sub">待处理</div>
-          <div class="stat-icon">📋</div>
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div class="table-card">
-          <div class="table-toolbar"><span style="font-weight:600">转化漏斗</span></div>
-          <div style="padding:20px">
-            <div class="funnel" id="funnelData"></div>
-          </div>
-        </div>
-        <div class="table-card">
-          <div class="table-toolbar"><span style="font-weight:600">客服排行</span></div>
-          <div id="agentRank"></div>
-        </div>
+        <div class="stat-card"><div class="stat-label">租户总数</div><div class="stat-val" id="statTotal">-</div><div class="stat-icon">🏢</div></div>
+        <div class="stat-card"><div class="stat-label">活跃租户</div><div class="stat-val" id="statActive">-</div><div class="stat-icon">✅</div></div>
+        <div class="stat-card"><div class="stat-label">即将到期</div><div class="stat-val" id="statExpiring">-</div><div class="stat-sub">7天内到期</div><div class="stat-icon">⏰</div></div>
+        <div class="stat-card"><div class="stat-label">用户总数</div><div class="stat-val" id="statUsers">-</div><div class="stat-icon">👥</div></div>
       </div>
     </div>
 
-    <!-- 客户列表 -->
-    <div class="view" id="view-customers" style="display:none">
+    <!-- 租户管理 -->
+    <div class="view" id="view-tenants">
       <div class="page-header">
-        <div>
-          <div class="page-title">我的客户</div>
-          <div class="page-sub" id="customerCount">共 0 位客户</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="openCustomerModal()">+ 新增客户</button>
+        <div><div class="page-title">租户管理</div><div class="page-sub">管理平台所有租户</div></div>
+        <button class="btn btn-primary btn-sm" onclick="openCreateTenant()">+ 新增租户</button>
       </div>
       <div class="table-card">
         <table>
-          <thead>
-            <tr>
-              <th>客户</th>
-              <th>小区</th>
-              <th>级别</th>
-              <th>状态</th>
-              <th>通话数</th>
-              <th>最近跟进</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="customerTable"></tbody>
+          <thead><tr><th>租户名称</th><th>登录账号</th><th>到期时间</th><th>绑定IP</th><th>用户数</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="tenantTableBody"><tr><td colspan="7" class="loading">加载中...</td></tr></tbody>
         </table>
       </div>
     </div>
 
-    <!-- 公海 -->
-    <div class="view" id="view-sea" style="display:none">
-      <div class="page-header">
-        <div>
-          <div class="page-title">🌊 公海客户</div>
-          <div class="page-sub">抢单后成为您的客户</div>
-        </div>
+    <!-- 提示词管理 -->
+    <div class="view" id="view-prompts">
+      <div class="page-header"><div><div class="page-title">提示词管理</div><div class="page-sub">按租户管理 AI 提示词</div></div></div>
+      <div class="selector-row">
+        <label>选择租户：</label>
+        <select id="promptTenantSelect" onchange="loadPromptConfigs()"><option value="">-- 请选择 --</option></select>
       </div>
-      <div class="table-card">
-        <table>
-          <thead>
-            <tr>
-              <th>客户</th>
-              <th>小区</th>
-              <th>预算</th>
-              <th>通话数</th>
-              <th>进入公海原因</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="seaTable"></tbody>
-        </table>
+      <div class="config-grid" id="promptCards"></div>
+    </div>
+
+    <!-- 模型配置 -->
+    <div class="view" id="view-models">
+      <div class="page-header"><div><div class="page-title">模型配置</div><div class="page-sub">AI 模型参数与测试</div></div></div>
+      <div class="selector-row">
+        <label>选择租户：</label>
+        <select id="modelTenantSelect" onchange="loadModelConfigs()"><option value="">-- 请选择 --</option></select>
+      </div>
+      <div class="config-grid" id="modelCards"></div>
+      <div class="test-panel">
+        <h3>模型测试</h3>
+        <div class="selector-row">
+          <label>选择配置：</label>
+          <select id="testConfigSelect"><option value="">-- 请先选择租户 --</option></select>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <textarea id="testMessage" rows="3" placeholder="输入测试消息..."></textarea>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="sendTest()" id="testBtn">发送测试</button>
+        <div class="test-output" id="testOutput">测试结果将显示在这里</div>
       </div>
     </div>
 
-    <!-- 录音列表 -->
-    <div class="view" id="view-recordings" style="display:none">
-      <div class="page-header">
-        <div>
-          <div class="page-title">通话录音</div>
-          <div class="page-sub" id="recordingCount">共 0 条录音</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="openUploadModal()">+ 上传录音</button>
-      </div>
-      <div class="table-card">
-        <table>
-          <thead>
-            <tr>
-              <th>客户</th>
-              <th>通话时间</th>
-              <th>类型</th>
-              <th>分析状态</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="recordingTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- 待确认 -->
-    <div class="view" id="view-pending" style="display:none">
-      <div class="page-header">
-        <div>
-          <div class="page-title">📋 待确认卡片</div>
-          <div class="page-sub">请核对 AI 识别的客户信息</div>
-        </div>
-      </div>
-      <div id="pendingList"></div>
-    </div>
-
-    <!-- 用户管理 -->
-    <div class="view" id="view-users" style="display:none">
-      <div class="page-header">
-        <div>
-          <div class="page-title">👤 用户管理</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ 添加用户</button>
-      </div>
-      <div class="table-card">
-        <table>
-          <thead>
-            <tr>
-              <th>用户名</th>
-              <th>姓名</th>
-              <th>角色</th>
-              <th>状态</th>
-              <th>最近登录</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="userTable"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- AI 配置 -->
-    <div class="view" id="view-ai-config" style="display:none">
-      <div class="page-header">
-        <div>
-          <div class="page-title">🤖 AI 模型配置</div>
-          <div class="page-sub">配置不同阶段使用的 AI 模型和提示词</div>
-        </div>
-      </div>
-      <div id="aiConfigList"></div>
-    </div>
-
-    <!-- 系统配置 -->
-    <div class="view" id="view-settings" style="display:none">
-      <div class="page-header">
-        <div>
-          <div class="page-title">⚙️ 系统配置</div>
-        </div>
-      </div>
-      <div class="config-card">
-        <div class="config-card-title">跟进规则</div>
-        <div class="config-row">
-          <span class="config-label">每日底线任务数</span>
-          <input type="number" value="60" style="width:80px;padding:6px;border:1px solid var(--gray-200);border-radius:6px" id="configDailyTarget">
-        </div>
-        <div class="config-row">
-          <span class="config-label">跟进周期（天）</span>
-          <input type="number" value="3" style="width:80px;padding:6px;border:1px solid var(--gray-200);border-radius:6px" id="configFollowDays">
-        </div>
-        <div class="config-row">
-          <span class="config-label">公海回收天数</span>
-          <input type="number" value="6" style="width:80px;padding:6px;border:1px solid var(--gray-200);border-radius:6px" id="configSeaDays">
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="saveSettings()">保存配置</button>
-    </div>
+    <!-- PLACEHOLDER_VIEWS -->
   </main>
 </div>
 
-<script>
-let token = localStorage.getItem('sonar_token');
-let currentUser = null;
+<!-- Toast -->
+<div class="toast" id="toast"></div>
 
-// 检查登录状态
-async function checkAuth() {
-  if (!token) {
-    showLogin();
-    return;
-  }
+<!-- 新增租户弹窗 -->
+<div class="modal" id="createTenantModal">
+  <div class="modal-content">
+    <div class="modal-header"><div class="modal-title">新增租户</div><span class="modal-close" onclick="closeModal('createTenantModal')">&times;</span></div>
+    <div class="form-group"><label>租户名称</label><input id="ctName" placeholder="如：某某装饰公司"></div>
+    <div class="form-group"><label>租户标识 (slug)</label><input id="ctSlug" placeholder="英文标识，如 company-a"></div>
+    <div class="form-group"><label>登录账号</label><input id="ctUsername" placeholder="管理员登录用户名"></div>
+    <div class="form-group"><label>登录密码</label><input id="ctPassword" type="password" placeholder="至少6位"></div>
+    <div class="form-group"><label>到期时间</label><input id="ctExpires" type="date"></div>
+    <div class="form-group"><label>绑定IP（逗号分隔，留空不限制）</label><input id="ctIps" placeholder="如 1.2.3.4,5.6.7.8"></div>
+    <div class="form-group"><label>最大用户数</label><input id="ctMaxUsers" type="number" value="10"></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('createTenantModal')">取消</button><button class="btn btn-primary" onclick="createTenant()">创建</button></div>
+  </div>
+</div>
+
+<!-- 编辑租户弹窗 -->
+<div class="modal" id="editTenantModal">
+  <div class="modal-content">
+    <div class="modal-header"><div class="modal-title">编辑租户</div><span class="modal-close" onclick="closeModal('editTenantModal')">&times;</span></div>
+    <input type="hidden" id="etId">
+    <div class="form-group"><label>租户名称</label><input id="etName"></div>
+    <div class="form-group"><label>到期时间</label><input id="etExpires" type="date"></div>
+    <div class="form-group"><label>绑定IP</label><input id="etIps" placeholder="逗号分隔"></div>
+    <div class="form-group"><label>最大用户数</label><input id="etMaxUsers" type="number"></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('editTenantModal')">取消</button><button class="btn btn-primary" onclick="saveTenant()">保存</button></div>
+  </div>
+</div>
+
+<!-- 重置密码弹窗 -->
+<div class="modal" id="resetPwdModal">
+  <div class="modal-content">
+    <div class="modal-header"><div class="modal-title">重置管理员密码</div><span class="modal-close" onclick="closeModal('resetPwdModal')">&times;</span></div>
+    <input type="hidden" id="rpId">
+    <div class="form-group"><label>新密码</label><input id="rpPassword" type="password" placeholder="至少6位"></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('resetPwdModal')">取消</button><button class="btn btn-primary" onclick="resetPassword()">确认重置</button></div>
+  </div>
+</div>
+
+<!-- 编辑提示词弹窗 -->
+<div class="modal" id="editPromptModal">
+  <div class="modal-content" style="max-width:800px">
+    <div class="modal-header"><div class="modal-title" id="epTitle">编辑提示词</div><span class="modal-close" onclick="closeModal('editPromptModal')">&times;</span></div>
+    <input type="hidden" id="epId">
+    <div class="form-group"><label>系统提示词 (systemPrompt)</label><textarea id="epPrompt" rows="18" style="font-size:13px;line-height:1.6"></textarea></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('editPromptModal')">取消</button><button class="btn btn-primary" onclick="savePrompt()">保存</button></div>
+  </div>
+</div>
+
+<!-- 编辑模型配置弹窗 -->
+<div class="modal" id="editModelModal">
+  <div class="modal-content">
+    <div class="modal-header"><div class="modal-title">编辑模型配置</div><span class="modal-close" onclick="closeModal('editModelModal')">&times;</span></div>
+    <input type="hidden" id="emId">
+    <div class="form-group"><label>模型</label><input id="emModel"></div>
+    <div class="form-group"><label>API URL</label><input id="emApiUrl"></div>
+    <div class="form-group"><label>API Key（留空不修改）</label><input id="emApiKey" placeholder="留空保持不变"></div>
+    <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('editModelModal')">取消</button><button class="btn btn-primary" onclick="saveModel()">保存</button></div>
+  </div>
+</div>
+
+<!-- PLACEHOLDER_MODALS -->
+
+<script>
+const API = '/api';
+let token = localStorage.getItem('admin_token');
+let currentUser = null;
+let tenantsCache = [];
+let currentModelConfigs = [];
+
+// =====================================================
+// 工具函数
+// =====================================================
+function $(id) { return document.getElementById(id); }
+
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API + path, { ...opts, headers });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || '请求失败');
+  return data;
+}
+
+function toast(msg, type = 'success') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast toast-' + type + ' show';
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function openModal(id) { $(id).classList.add('active'); }
+function closeModal(id) { $(id).classList.remove('active'); }
+
+function fmtDate(d) {
+  if (!d) return '-';
+  return new Date(d).toLocaleDateString('zh-CN');
+}
+
+// =====================================================
+// 登录/登出
+// =====================================================
+async function doLogin() {
+  const username = $('loginUsername').value.trim();
+  const password = $('loginPassword').value;
+  if (!username || !password) return toast('请输入用户名和密码', 'error');
   try {
-    const res = await fetch('/api/auth/me', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    currentUser = data.data;
-    showApp();
+    const res = await api('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+    token = res.data.token;
+    currentUser = res.data.user;
+    localStorage.setItem('admin_token', token);
+    $('loginPage').style.display = 'none';
+    $('app').classList.add('active');
+    $('userName').textContent = currentUser.name;
+    $('userAvatar').textContent = currentUser.name[0];
     loadDashboard();
   } catch (e) {
-    showLogin();
-  }
-}
-
-function showLogin() {
-  document.getElementById('loginPage').style.display = 'flex';
-  document.getElementById('app').classList.remove('active');
-}
-
-function showApp() {
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('app').classList.add('active');
-  document.getElementById('userName').textContent = currentUser.name;
-  document.getElementById('userAvatar').textContent = currentUser.name[0];
-}
-
-async function doLogin() {
-  const username = document.getElementById('loginUsername').value;
-  const password = document.getElementById('loginPassword').value;
-
-  const res = await fetch('/api/auth/login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, password })
-  });
-
-  const data = await res.json();
-  if (data.success) {
-    token = data.data.token;
-    localStorage.setItem('sonar_token', token);
-    currentUser = data.data.user;
-    showApp();
-    loadDashboard();
-  } else {
-    alert(data.error || '登录失败');
+    toast(e.message, 'error');
   }
 }
 
 function logout() {
-  localStorage.removeItem('sonar_token');
   token = null;
-  showLogin();
+  currentUser = null;
+  localStorage.removeItem('admin_token');
+  location.reload();
 }
 
-function showView(view, link) {
-  document.querySelectorAll('.view').forEach(v => v.style.display = 'none');
-  document.getElementById('view-' + view).style.display = 'block';
-  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-  link.classList.add('active');
+// =====================================================
+// 视图切换
+// =====================================================
+function showView(name, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+  $('view-' + name).classList.add('active');
+  if (el) el.classList.add('active');
 
-  if (view === 'dashboard') loadDashboard();
-  if (view === 'customers') loadCustomers();
-  if (view === 'sea') loadSea();
-  if (view === 'recordings') loadRecordings();
-  if (view === 'users') loadUsers();
-  if (view === 'ai-config') loadAIConfig();
+  if (name === 'dashboard') loadDashboard();
+  else if (name === 'tenants') loadTenants();
+  else if (name === 'prompts') { populateTenantSelect('promptTenantSelect'); }
+  else if (name === 'models') { populateTenantSelect('modelTenantSelect'); }
 }
 
+// =====================================================
+// 数据概览
+// =====================================================
 async function loadDashboard() {
   try {
-    const res = await fetch('/api/stats/dashboard', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data = await res.json();
-    if (!data.success) return;
+    const res = await api('/tenants/stats');
+    const d = res.data;
+    $('statTotal').textContent = d.total;
+    $('statActive').textContent = d.active;
+    $('statExpiring').textContent = d.expiringSoon;
+    $('statUsers').textContent = d.totalUsers;
+  } catch (e) {
+    toast('加载统计失败: ' + e.message, 'error');
+  }
+}
 
-    const d = data.data;
-    document.getElementById('statTodayCalls').textContent = d.todayCalls || 0;
-    document.getElementById('statTotalCustomers').textContent = d.totalCustomers || 0;
-    document.getElementById('statSeaCustomers').textContent = d.inSeaCount || 0;
-    document.getElementById('statPending').textContent = d.pendingConfirm || 0;
+// =====================================================
+// 租户管理
+// =====================================================
+async function loadTenants() {
+  try {
+    const res = await api('/tenants');
+    tenantsCache = res.data;
+    renderTenants(tenantsCache);
+  } catch (e) {
+    toast('加载租户失败: ' + e.message, 'error');
+  }
+}
 
-    // 漏斗
-    const funnel = d.funnel;
-    const total = funnel.total || 1;
-    const funnelHtml = [
-      { label: '新线索', val: total, color: '#3b82f6' },
-      { label: '有效', val: funnel.valid || 0, color: '#06b6d4', rate: Math.round((funnel.valid || 0) / total * 100) },
-      { label: '已邀约', val: funnel.invited || 0, color: '#8b5cf6', rate: Math.round((funnel.invited || 0) / total * 100) },
-      { label: '已到店', val: funnel.visited || 0, color: '#f59e0b', rate: Math.round((funnel.visited || 0) / total * 100) },
-      { label: '已签单', val: funnel.signed || 0, color: '#10b981', rate: Math.round((funnel.signed || 0) / total * 100) }
-    ].map(f => `
-      <div class="funnel-row">
-        <div class="funnel-label">${f.label}</div>
-        <div class="funnel-bar-wrap">
-          <div class="funnel-bar" style="width:${f.val === total ? 100 : f.rate}%;background:${f.color}">
-            <span>${f.val}</span>
-            ${f.rate ? `<span class="rate">${f.rate}%</span>` : ''}
-          </div>
-        </div>
-        <div class="funnel-count">${f.val}</div>
+function renderTenants(list) {
+  const tbody = $('tenantTableBody');
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">暂无租户</td></tr>'; return; }
+  tbody.innerHTML = list.map(t => {
+    const statusBadge = t.status === 'active' ? '<span class="badge badge-active">启用</span>' : '<span class="badge badge-disabled">禁用</span>';
+    const isDefault = t.slug === 'default';
+    return `<tr>
+      <td><strong>${t.name}</strong><br><span style="font-size:11px;color:var(--gray-400)">${t.slug}</span></td>
+      <td>${t.adminUser || '-'}</td>
+      <td>${fmtDate(t.expiresAt)}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${t.allowedIps || '-'}</td>
+      <td>${t.userCount}/${t.maxUsers}</td>
+      <td>${statusBadge}</td>
+      <td>
+        ${isDefault ? '<span style="font-size:11px;color:var(--gray-400)">平台租户</span>' : `
+        <button class="btn btn-outline btn-xs" onclick="openEditTenant('${t.id}')">编辑</button>
+        <button class="btn btn-xs ${t.status==='active'?'btn-amber':'btn-green'}" onclick="toggleTenant('${t.id}')">${t.status==='active'?'禁用':'启用'}</button>
+        <button class="btn btn-outline btn-xs" onclick="openResetPwd('${t.id}')">重置密码</button>
+        `}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openCreateTenant() { openModal('createTenantModal'); }
+
+async function createTenant() {
+  const data = {
+    name: $('ctName').value.trim(),
+    slug: $('ctSlug').value.trim(),
+    username: $('ctUsername').value.trim(),
+    password: $('ctPassword').value,
+    expiresAt: $('ctExpires').value || null,
+    allowedIps: $('ctIps').value.trim() || null,
+    maxUsers: parseInt($('ctMaxUsers').value) || 10
+  };
+  if (!data.name || !data.slug || !data.username || !data.password) return toast('请填写必填项', 'error');
+  try {
+    await api('/tenants', { method: 'POST', body: JSON.stringify(data) });
+    toast('租户创建成功');
+    closeModal('createTenantModal');
+    ['ctName','ctSlug','ctUsername','ctPassword','ctExpires','ctIps'].forEach(id => $(id).value = '');
+    $('ctMaxUsers').value = '10';
+    loadTenants();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function openEditTenant(id) {
+  const t = tenantsCache.find(x => x.id === id);
+  if (!t) return;
+  $('etId').value = id;
+  $('etName').value = t.name;
+  $('etExpires').value = t.expiresAt ? t.expiresAt.slice(0, 10) : '';
+  $('etIps').value = t.allowedIps || '';
+  $('etMaxUsers').value = t.maxUsers;
+  openModal('editTenantModal');
+}
+
+async function saveTenant() {
+  const id = $('etId').value;
+  const data = {
+    name: $('etName').value.trim(),
+    expiresAt: $('etExpires').value || null,
+    allowedIps: $('etIps').value.trim() || null,
+    maxUsers: parseInt($('etMaxUsers').value) || 10
+  };
+  try {
+    await api('/tenants/' + id, { method: 'PUT', body: JSON.stringify(data) });
+    toast('更新成功');
+    closeModal('editTenantModal');
+    loadTenants();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+async function toggleTenant(id) {
+  try {
+    const res = await api('/tenants/' + id + '/toggle', { method: 'PUT' });
+    toast(res.message);
+    loadTenants();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function openResetPwd(id) {
+  $('rpId').value = id;
+  $('rpPassword').value = '';
+  openModal('resetPwdModal');
+}
+
+async function resetPassword() {
+  const id = $('rpId').value;
+  const password = $('rpPassword').value;
+  if (!password || password.length < 6) return toast('密码至少6位', 'error');
+  try {
+    await api('/tenants/' + id + '/reset-password', { method: 'POST', body: JSON.stringify({ password }) });
+    toast('密码已重置');
+    closeModal('resetPwdModal');
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// =====================================================
+// 租户下拉填充
+// =====================================================
+async function populateTenantSelect(selectId) {
+  if (!tenantsCache.length) {
+    try { const res = await api('/tenants'); tenantsCache = res.data; } catch(e) { return; }
+  }
+  const sel = $(selectId);
+  const val = sel.value;
+  sel.innerHTML = '<option value="">-- 请选择 --</option>' + tenantsCache.map(t => `<option value="${t.id}">${t.name} (${t.slug})</option>`).join('');
+  if (val) sel.value = val;
+}
+
+// =====================================================
+// 提示词管理
+// =====================================================
+async function loadPromptConfigs() {
+  const tenantId = $('promptTenantSelect').value;
+  const container = $('promptCards');
+  if (!tenantId) { container.innerHTML = ''; return; }
+
+  try {
+    // 临时切换 tenantId 来获取该租户的配置
+    const res = await api('/config/ai?tenantId=' + tenantId);
+    const configs = res.data;
+    container.innerHTML = configs.map(c => `
+      <div class="config-card">
+        <div class="config-card-title">${c.name}</div>
+        <div class="config-card-desc">${c.description || ''}</div>
+        <div class="prompt-preview">${c.systemPrompt ? c.systemPrompt.slice(0, 200) + (c.systemPrompt.length > 200 ? '...' : '') : '（未设置提示词）'}</div>
+        <div style="margin-top:12px"><button class="btn btn-outline btn-xs" onclick="openEditPrompt('${c.id}','${c.name}')">编辑提示词</button></div>
       </div>
     `).join('');
-    document.getElementById('funnelData').innerHTML = funnelHtml;
-
-    // 客服排行
-    const agents = d.agentStats || [];
-    if (agents.length === 0) {
-      document.getElementById('agentRank').innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray-400)">暂无数据</div>';
-    } else {
-      document.getElementById('agentRank').innerHTML = agents.map(a => `
-        <div style="padding:12px 16px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;justify-content:space-between">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="width:28px;height:28px;border-radius:50%;background:var(--blue);color:white;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600">${a.name[0]}</div>
-            <span>${a.name}</span>
-          </div>
-          <span style="font-weight:600;color:var(--navy)">${a.todayCalls} 通</span>
-        </div>
-      `).join('');
-    }
-  } catch (e) {
-    console.error(e);
-  }
+  } catch (e) { toast('加载配置失败: ' + e.message, 'error'); }
 }
 
-async function loadCustomers() {
+function openEditPrompt(id, name) {
+  $('epId').value = id;
+  $('epTitle').textContent = '编辑提示词 - ' + name;
+  // 从缓存中找到完整 prompt
+  $('epPrompt').value = '加载中...';
+  openModal('editPromptModal');
+  // 获取完整配置
+  api('/config/ai').then(res => {
+    const c = res.data.find(x => x.id === id);
+    $('epPrompt').value = c?.systemPrompt || '';
+  }).catch(() => {});
+}
+
+async function savePrompt() {
+  const id = $('epId').value;
+  const systemPrompt = $('epPrompt').value;
   try {
-    const res = await fetch('/api/customers', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data = await res.json();
-    if (!data.success) return;
-
-    const list = data.data.list || [];
-    document.getElementById('customerCount').textContent = '共 ' + data.data.pagination.total + ' 位客户';
-
-    const statusMap = { pending:'待确认', valid:'有效', invited:'已邀约', visited:'已到店', signed:'已签单', dead:'死单' };
-    const levelClass = { S:'badge-s', A:'badge-a', B:'badge-b', C:'badge-c' };
-
-    document.getElementById('customerTable').innerHTML = list.map(c => `
-      <tr>
-        <td>
-          <div style="font-weight:500">${c.name || '-'}</div>
-          <div style="font-size:11px;color:var(--gray-400)">${c.phone}</div>
-        </td>
-        <td>${c.community || '-'}</td>
-        <td><span class="badge ${levelClass[c.level]}">${c.level}级</span></td>
-        <td><span class="badge badge-${c.status}">${statusMap[c.status]}</span></td>
-        <td>${c.callCount || 0}</td>
-        <td>${c.lastCallAt ? new Date(c.lastCallAt).toLocaleDateString() : '-'}</td>
-        <td>
-          <button class="btn btn-outline btn-xs" onclick="alert('查看详情')">详情</button>
-        </td>
-      </tr>
-    `).join('') || '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">暂无数据</td></tr>';
-  } catch (e) {
-    console.error(e);
-  }
+    await api('/config/ai/' + id, { method: 'PUT', body: JSON.stringify({ systemPrompt }) });
+    toast('提示词已保存');
+    closeModal('editPromptModal');
+    loadPromptConfigs();
+  } catch (e) { toast(e.message, 'error'); }
 }
 
-async function loadSea() {
+// =====================================================
+// 模型配置
+// =====================================================
+async function loadModelConfigs() {
+  const tenantId = $('modelTenantSelect').value;
+  const container = $('modelCards');
+  const testSel = $('testConfigSelect');
+  if (!tenantId) { container.innerHTML = ''; testSel.innerHTML = '<option value="">-- 请先选择租户 --</option>'; return; }
+
   try {
-    const res = await fetch('/api/customers/sea', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data = await res.json();
-    if (!data.success) return;
-
-    const list = data.data.list || [];
-
-    document.getElementById('seaTable').innerHTML = list.map(c => `
-      <tr>
-        <td>${c.name || '-'}</td>
-        <td>${c.community || '-'}</td>
-        <td>${c.budget || '-'}</td>
-        <td>${c.callCount || 0}</td>
-        <td><span class="badge badge-sea">${c.seaReason || '未跟进'}</span></td>
-        <td>
-          <button class="btn btn-green btn-xs" onclick="claimCustomer('${c.id}')">抢单</button>
-        </td>
-      </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400)">公海为空</td></tr>';
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-async function claimCustomer(id) {
-  if (!confirm('确定要抢这个客户吗？')) return;
-  const res = await fetch('/api/customers/' + id + '/claim', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + token }
-  });
-  const data = await res.json();
-  if (data.success) {
-    alert('抢单成功！');
-    loadSea();
-  } else {
-    alert(data.error || '抢单失败');
-  }
-}
-
-async function loadRecordings() {
-  try {
-    const res = await fetch('/api/recordings', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data = await res.json();
-    if (!data.success) return;
-
-    const list = data.data.list || [];
-    document.getElementById('recordingCount').textContent = '共 ' + data.data.pagination.total + ' 条录音';
-
-    const statusMap = { pending:'待分析', processing:'分析中', completed:'已完成', failed:'失败' };
-    const stageMap = { cold_call:'首通', follow_up:'跟进' };
-
-    document.getElementById('recordingTable').innerHTML = list.map(r => `
-      <tr>
-        <td>
-          <div style="font-weight:500">${r.customerName || r.customerPhone || '-'}</div>
-        </td>
-        <td>${r.callTime ? new Date(r.callTime).toLocaleString() : '-'}</td>
-        <td><span class="badge badge-${r.callStage === 'cold_call' ? 'new' : 'invited'}">${stageMap[r.callStage] || '-'}</span></td>
-        <td><span class="badge badge-${r.analysisStatus === 'completed' ? 'valid' : r.analysisStatus === 'failed' ? 'dead' : 'pending'}">${statusMap[r.analysisStatus]}</span></td>
-        <td>
-          <button class="btn btn-outline btn-xs" onclick="viewRecording('${r.id}')">查看</button>
-        </td>
-      </tr>
-    `).join('') || '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--gray-400)">暂无录音</td></tr>';
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-async function loadUsers() {
-  try {
-    const res = await fetch('/api/users/agents', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data = await res.json();
-    if (!data.success) return;
-
-    const list = data.data.list || [];
-    const roleMap = { admin:'管理员', boss:'老板', agent:'客服' };
-
-    document.getElementById('userTable').innerHTML = list.map(u => `
-      <tr>
-        <td>${u.username}</td>
-        <td>${u.name}</td>
-        <td><span class="badge badge-${u.role === 'admin' ? 'new' : u.role === 'boss' ? 'invited' : 'valid'}">${roleMap[u.role]}</span></td>
-        <td><span class="badge badge-${u.isActive ? 'valid' : 'dead'}">${u.isActive ? '正常' : '禁用'}</span></td>
-        <td>${u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString() : '-'}</td>
-        <td>
-          <button class="btn btn-outline btn-xs" onclick="alert('编辑')">编辑</button>
-        </td>
-      </tr>
-    `).join('') || '<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400)">暂无用户</td></tr>';
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-async function loadAIConfig() {
-  try {
-    const res = await fetch('/api/config/ai', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    const data = await res.json();
-    if (!data.success) return;
-
-    const list = data.data || [];
-    const nameMap = { line_a1:'Line A1 - 首通录音解析', line_a2:'Line A2 - 首通深度诊断', line_b1:'Line B1 - 跟进录音解析', line_b2:'Line B2 - 跟进深度诊断' };
-
-    document.getElementById('aiConfigList').innerHTML = list.map(c => `
+    const res = await api('/config/ai?tenantId=' + tenantId);
+    currentModelConfigs = res.data;
+    container.innerHTML = currentModelConfigs.map(c => `
       <div class="config-card">
-        <div class="config-card-title">
-          <span>${nameMap[c.name] || c.name}</span>
-          <div class="toggle ${c.isActive ? 'active' : ''}" onclick="toggleAIConfig('${c.id}', ${!c.isActive})"></div>
-        </div>
-        <div class="config-row">
-          <span class="config-label">模型</span>
-          <span class="config-value">${c.provider} / ${c.model}</span>
-        </div>
-        <div class="config-row">
-          <span class="config-label">API Key</span>
-          <span class="config-value">${c.apiKey || '未设置'}</span>
-        </div>
-        <div style="margin-top:12px">
-          <button class="btn btn-outline btn-sm" onclick="editAIConfig('${c.id}')">编辑配置</button>
-        </div>
+        <div class="config-card-title">${c.name} <span class="toggle ${c.isActive?'active':''}" onclick="toggleModelActive('${c.id}',${!c.isActive})"></span></div>
+        <div class="config-card-desc">${c.description || ''}</div>
+        <div class="config-row"><span class="config-label">Provider</span><span class="config-value">${c.provider}</span></div>
+        <div class="config-row"><span class="config-label">Model</span><span class="config-value">${c.model}</span></div>
+        <div class="config-row"><span class="config-label">API URL</span><span class="config-value">${c.apiUrl || '-'}</span></div>
+        <div class="config-row"><span class="config-label">API Key</span><span class="config-value">${c.apiKey || '-'}</span></div>
+        <div style="margin-top:12px"><button class="btn btn-outline btn-xs" onclick="openEditModel('${c.id}')">编辑配置</button></div>
       </div>
-    `).join('') || '<div style="padding:20px;text-align:center;color:var(--gray-400)">暂无配置</div>';
+    `).join('');
+
+    testSel.innerHTML = '<option value="">-- 选择配置 --</option>' + currentModelConfigs.map(c => `<option value="${c.id}">${c.name} - ${c.model}</option>`).join('');
+  } catch (e) { toast('加载配置失败: ' + e.message, 'error'); }
+}
+
+async function toggleModelActive(id, active) {
+  try {
+    await api('/config/ai/' + id, { method: 'PUT', body: JSON.stringify({ isActive: active }) });
+    loadModelConfigs();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+function openEditModel(id) {
+  const c = currentModelConfigs.find(x => x.id === id);
+  if (!c) return;
+  $('emId').value = id;
+  $('emModel').value = c.model;
+  $('emApiUrl').value = c.apiUrl || '';
+  $('emApiKey').value = '';
+  openModal('editModelModal');
+}
+
+async function saveModel() {
+  const id = $('emId').value;
+  const data = { model: $('emModel').value.trim(), apiUrl: $('emApiUrl').value.trim() };
+  const key = $('emApiKey').value.trim();
+  if (key) data.apiKey = key;
+  try {
+    await api('/config/ai/' + id, { method: 'PUT', body: JSON.stringify(data) });
+    toast('配置已保存');
+    closeModal('editModelModal');
+    loadModelConfigs();
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+// =====================================================
+// 模型测试
+// =====================================================
+async function sendTest() {
+  const configId = $('testConfigSelect').value;
+  const message = $('testMessage').value.trim();
+  if (!configId) return toast('请选择配置', 'error');
+  if (!message) return toast('请输入测试消息', 'error');
+
+  const btn = $('testBtn');
+  const output = $('testOutput');
+  btn.disabled = true;
+  btn.textContent = '发送中...';
+  output.textContent = '等待 AI 响应...';
+
+  try {
+    const res = await api('/config/ai/test', { method: 'POST', body: JSON.stringify({ configId, message }) });
+    output.textContent = res.data.reply;
   } catch (e) {
-    console.error(e);
+    output.textContent = '错误: ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '发送测试';
   }
 }
 
-function openCustomerModal() { alert('新增客户功能'); }
-function openUploadModal() { alert('上传录音功能'); }
-function openUserModal() { alert('添加用户功能'); }
-function editAIConfig(id) { alert('编辑 AI 配置: ' + id); }
-function viewRecording(id) { alert('查看录音: ' + id); }
-function saveSettings() { alert('配置已保存'); }
-
-checkAuth();
+// =====================================================
+// 初始化
+// =====================================================
+(async function init() {
+  if (token) {
+    try {
+      const res = await api('/auth/me');
+      currentUser = res.data;
+      $('loginPage').style.display = 'none';
+      $('app').classList.add('active');
+      $('userName').textContent = currentUser.name;
+      $('userAvatar').textContent = currentUser.name[0];
+      loadDashboard();
+    } catch (e) {
+      token = null;
+      localStorage.removeItem('admin_token');
+    }
+  }
+})();
+// PLACEHOLDER_JS1
 </script>
+<!-- PLACEHOLDER_SCRIPT -->
+<!-- PLACEHOLDER_BODY -->
 </body>
 </html>

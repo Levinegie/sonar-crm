@@ -203,7 +203,7 @@ async function analyzeRecording(recordingId) {
 
     // 7. 【新增】待确认卡片识别
     console.log('Confirm Card: Extracting customer info...');
-    const confirmCard = await runConfirmCardAnalysis(stage1Result.transcript);
+    const confirmCard = await runConfirmCardAnalysis(stage1Result.transcript, recording.tenantId);
 
     // 8. 【新增】保存待确认卡片（作为分析结果的一个特殊 stage）
     await prisma.analysisResult.create({
@@ -284,7 +284,7 @@ async function analyzeRecording(recordingId) {
  */
 async function runStage1Analysis(recording, customer) {
   const callStage = customer ? 'follow_up' : 'cold_call';
-  const prompt = getStage1Prompt(callStage);
+  const prompt = await getStage1Prompt(callStage, recording.tenantId);
 
   try {
     // 调用 Gemini 分析音频
@@ -318,7 +318,7 @@ async function runStage1Analysis(recording, customer) {
  * 第二阶段分析：深度诊断
  */
 async function runStage2Analysis(recording, stage1Result, lineType) {
-  const prompt = getStage2Prompt(lineType);
+  const prompt = await getStage2Prompt(lineType, recording.tenantId);
 
   const messages = [
     {
@@ -427,9 +427,28 @@ function parseStage2Output(output) {
 }
 
 /**
+ * 从数据库获取租户的 systemPrompt，没有则返回 null
+ */
+async function getPromptFromDB(tenantId, configName) {
+  try {
+    const config = await prisma.aIConfig.findFirst({
+      where: { tenantId, name: configName, isActive: true }
+    });
+    return config?.systemPrompt || null;
+  } catch (e) {
+    console.error('Failed to load prompt from DB:', e);
+    return null;
+  }
+}
+
+/**
  * 第一阶段提示词
  */
-function getStage1Prompt(callStage) {
+async function getStage1Prompt(callStage, tenantId) {
+  const configName = callStage === 'cold_call' ? 'line_a1' : 'line_b1';
+  const dbPrompt = tenantId ? await getPromptFromDB(tenantId, configName) : null;
+  if (dbPrompt) return dbPrompt;
+
   if (callStage === 'cold_call') {
     return `你是一台高精度的"录音解析仪"。你的任务：听录音，转写对话，评估客户线索质量和客服态度。
 
@@ -475,7 +494,11 @@ function getStage1Prompt(callStage) {
 /**
  * 第二阶段提示词
  */
-function getStage2Prompt(lineType) {
+async function getStage2Prompt(lineType, tenantId) {
+  const configName = lineType === 'line_a' ? 'line_a2' : 'line_b2';
+  const dbPrompt = tenantId ? await getPromptFromDB(tenantId, configName) : null;
+  if (dbPrompt) return dbPrompt;
+
   if (lineType === 'line_a') {
     return `你是一位在家装网销领域拥有20年经验的"金牌操盘手"。你的任务：深度诊断首通电话的销售能力。
 
@@ -550,7 +573,10 @@ function getStage2Prompt(lineType) {
  * 待确认卡片识别提示词
  * 从录音转写中提取结构化信息，生成待确认卡片
  */
-function getConfirmCardPrompt() {
+async function getConfirmCardPrompt(tenantId) {
+  const dbPrompt = tenantId ? await getPromptFromDB(tenantId, 'confirm_card') : null;
+  if (dbPrompt) return dbPrompt;
+
   return `你是一位专业的家装客服助手。你的任务是从通话录音转写中提取客户信息，生成待确认卡片。
 
 请仔细分析通话内容，提取以下信息：
@@ -691,8 +717,8 @@ function parseConfirmCardOutput(output) {
  * @param {string} transcript - 第一阶段分析得到的转写文本
  * @returns {Promise<object>} - 待确认卡片数据
  */
-async function runConfirmCardAnalysis(transcript) {
-  const prompt = getConfirmCardPrompt();
+async function runConfirmCardAnalysis(transcript, tenantId) {
+  const prompt = await getConfirmCardPrompt(tenantId);
 
   const messages = [
     {
