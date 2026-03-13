@@ -278,7 +278,7 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     <div id="login-btn" style="color:rgba(255,255,255,0.6);font-size:12px">
       <span onclick="showLoginModal()" style="cursor:pointer;opacity:0.7">登录</span>
     </div>
-    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.1.1</div>
+    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.2.0</div>
   </div>
 </div>
 
@@ -391,15 +391,16 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     </div>
     <div class="nav-group">
       <div class="nav-group-label">工作台</div>
-      <a class="nav-link active" onclick="showStaffView('todo',this)"><span class="ni">📋</span>今日待办<span class="nav-badge">8</span></a>
-      <a class="nav-link" onclick="showStaffView('confirm',this)"><span class="ni">✅</span>待确认卡片<span class="nav-badge" id="confirm-count">0</span></a>
+      <a class="nav-link active" onclick="showStaffView('todo',this)"><span class="ni">📋</span>今日待办<span class="nav-badge" id="todo-badge">8</span></a>
+      <a class="nav-link" onclick="showStaffView('confirm',this)"><span class="ni">✅</span>待确认卡片<span class="nav-badge" id="confirm-count" style="display:none">0</span></a>
       <a class="nav-link" onclick="showStaffView('search',this)"><span class="ni">🔍</span>搜索查重</a>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">客户</div>
       <a class="nav-link" onclick="showStaffView('customers',this)"><span class="ni">👥</span>我的客户</a>
-      <a class="nav-link" onclick="showStaffView('pinned',this)"><span class="ni">⭐</span>重点客户<span class="nav-badge" id="pinned-count">3</span></a>
-      <a class="nav-link" onclick="showStaffView('sea',this)"><span class="ni">🌊</span>公海抢单<span class="nav-badge green">5</span></a>
+      <a class="nav-link" onclick="showStaffView('pinned',this)"><span class="ni">⭐</span>重点客户</a>
+      <a class="nav-link" onclick="showStaffView('sea',this)"><span class="ni">🌊</span>公海抢单<span class="nav-badge green" id="sea-badge">5</span></a>
+      <a class="nav-link" onclick="showStaffView('dead-sea',this)"><span class="ni">💀</span>死单公海</a>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">学习</div>
@@ -411,16 +412,36 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     <!-- 今日待办 -->
     <div class="view active" id="staff-todo">
       <div class="page-header">
-        <div><div class="page-title">今日待办</div><div class="page-sub">2026年2月27日 · 已完成 12 / 60 通 · 剩余 48 通</div></div>
+        <div><div class="page-title">今日待办</div><div class="page-sub" id="todo-subtitle"></div></div>
         <div style="display:flex;align-items:center;gap:12px">
           <div class="progress-ring">
             <svg width="48" height="48" viewBox="0 0 48 48">
               <circle class="ring-bg" cx="24" cy="24" r="20"/>
-              <circle class="ring-fill" cx="24" cy="24" r="20" stroke-dasharray="125.66" stroke-dashoffset="100.5"/>
+              <circle class="ring-fill" id="todo-ring-fill" cx="24" cy="24" r="20" stroke-dasharray="125.66" stroke-dashoffset="100.5"/>
             </svg>
-            <div class="ring-text">20%</div>
+            <div class="ring-text" id="todo-ring-text">20%</div>
           </div>
-          <button class="btn btn-primary" onclick="alert('✅ 已开始接单！今日任务已加载')">开始接单</button>
+          <div style="position:relative">
+            <button class="btn btn-primary" id="btn-extra-order" onclick="showExtraOrderPicker()">开始接单</button>
+            <div id="extra-order-picker" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:white;border:1px solid var(--gray-200);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);padding:8px;z-index:50;min-width:160px">
+              <div style="padding:6px 10px;font-size:12px;color:var(--gray-400);font-weight:500">选择额外接单数量</div>
+              <div onclick="confirmExtraOrder(5)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--blue-pale)'" onmouseout="this.style.background=''">5 个客户</div>
+              <div onclick="confirmExtraOrder(10)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--blue-pale)'" onmouseout="this.style.background=''">10 个客户</div>
+              <div onclick="confirmExtraOrder(15)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--blue-pale)'" onmouseout="this.style.background=''">15 个客户</div>
+              <div onclick="confirmExtraOrder(20)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--blue-pale)'" onmouseout="this.style.background=''">20 个客户</div>
+            </div>
+          </div>
+          <div style="position:relative">
+            <button class="btn btn-outline" id="btn-leave" onclick="showLeavePicker()">请假</button>
+            <div id="leave-picker" style="display:none;position:absolute;top:100%;right:0;margin-top:6px;background:white;border:1px solid var(--gray-200);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,0.12);padding:8px;z-index:50;min-width:140px">
+              <div style="padding:6px 10px;font-size:12px;color:var(--gray-400);font-weight:500">选择请假天数</div>
+              <div onclick="confirmLeave(1)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--amber-pale)'" onmouseout="this.style.background=''">1 天</div>
+              <div onclick="confirmLeave(2)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--amber-pale)'" onmouseout="this.style.background=''">2 天</div>
+              <div onclick="confirmLeave(3)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--amber-pale)'" onmouseout="this.style.background=''">3 天</div>
+              <div onclick="confirmLeave(5)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--amber-pale)'" onmouseout="this.style.background=''">5 天</div>
+              <div onclick="confirmLeave(7)" style="padding:8px 12px;cursor:pointer;border-radius:6px;font-size:14px;transition:background 0.15s" onmouseover="this.style.background='var(--amber-pale)'" onmouseout="this.style.background=''">7 天</div>
+            </div>
+          </div>
         </div>
       </div>
       <div class="page-body"><div id="todo-list"></div></div>
@@ -611,6 +632,20 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
       </div>
     </div>
 
+    <!-- 死单公海 -->
+    <div class="view" id="staff-dead-sea">
+      <div class="page-header"><div><div class="page-title">死单公海</div><div class="page-sub">标记无效/死单的客户，可抢单重新跟进</div></div></div>
+      <div class="page-body">
+        <div style="margin-bottom:12px">
+          <input type="text" id="dead-sea-search" placeholder="搜索客户名/小区…" oninput="renderDeadSea()" style="padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;width:260px">
+        </div>
+        <div class="table-card">
+          <table><thead><tr><th>客户</th><th>小区</th><th>预算</th><th>历史通数</th><th>标记原因</th><th>入库天数</th><th>操作</th></tr></thead>
+          <tbody id="dead-sea-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
     <!-- 案例库 -->
     <div class="view" id="staff-cases">
       <div class="page-header"><div class="page-title">优秀案例库</div></div>
@@ -666,6 +701,9 @@ async function checkAuth() {
     const data = await api('/api/auth/me');
     if (data.success) {
       currentUser = data.data;
+      // 同步请假和累计通话数据
+      if (currentUser.leaveUntil) todoState.leaveUntil = currentUser.leaveUntil;
+      if (currentUser.carryoverCalls) todoState.carryoverCalls = currentUser.carryoverCalls;
       updateUserInfo();
       return true;
     }
@@ -858,6 +896,7 @@ async function handleLogin() {
     renderCustomerTable();
     renderSea();
     renderTodo();
+  updateTodoHeader();
   }
 }
 
@@ -1027,11 +1066,18 @@ const mockCustomers = [
 ];
 
 const mockSeaCustomers = [
-  {id:101,name:'谭**',area:'碧桂园',budget:'15万',calls:2,daysAgo:7,reason:'3次未接听'},
-  {id:102,name:'林**',area:'学仕里',budget:'28万',calls:1,daysAgo:8,reason:'客服离职转入'},
-  {id:103,name:'杨**',area:'信阳新城',budget:'10万',calls:3,daysAgo:6,reason:'6天无跟进'},
-  {id:104,name:'何**',area:'万达华府',budget:'35万',calls:1,daysAgo:9,reason:'首通后未跟进'},
-  {id:105,name:'马**',area:'光山碧桂园',budget:'20万',calls:2,daysAgo:7,reason:'客户换号失联'},
+  {id:101,name:'谭**',area:'碧桂园',budget:'15万',calls:2,daysAgo:7,reason:'3次未接听',realPhone:'13812345601'},
+  {id:102,name:'林**',area:'学仕里',budget:'28万',calls:1,daysAgo:8,reason:'客服离职转入',realPhone:'15987654302'},
+  {id:103,name:'杨**',area:'信阳新城',budget:'10万',calls:3,daysAgo:6,reason:'6天无跟进',realPhone:'18676543203'},
+  {id:104,name:'何**',area:'万达华府',budget:'35万',calls:1,daysAgo:9,reason:'首通后未跟进',realPhone:'17765432104'},
+  {id:105,name:'马**',area:'光山碧桂园',budget:'20万',calls:2,daysAgo:7,reason:'客户换号失联',realPhone:'15543216505'},
+];
+
+const mockDeadSeaCustomers = [
+  {id:201,name:'陈**',area:'东方明珠',budget:'12万',calls:4,daysAgo:15,reason:'明确拒绝装修',realPhone:'13698765401'},
+  {id:202,name:'王**',area:'碧桂园三期',budget:'8万',calls:2,daysAgo:22,reason:'号码空号',realPhone:'15876543202'},
+  {id:203,name:'刘**',area:'万达华府',budget:'25万',calls:5,daysAgo:10,reason:'已签约其他公司',realPhone:'18765432103'},
+  {id:204,name:'张**',area:'学仕里',budget:'18万',calls:3,daysAgo:30,reason:'客户表示暂不装修',realPhone:'17654321804'},
 ];
 
 const statusMap = {pending:['待跟进','badge-pending'],valid:['有效客户','badge-valid'],invited:['已邀约','badge-invited'],visited:['已到店','badge-visited'],signed:['已签单','badge-signed'],dead:['死单','badge-dead'],invalid:['无效','badge-dead']};
@@ -1084,6 +1130,7 @@ function updateConfirmBadge() {
 function renderConfirmCards() {
   const container = document.getElementById('confirm-body');
   console.log('renderConfirmCards: count=', pendingConfirmCards.length);
+  updateConfirmBadge();
 
   if (pendingConfirmCards.length === 0) {
     container.innerHTML = `
@@ -1298,6 +1345,15 @@ async function submitConfirmCard(recordingId) {
         setTimeout(() => card.remove(), 500);
       }
       updateConfirmBadge();
+      // 确认卡片后自动完成对应的每日任务
+      if (data.customerPhone && !useMockData) {
+        try {
+          const cust = await api('/api/customers?keyword=' + encodeURIComponent(data.customerPhone));
+          if (cust.success && cust.data && cust.data.length > 0) {
+            await completeTaskByCustomer(cust.data[0].id);
+          }
+        } catch(e) { /* ignore */ }
+      }
       // 刷新客户列表
       if (window.loadCustomers) await loadCustomers();
     } else {
@@ -1364,30 +1420,30 @@ function formatDate(d) {
 }
 
 // ══ 今日待办 ══
-function renderTodo() {
+function renderTodoMock() {
   const todos = [
-    {id:6,name:'赵丽',area:'云素小院',phone:'151****6809',level:'new',callNum:1,timeStr:'今天·新线索首通',
+    {id:6,name:'赵丽',area:'云素小院',phone:'151****6809',realPhone:'15136896809',level:'new',callNum:1,timeStr:'今天·新线索首通',
      portraitHint:'',
      ai:'别墅客户220㎡，预算45万，顶级线索。重点：突出公司别墅案例经验，避免直接报价，先约量房。本通话后画像将从25%提升至约50%。'},
-    {id:1,name:'王明',area:'学仕里',phone:'135****6093',level:'S',callNum:3,timeStr:'今天约好14:30',
+    {id:1,name:'王明',area:'学仕里',phone:'135****6093',realPhone:'13576216093',level:'S',callNum:3,timeStr:'今天约好14:30',
      portraitHint:'👤 个体老板 · 喜欢智能家居 · 对比多家公司 · 画像完整度72%',
      ai:'【基于画像】王明是个体老板，做事爽快但重结果。上次确认下周二到店，本次核心任务：确认到店时间+预告方案亮点。他在对比多家，建议主动说「我们的全屋智能方案是唯一能做到…」制造差异化。'},
-    {id:10,name:'郑欣',area:'光山碧桂园',phone:'159****7906',level:'A',callNum:2,timeStr:'今天',
+    {id:10,name:'郑欣',area:'光山碧桂园',phone:'159****7906',realPhone:'15903767906',level:'A',callNum:2,timeStr:'今天',
      portraitHint:'👤 夫妻户型 · 丈夫是医生 · 对比多家 · 画像完整度60%',
      ai:'【基于画像】丈夫是医生，逻辑性强、注重细节。上次答应出预算参考表，本次先发过去。策略：用数据说话，推进邀约到店看实景，可提「我们的工艺检测报告」增加可信度。'},
-    {id:2,name:'李雪梅',area:'碧桂园',phone:'137****2079',level:'A',callNum:2,timeStr:'明天',
+    {id:2,name:'李雪梅',area:'碧桂园',phone:'137****2079',realPhone:'13762152079',level:'A',callNum:2,timeStr:'明天',
      portraitHint:'👤 夫妻 · 重收纳 · 百家咨询 · 画像完整度55%',
      ai:'上次答应发同类案例。本次重点：追问她看完案例的感受，趁热推进邀约。她非常在意收纳，可以重点介绍我们的全屋收纳设计方案。'},
-    {id:8,name:'周婷',area:'碧桂园二期',phone:'158****6985',level:'S',callNum:3,timeStr:'周六约好量房',
+    {id:8,name:'周婷',area:'碧桂园二期',phone:'158****6985',realPhone:'15876536985',level:'S',callNum:3,timeStr:'周六约好量房',
      portraitHint:'👤 医生职业 · 重质量 · 画像完整度68%',
      ai:'【基于画像】周婷是医生，对服务质量要求极高，注重专业性。量房前确认：时间、地址、是否有家人陪同。提醒她可以提前把想法告诉我们，让设计师做好准备。'},
-    {id:7,name:'孙磊',area:'宝龙城',phone:'155****4490',level:'A',callNum:2,timeStr:'明天',
+    {id:7,name:'孙磊',area:'宝龙城',phone:'155****4490',realPhone:'15590234490',level:'A',callNum:2,timeStr:'明天',
      portraitHint:'👤 夫妻 · 对比多家 · 画像完整度50%',
      ai:'客户在对比三家公司。策略：本次重点讲施工质保体系和本地服务能力，主动邀约「带你去看在建工地」建立信任。下次通话需要补充职业信息。'},
-    {id:5,name:'陈建国',area:'信阳春天',phone:'151****6026',level:'B',callNum:2,timeStr:'3天后',
+    {id:5,name:'陈建国',area:'信阳春天',phone:'151****6026',realPhone:'15198736026',level:'B',callNum:2,timeStr:'3天后',
      portraitHint:'👤 单身 · 重性价比 · 画像完整度45%',
      ai:'预算偏紧（8万），介绍分期方案降低决策门槛。下次通话需补充职业信息，有助于判断付款能力。'},
-    {id:9,name:'吴刚',area:'滨河学府',phone:'159****0108',level:'C',callNum:1,timeStr:'5天后',
+    {id:9,name:'吴刚',area:'滨河学府',phone:'159****0108',realPhone:'15937650108',level:'C',callNum:1,timeStr:'5天后',
      portraitHint:'👤 画像较少 · 完整度20%',
      ai:'意向较弱，保持联系节奏即可。本次通话重点：尽量补充画像信息，了解家庭情况和装修时间节点。'},
   ];
@@ -1398,7 +1454,7 @@ function renderTodo() {
         <div class="todo-info">
           <div class="todo-name">${t.name} <span style="font-size:12px;color:var(--gray-400);font-weight:400">· ${t.area}</span></div>
           <div class="todo-meta">
-            <span>${t.phone}</span>
+            <span id="phone-display-${t.id}">${t.phone}</span>
             <span class="badge badge-calls">第${t.callNum}通</span>
             ${t.level==='new'?'<span class="badge badge-new">🔵 新线索首通</span>':''}
             <span style="color:var(--amber)">⏰ ${t.timeStr}</span>
@@ -1408,12 +1464,412 @@ function renderTodo() {
       </div>
       ${t.portraitHint?`<div class="todo-portrait-bar">👤 ${t.portraitHint}</div>`:''}
       <div class="todo-ai"><div class="ai-label">🤖 AI 建议</div>${t.ai}</div>
-      <div class="todo-actions">
-        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();alert('📞 正在拨打 ${t.phone}…')">📞 拨打</button>
+      <div class="todo-actions" id="todo-actions-${t.id}">
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();revealPhone(${t.id},'${t.realPhone}')">📞 拨打</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail(${t.id})">查看详情</button>
       </div>
     </div>`).join('');
 }
+
+async function renderTodo() {
+  if (useMockData) { renderTodoMock(); return; }
+  try {
+    const data = await api('/api/tasks/today');
+    if (!data.success || !data.data) { renderTodoMock(); return; }
+    const { tasks, stats } = data.data;
+    if (!tasks || tasks.length === 0) {
+      document.getElementById('todo-list').innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-400)">今日暂无待办任务</div>';
+      todoState.completed = stats ? stats.completed : 0;
+      updateTodoHeader();
+      return;
+    }
+    todoState.completed = stats.completed;
+    todoState.dailyMin = stats.total;
+    const priorityLabel = { P0: '逾期', P1: '今日重点', P2: '今日跟进', P3: '提前抓取' };
+    const priorityColor = { P0: 'var(--red)', P1: 'var(--amber)', P2: 'var(--blue)', P3: 'var(--gray-400)' };
+    document.getElementById('todo-list').innerHTML = tasks.map(t => {
+      const c = t.customer;
+      const lvl = c.level || 'C';
+      const overdueTag = t.priority === 'P0' ? `<span class="badge" style="background:var(--red-pale);color:var(--red)">逾期${t.overdueDays}天</span>` : '';
+      const pLabel = priorityLabel[t.priority] || '';
+      const pColor = priorityColor[t.priority] || 'var(--gray-400)';
+      const portraitHint = c.portraitPct ? `画像完整度${c.portraitPct}%` : '';
+      const completedStyle = t.status === 'completed' ? 'opacity:0.5;' : '';
+      const nextStr = c.nextFollowAt ? new Date(c.nextFollowAt).toLocaleDateString('zh-CN') : '';
+      return `<div class="todo-item" data-task-id="${t.id}" data-customer-id="${c.id}" style="${completedStyle}" onclick="openDetail('${c.id}')">
+        <div class="todo-item-header">
+          <div class="todo-priority" style="background:${pColor}"></div>
+          <div class="todo-info">
+            <div class="todo-name">${c.name || '未知'} <span style="font-size:12px;color:var(--gray-400);font-weight:400">· ${c.community || ''}</span></div>
+            <div class="todo-meta">
+              <span id="phone-display-task-${t.id}">${c.phoneMasked || ''}</span>
+              <span class="badge badge-calls">第${c.callCount || 0}通</span>
+              ${overdueTag}
+              <span style="color:${pColor};font-size:11px">${pLabel}</span>
+              ${nextStr ? '<span style="color:var(--amber);font-size:11px">⏰ ' + nextStr + '</span>' : ''}
+            </div>
+          </div>
+          <span class="badge ${levelMap[lvl] || 'badge-c'}">${lvl}级</span>
+        </div>
+        ${portraitHint ? '<div class="todo-portrait-bar">👤 ' + portraitHint + '</div>' : ''}
+        <div class="todo-actions" id="todo-actions-task-${t.id}">
+          ${t.status === 'completed'
+            ? '<span style="color:var(--green);font-size:12px">✓ 已完成</span>'
+            : '<button class="btn btn-primary btn-sm" onclick="event.stopPropagation();revealPhoneTask(\'' + t.id + '\',\'' + (c.phone || '') + '\')">📞 拨打</button><button class="btn btn-green btn-sm" onclick="event.stopPropagation();completeTask(\'' + t.id + '\')">✓ 完成</button>'
+          }
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail('${c.id}')">查看详情</button>
+        </div>
+      </div>`;
+    }).join('');
+    const badge = document.getElementById('todo-badge');
+    if (badge) {
+      const pending = tasks.filter(t => t.status === 'pending').length;
+      badge.textContent = pending;
+      badge.style.display = pending > 0 ? '' : 'none';
+    }
+    updateTodoHeader();
+  } catch (e) {
+    console.error('renderTodo error:', e);
+    renderTodoMock();
+  }
+}
+
+function revealPhoneTask(taskId, realPhone) {
+  const phoneEl = document.getElementById('phone-display-task-' + taskId);
+  if (phoneEl) phoneEl.innerHTML = '<span style="color:var(--blue);font-weight:500;font-size:13px;user-select:all;letter-spacing:0.5px">' + realPhone + '</span>';
+}
+
+async function completeTask(taskId) {
+  try {
+    const result = await api('/api/tasks/' + taskId + '/complete', { method: 'POST' });
+    if (result.success) {
+      const item = document.querySelector('[data-task-id="' + taskId + '"]');
+      if (item) {
+        item.style.transition = 'opacity 0.3s, max-height 0.4s ease 0.2s';
+        item.style.opacity = '0';
+        item.style.maxHeight = item.scrollHeight + 'px';
+        item.style.overflow = 'hidden';
+        setTimeout(() => { item.style.maxHeight = '0'; item.style.marginBottom = '0'; item.style.padding = '0'; }, 200);
+        setTimeout(() => { item.remove(); updateTodoHeader(); }, 600);
+      }
+      todoState.completed++;
+      showToast('任务已完成', 'success');
+    }
+  } catch (e) {
+    console.error('completeTask error:', e);
+    showToast('完成任务失败', 'error');
+  }
+}
+
+async function completeTaskByCustomer(customerId) {
+  try {
+    await api('/api/tasks/complete-by-customer', {
+      method: 'POST',
+      body: JSON.stringify({ customerId })
+    });
+  } catch (e) {
+    console.error('completeTaskByCustomer error:', e);
+  }
+}
+
+// 点击拨打 → 显示真实号码 + 出现"已沟通"按钮
+function revealPhone(id, realPhone) {
+  // 号码区域替换为可选中的真实号码
+  const phoneEl = document.getElementById('phone-display-' + id);
+  if (phoneEl) {
+    phoneEl.innerHTML = `<span style="color:var(--blue);font-weight:500;font-size:13px;user-select:all;letter-spacing:0.5px">${realPhone}</span>`;
+  }
+  // 按钮区域：拨打按钮变灰 + 出现"已沟通"按钮
+  const actions = document.getElementById('todo-actions-' + id);
+  if (actions) {
+    const callBtn = actions.querySelector('.btn-primary');
+    if (callBtn) {
+      callBtn.disabled = true;
+      callBtn.style.opacity = '0.4';
+      callBtn.style.cursor = 'default';
+      callBtn.textContent = '📞 ' + realPhone;
+      callBtn.onclick = function(e) { e.stopPropagation(); };
+    }
+    // 插入"已沟通"按钮（如果还没有）
+    if (!actions.querySelector('.btn-called')) {
+      const doneBtn = document.createElement('button');
+      doneBtn.className = 'btn btn-sm btn-called';
+      doneBtn.style.cssText = 'background:var(--green);color:white;';
+      doneBtn.textContent = '✓ 已沟通';
+      doneBtn.onclick = function(e) { e.stopPropagation(); markCalled(id); };
+      actions.insertBefore(doneBtn, actions.querySelector('.btn-outline'));
+    }
+  }
+}
+
+// 标记已沟通
+function markCalled(id) {
+  const item = document.getElementById('todo-actions-' + id)?.closest('.todo-item');
+  if (item) {
+    item.style.transition = 'opacity 0.3s, max-height 0.4s ease 0.2s';
+    item.style.opacity = '0';
+    item.style.maxHeight = item.scrollHeight + 'px';
+    item.style.overflow = 'hidden';
+    setTimeout(() => { item.style.maxHeight = '0'; item.style.marginBottom = '0'; item.style.padding = '0'; }, 200);
+    setTimeout(() => {
+      item.remove();
+      // DOM 移除后再更新状态
+      updateTodoHeader();
+      const badge = document.getElementById('todo-badge');
+      if (badge) {
+        const count = document.querySelectorAll('#todo-list .todo-item').length;
+        if (count <= 0) { badge.style.display = 'none'; }
+        else { badge.textContent = count; }
+      }
+    }, 600);
+  }
+  todoState.completed++;
+  showToast('已标记沟通完成', 'success');
+}
+
+// ══ 开始接单 + 请假 ══
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  const bg = type === 'error' ? 'var(--red)' : 'var(--green)';
+  Object.assign(t.style, {position:'fixed',top:'60px',left:'50%',transform:'translateX(-50%)',background:bg,color:'white',padding:'10px 24px',borderRadius:'8px',fontSize:'14px',zIndex:'9999',boxShadow:'0 4px 12px rgba(0,0,0,0.15)',transition:'opacity 0.3s'});
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},2500);
+}
+
+const todoState = {
+  dailyMin: 60,
+  completed: 12,
+  carryoverCalls: 0,
+  leaveUntil: null
+};
+
+function updateTodoHeader() {
+  const total = todoState.dailyMin + todoState.carryoverCalls;
+  const remaining = Math.max(0, total - todoState.completed);
+  const pct = total > 0 ? Math.round((todoState.completed / total) * 100) : 0;
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+
+  const sub = document.getElementById('todo-subtitle');
+  if (sub) {
+    let text = `${dateStr} · 已完成 ${todoState.completed} / ${total} 通 · 剩余 ${remaining} 通`;
+    if (todoState.carryoverCalls > 0) text += ` · 含累计 ${todoState.carryoverCalls} 通`;
+    sub.textContent = text;
+  }
+
+  // 进度环
+  const circumference = 125.66;
+  const offset = circumference - (circumference * Math.min(pct, 100) / 100);
+  const ringFill = document.getElementById('todo-ring-fill');
+  const ringText = document.getElementById('todo-ring-text');
+  if (ringFill) ringFill.setAttribute('stroke-dashoffset', offset);
+  if (ringText) ringText.textContent = pct + '%';
+
+  // 开始接单按钮 — 始终可用
+  const btn = document.getElementById('btn-extra-order');
+  if (btn) {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+  }
+
+  // 请假按钮状态
+  const leaveBtn = document.getElementById('btn-leave');
+  if (leaveBtn && todoState.leaveUntil) {
+    const until = new Date(todoState.leaveUntil);
+    if (until > new Date()) {
+      leaveBtn.textContent = `请假中（至 ${until.getMonth()+1}月${until.getDate()}日）`;
+      leaveBtn.style.background = 'var(--amber-pale)';
+      leaveBtn.style.color = 'var(--amber)';
+      leaveBtn.style.borderColor = 'var(--amber)';
+      leaveBtn.onclick = cancelLeave;
+    } else {
+      leaveBtn.textContent = '请假';
+      leaveBtn.style.background = '';
+      leaveBtn.style.color = '';
+      leaveBtn.style.borderColor = '';
+      leaveBtn.onclick = showLeavePicker;
+      todoState.leaveUntil = null;
+    }
+  }
+}
+
+function showExtraOrderPicker() {
+  const picker = document.getElementById('extra-order-picker');
+  picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('leave-picker').style.display = 'none';
+}
+
+function confirmExtraOrder(num) {
+  document.getElementById('extra-order-picker').style.display = 'none';
+
+  // mock 额外客户池 — 跟正常待办一样有完整信息
+  const extraPool = [
+    {id:301,name:'蒋小云',area:'碧桂园四期',phone:'137****0001',realPhone:'13712340001',level:'B',callNum:1,timeStr:'今天',
+     portraitHint:'👤 夫妻 · 新房毛坯 · 画像完整度30%',
+     ai:'新分配客户，首通重点：了解装修时间节点和预算范围，建立初步信任。'},
+    {id:302,name:'曹文博',area:'万达华府',phone:'158****0002',realPhone:'15898760002',level:'A',callNum:2,timeStr:'今天',
+     portraitHint:'👤 企业主 · 重品质 · 画像完整度55%',
+     ai:'【基于画像】企业主，决策快但要求高。上次聊过设计风格，本次推进邀约到店看实景样板间。'},
+    {id:303,name:'袁晓峰',area:'信阳新城',phone:'186****0003',realPhone:'18665430003',level:'C',callNum:1,timeStr:'今天',
+     portraitHint:'👤 画像较少 · 完整度15%',
+     ai:'首通客户，信息较少。重点补充家庭情况、装修时间和预算，判断意向等级。'},
+    {id:304,name:'邓丽华',area:'东方明珠',phone:'177****0004',realPhone:'17743210004',level:'B',callNum:2,timeStr:'今天',
+     portraitHint:'👤 夫妻+1孩 · 重环保 · 画像完整度40%',
+     ai:'客户非常关注环保材料，上次答应发材料检测报告。本次跟进感受，推进邀约。'},
+    {id:305,name:'彭志强',area:'光山碧桂园',phone:'155****0005',realPhone:'15532100005',level:'A',callNum:3,timeStr:'今天',
+     portraitHint:'👤 个体户 · 对比多家 · 画像完整度62%',
+     ai:'【基于画像】个体户，注重性价比。已对比3家公司，本次重点讲差异化优势和售后保障。'},
+    {id:306,name:'潘美琪',area:'学仕里',phone:'138****0006',realPhone:'13887650006',level:'B',callNum:1,timeStr:'今天',
+     portraitHint:'👤 单身 · 小户型 · 画像完整度25%',
+     ai:'小户型客户，预算可能偏紧。首通了解需求，推荐高性价比方案。'},
+    {id:307,name:'苏建军',area:'宝龙城',phone:'159****0007',realPhone:'15976540007',level:'C',callNum:1,timeStr:'今天',
+     portraitHint:'👤 画像较少 · 完整度10%',
+     ai:'新线索首通，重点收集基本信息：户型、面积、装修时间、预算范围。'},
+    {id:308,name:'魏雅婷',area:'滨河学府',phone:'188****0008',realPhone:'18865430008',level:'A',callNum:2,timeStr:'今天',
+     portraitHint:'👤 教师 · 重设计感 · 画像完整度58%',
+     ai:'【基于画像】教师职业，逻辑清晰注重细节。上次对设计方案感兴趣，本次发案例图推进到店。'},
+    {id:309,name:'贾明辉',area:'云素小院',phone:'177****0009',realPhone:'17754320009',level:'S',callNum:3,timeStr:'今天',
+     portraitHint:'👤 别墅 · 企业主 · 预算充足 · 画像完整度70%',
+     ai:'【基于画像】别墅客户，预算50万+，高价值线索。已约过量房但取消，本次重新确认时间，态度要诚恳。'},
+    {id:310,name:'夏文静',area:'中粮福临',phone:'136****0010',realPhone:'13643210010',level:'B',callNum:2,timeStr:'今天',
+     portraitHint:'👤 夫妻 · 重收纳 · 画像完整度45%',
+     ai:'客户重视收纳设计，上次聊过全屋定制。本次跟进报价反馈，推进签约。'},
+    {id:311,name:'任国强',area:'碧桂园',phone:'155****0011',realPhone:'15512340011',level:'C',callNum:1,timeStr:'今天',
+     portraitHint:'👤 画像较少 · 完整度20%',
+     ai:'意向待确认，首通了解基本需求和时间节点。'},
+    {id:312,name:'姚丽萍',area:'信阳春天',phone:'188****0012',realPhone:'18876540012',level:'B',callNum:1,timeStr:'今天',
+     portraitHint:'👤 夫妻+老人 · 画像完整度35%',
+     ai:'家有老人，可能关注适老化设计。首通重点了解户型和特殊需求。'},
+    {id:313,name:'廖志远',area:'万达华府',phone:'177****0013',realPhone:'17765430013',level:'A',callNum:2,timeStr:'今天',
+     portraitHint:'👤 IT从业 · 重智能家居 · 画像完整度50%',
+     ai:'【基于画像】IT从业者，对智能家居非常感兴趣。本次重点介绍智能方案，推进到店体验。'},
+    {id:314,name:'石小燕',area:'光山新城',phone:'136****0014',realPhone:'13698760014',level:'C',callNum:1,timeStr:'今天',
+     portraitHint:'👤 画像较少 · 完整度15%',
+     ai:'新线索，首通建立联系，收集基本信息。'},
+    {id:315,name:'段文杰',area:'东方明珠',phone:'155****0015',realPhone:'15587650015',level:'B',callNum:2,timeStr:'今天',
+     portraitHint:'👤 公务员 · 稳重型 · 画像完整度42%',
+     ai:'公务员客户，决策周期可能较长。保持耐心跟进，用数据和案例说服。'},
+    {id:316,name:'雷美玲',area:'碧桂园二期',phone:'186****0016',realPhone:'18643210016',level:'A',callNum:3,timeStr:'今天',
+     portraitHint:'👤 夫妻 · 已到店 · 画像完整度65%',
+     ai:'【基于画像】已到店看过，对方案基本满意。本次推进签约，可给限时优惠促成。'},
+    {id:317,name:'侯建华',area:'学仕里',phone:'177****0017',realPhone:'17732100017',level:'B',callNum:1,timeStr:'今天',
+     portraitHint:'👤 退休 · 画像完整度30%',
+     ai:'退休客户，时间充裕但可能预算有限。了解需求后推荐适合方案。'},
+    {id:318,name:'龙晓芳',area:'宝龙城',phone:'135****0018',realPhone:'13576540018',level:'C',callNum:1,timeStr:'今天',
+     portraitHint:'👤 画像较少 · 完整度10%',
+     ai:'新线索首通，重点了解装修意向和时间安排。'},
+    {id:319,name:'万志豪',area:'滨河学府',phone:'158****0019',realPhone:'15812340019',level:'A',callNum:2,timeStr:'今天',
+     portraitHint:'👤 医生 · 重品质 · 画像完整度55%',
+     ai:'【基于画像】医生职业，注重品质和专业性。上次对工艺细节感兴趣，本次发工地实拍推进邀约。'},
+    {id:320,name:'钟雅琴',area:'云素小院',phone:'188****0020',realPhone:'18898760020',level:'B',callNum:1,timeStr:'今天',
+     portraitHint:'👤 夫妻 · 新房 · 画像完整度28%',
+     ai:'新分配客户，首通了解基本情况和装修预期。'},
+  ];
+
+  const todoList = document.getElementById('todo-list');
+  const picked = extraPool.slice(0, num);
+  const levelMap = window.levelMap || {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c'};
+  picked.forEach(t => {
+    const html = `
+      <div class="todo-item" onclick="openDetail(${t.id})">
+        <div class="todo-item-header">
+          <div class="todo-priority priority-${t.level}"></div>
+          <div class="todo-info">
+            <div class="todo-name">${t.name} <span style="font-size:12px;color:var(--gray-400);font-weight:400">· ${t.area}</span></div>
+            <div class="todo-meta">
+              <span id="phone-display-${t.id}">${t.phone}</span>
+              <span class="badge badge-calls">第${t.callNum}通</span>
+              <span style="color:var(--amber)">⏰ ${t.timeStr}</span>
+            </div>
+          </div>
+          <span class="badge ${levelMap[t.level] || 'badge-c'}">${t.level}级</span>
+        </div>
+        ${t.portraitHint?`<div class="todo-portrait-bar">${t.portraitHint}</div>`:''}
+        <div class="todo-ai"><div class="ai-label">🤖 AI 建议</div>${t.ai}</div>
+        <div class="todo-actions" id="todo-actions-${t.id}">
+          <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();revealPhone(${t.id},'${t.realPhone}')">📞 拨打</button>
+          <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail(${t.id})">查看详情</button>
+        </div>
+      </div>`;
+    todoList.insertAdjacentHTML('beforeend', html);
+  });
+
+  // 更新小红点
+  const badge = document.getElementById('todo-badge');
+  if (badge) {
+    const count = todoList.querySelectorAll('.todo-item').length;
+    badge.textContent = count;
+    badge.style.display = '';
+  }
+
+  showToast(`已加载 ${num} 个额外客户到待办`, 'success');
+}
+
+function showLeavePicker() {
+  const picker = document.getElementById('leave-picker');
+  picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+  document.getElementById('extra-order-picker').style.display = 'none';
+}
+
+async function confirmLeave(days) {
+  document.getElementById('leave-picker').style.display = 'none';
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setDate(endDate.getDate() + days);
+  if (useMockData) {
+    // mock：显示已提交待审批状态
+    const leaveBtn = document.getElementById('btn-leave');
+    leaveBtn.textContent = '请假待审批';
+    leaveBtn.style.background = 'var(--amber-pale)';
+    leaveBtn.style.color = 'var(--amber)';
+    leaveBtn.style.borderColor = 'var(--amber)';
+    leaveBtn.onclick = null;
+    leaveBtn.style.cursor = 'default';
+    showToast(`已提交请假申请（${days}天），等待主管审批`, 'success');
+    return;
+  }
+  try {
+    const data = await api('/api/stats/leave-requests', {
+      method: 'POST',
+      body: JSON.stringify({
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        reason: `请假${days}天`
+      })
+    });
+    if (data.success) {
+      const leaveBtn = document.getElementById('btn-leave');
+      leaveBtn.textContent = '请假待审批';
+      leaveBtn.style.background = 'var(--amber-pale)';
+      leaveBtn.style.color = 'var(--amber)';
+      leaveBtn.style.borderColor = 'var(--amber)';
+      leaveBtn.onclick = null;
+      leaveBtn.style.cursor = 'default';
+      showToast(`已提交请假申请（${days}天），等待主管审批`, 'success');
+    } else {
+      showToast(data.message || '提交失败', 'error');
+    }
+  } catch (e) {
+    showToast('请假请求失败', 'error');
+  }
+}
+
+async function cancelLeave() {
+  // 请假走审批流，客服端不能直接取消已批准的请假
+  showToast('请联系主管取消请假', 'error');
+}
+
+// 点击空白处关闭下拉
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#btn-extra-order') && !e.target.closest('#extra-order-picker')) {
+    document.getElementById('extra-order-picker').style.display = 'none';
+  }
+  if (!e.target.closest('#btn-leave') && !e.target.closest('#leave-picker')) {
+    document.getElementById('leave-picker').style.display = 'none';
+  }
+});
 
 // ══ 筛选排序状态 ══
 const staffFilterState = { time:'today', sortBy:'lastCall', sortDir:-1 };
@@ -1647,26 +2103,178 @@ function switchSeaTab(tab) {
   renderSea();
 }
 
+// 抢单后加入待办列表
+function updateSeaBadge() {
+  const badge = document.getElementById('sea-badge');
+  if (badge) {
+    const count = seaCustomers.length + invalidSeaCustomers.length;
+    if (count <= 0) { badge.style.display = 'none'; }
+    else { badge.textContent = count; }
+  }
+}
+
+function addClaimedToTodo(customer) {
+  const todoList = document.getElementById('todo-list');
+  if (!todoList) return;
+  const cid = 'claimed-' + (customer.id || Date.now());
+  const name = (customer.name || '未知').replace(/\*+/g, '');
+  const area = customer.area || '';
+  const realPhone = customer.realPhone || customer.phone || '';
+  const html = `
+    <div class="todo-item" style="border-left:3px solid var(--cyan)" id="todo-claimed-${cid}">
+      <div class="todo-item-header">
+        <div class="todo-priority priority-new"></div>
+        <div class="todo-info">
+          <div class="todo-name">${name} <span style="font-size:12px;color:var(--gray-400);font-weight:400">· ${area}</span></div>
+          <div class="todo-meta">
+            <span id="phone-display-${cid}" style="color:var(--blue);font-weight:500;user-select:all">${realPhone}</span>
+            <span class="badge badge-new">🌊 公海抢单</span>
+          </div>
+        </div>
+        <span class="badge badge-new">新</span>
+      </div>
+      <div class="todo-ai"><div class="ai-label">🤖 AI 建议</div>公海抢到的客户，建议尽快首次联系建立关系。</div>
+      <div class="todo-actions" id="todo-actions-${cid}">
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();revealPhone('${cid}','${realPhone}')">📞 拨打</button>
+      </div>
+    </div>`;
+  todoList.insertAdjacentHTML('afterbegin', html);
+  // 更新小红点
+  const badge = document.getElementById('todo-badge');
+  if (badge) {
+    const count = todoList.querySelectorAll('.todo-item').length;
+    badge.textContent = count;
+    badge.style.display = '';
+  }
+}
+
 async function claimSea(id, btn) {
+  if (useMockData) {
+    const list = currentSeaTab === 'invalid' ? invalidSeaCustomers : seaCustomers;
+    const customer = list.find(c => String(c.id) === String(id));
+    // 行淡出移除
+    const tr = btn.closest('tr');
+    if (tr) {
+      tr.style.transition = 'opacity 0.3s';
+      tr.style.opacity = '0';
+      setTimeout(() => tr.remove(), 300);
+    }
+    if (currentSeaTab === 'invalid') {
+      invalidSeaCustomers = invalidSeaCustomers.filter(c => String(c.id) !== String(id));
+    } else {
+      seaCustomers = seaCustomers.filter(c => String(c.id) !== String(id));
+    }
+    if (customer) addClaimedToTodo(customer);
+    updateSeaBadge();
+    showToast('抢单成功，已加入待办', 'success');
+    return;
+  }
   try {
     const result = await api(`/api/customers/${id}/claim`, { method: 'POST' });
     if (result.success) {
-      // 获取完整电话
       const phone = result.data.phone || '已抢到';
-      btn.closest('tr').cells[5].innerHTML = `<span style="font-size:12px;font-weight:600;color:var(--green)">✅ 已抢到：${phone}</span>`;
-      btn.closest('tr').style.background = 'var(--green-pale)';
-      // 从列表中移除
-      if (currentSeaTab === 'invalid') {
-        invalidSeaCustomers = invalidSeaCustomers.filter(c => c.id !== id);
-      } else {
-        seaCustomers = seaCustomers.filter(c => c.id !== id);
+      const tr = btn.closest('tr');
+      if (tr) {
+        tr.style.transition = 'opacity 0.3s';
+        tr.style.opacity = '0';
+        setTimeout(() => tr.remove(), 300);
       }
+      if (currentSeaTab === 'invalid') {
+        invalidSeaCustomers = invalidSeaCustomers.filter(c => String(c.id) !== String(id));
+      } else {
+        seaCustomers = seaCustomers.filter(c => String(c.id) !== String(id));
+      }
+      addClaimedToTodo({ name: result.data.name || '新客户', area: result.data.community || '', phone: phone, id: id });
+      updateSeaBadge();
+      showToast('抢单成功，已加入待办', 'success');
     } else {
-      alert(result.error || '抢单失败');
+      showToast(result.error || '抢单失败', 'error');
     }
   } catch (e) {
     console.error('Claim sea error:', e);
-    alert('抢单失败，请重试');
+    showToast('抢单失败，请重试', 'error');
+  }
+}
+
+// ══ 死单公海 ══
+let deadSeaCustomers = [];
+
+async function loadDeadSeaCustomers() {
+  try {
+    const data = await api('/api/customers/invalid-sea');
+    if (data.success && data.data?.list) {
+      deadSeaCustomers = data.data.list.map(c => ({
+        id: c.id,
+        name: c.name || '未知',
+        area: c.community || '',
+        budget: c.budget || '',
+        calls: c.callCount || 0,
+        daysAgo: c.daysAgo || 0,
+        reason: c.reason || '标记无效'
+      }));
+      return true;
+    }
+  } catch (e) { console.error('loadDeadSea error:', e); }
+  return false;
+}
+
+function renderDeadSea() {
+  const body = document.getElementById('dead-sea-body');
+  const kw = (document.getElementById('dead-sea-search')?.value || '').trim().toLowerCase();
+  const list = kw ? deadSeaCustomers.filter(c => c.name.toLowerCase().includes(kw) || c.area.toLowerCase().includes(kw)) : deadSeaCustomers;
+
+  if (list.length === 0) {
+    body.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">${kw ? '没有匹配的客户' : '暂无死单客户'}</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = list.map(c => `
+    <tr>
+      <td><strong>${c.name}</strong></td>
+      <td>${c.area || ''}</td>
+      <td>${c.budget || ''}</td>
+      <td><span class="badge badge-calls">共${c.calls}通</span></td>
+      <td style="font-size:12px;color:var(--gray-500)">${c.reason}</td>
+      <td style="font-size:12px;color:var(--gray-400)">${c.daysAgo}天</td>
+      <td><button class="btn btn-primary btn-sm" onclick="claimDeadSea('${c.id}',this)">抢单</button></td>
+    </tr>`).join('');
+}
+
+async function claimDeadSea(id, btn) {
+  if (useMockData) {
+    const customer = deadSeaCustomers.find(c => String(c.id) === String(id));
+    const tr = btn.closest('tr');
+    if (tr) {
+      tr.style.transition = 'opacity 0.3s';
+      tr.style.opacity = '0';
+      setTimeout(() => tr.remove(), 300);
+    }
+    deadSeaCustomers = deadSeaCustomers.filter(c => String(c.id) !== String(id));
+    if (customer) addClaimedToTodo(customer);
+    updateSeaBadge();
+    showToast('抢单成功，已加入待办', 'success');
+    return;
+  }
+  try {
+    const result = await api(`/api/customers/${id}/claim`, { method: 'POST' });
+    if (result.success) {
+      const phone = result.data.phone || '已抢到';
+      const tr = btn.closest('tr');
+      if (tr) {
+        tr.style.transition = 'opacity 0.3s';
+        tr.style.opacity = '0';
+        setTimeout(() => tr.remove(), 300);
+      }
+      deadSeaCustomers = deadSeaCustomers.filter(c => String(c.id) !== String(id));
+      addClaimedToTodo({ name: result.data.name || '新客户', area: result.data.community || '', phone: phone, id: id });
+      updateSeaBadge();
+      showToast('抢单成功，已加入待办', 'success');
+    } else {
+      showToast(result.error || '抢单失败', 'error');
+    }
+  } catch (e) {
+    console.error('Claim dead sea error:', e);
+    showToast('抢单失败，请重试', 'error');
   }
 }
 
@@ -1965,12 +2573,7 @@ function updatePinButton(isPinned) {
 
 function updatePinnedCount() {
   const mine = customers.filter(c=>c.agent==='严妍' && c.pinned);
-  const countEl = document.getElementById('pinned-count');
   const subEl = document.getElementById('staff-pinned-count');
-  if(countEl) {
-    countEl.textContent = mine.length;
-    countEl.style.display = mine.length > 0 ? 'inline-flex' : 'none';
-  }
   if(subEl) subEl.textContent = `共 ${mine.length} 位重点客户`;
 }
 
@@ -2106,6 +2709,9 @@ function showStaffView(id, el) {
   // 如果是重点客户视图，渲染数据
   if(id === 'pinned') {
     renderPinnedCustomers();
+  }
+  if(id === 'dead-sea') {
+    renderDeadSea();
   }
 }
 
@@ -2541,9 +3147,10 @@ async function init() {
     document.getElementById('login-btn').style.display = 'none';
     document.getElementById('user-info').style.display = 'block';
     // 加载真实数据
-    const [c, s, cc] = await Promise.all([loadCustomers(), loadSeaCustomers(), loadConfirmCards()]);
+    const [c, s, cc, ds] = await Promise.all([loadCustomers(), loadSeaCustomers(), loadConfirmCards(), loadDeadSeaCustomers()]);
     if (!c) window.customers = mockCustomers;
     if (!s) window.seaCustomers = mockSeaCustomers;
+    if (!ds) deadSeaCustomers = mockDeadSeaCustomers;
     // cc 是待确认卡片，已经存入 pendingConfirmCards
   } else {
     // 未登录 — 如果 URL 带邀请码，自动弹注册
@@ -2555,6 +3162,7 @@ async function init() {
     useMockData = true;
     window.customers = mockCustomers;
     window.seaCustomers = mockSeaCustomers;
+    deadSeaCustomers = mockDeadSeaCustomers;
     pendingConfirmCards = [
       // 新客户测试卡片
       {
@@ -2635,11 +3243,13 @@ async function init() {
 
   // 渲染页面
   renderTodo();
+  updateTodoHeader();
   renderConfirmCards();
   renderCustomerTable();
   updatePinnedCount();
   renderPinnedCustomers();
   renderSea();
+  renderDeadSea();
   renderCases();
 }
 init();

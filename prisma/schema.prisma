@@ -60,6 +60,8 @@ model User {
   lastLoginAt    DateTime?
   loginFailCount Int       @default(0)
   lockedUntil    DateTime?
+  leaveUntil     DateTime?
+  carryoverCalls Int       @default(0)
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
@@ -383,4 +385,47 @@ model Channel {
 
   @@index([tenantId])
   @@map("channels")
+}
+
+// =====================================================
+// 每日任务表
+// =====================================================
+model DailyTask {
+  id          String    @id @default(uuid())
+  tenantId    String
+  agentId     String
+  customerId  String
+  date        DateTime  @db.Date
+  priority    String    // P0=逾期, P1=今日S/A, P2=今日B/C, P3=提前抓取
+  status      String    @default("pending")
+  overdueDays Int       @default(0)
+  sortOrder   Int       @default(0)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@unique([tenantId, agentId, customerId, date])
+  @@index([tenantId, agentId, date])
+  @@map("daily_tasks")
+}
+
+// =====================================================
+// 请假申请表
+// =====================================================
+model LeaveRequest {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  type        String   @default("leave")
+  startDate   DateTime
+  endDate     DateTime
+  reason      String?
+  status      String   @default("pending")
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+  @@map("leave_requests")
 }

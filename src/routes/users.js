@@ -162,4 +162,43 @@ router.post('/:id/reset-password', authenticate, authorize('admin'), tenantScope
   }
 });
 
+// 客服请假
+router.post('/leave', authenticate, tenantScope, async (req, res) => {
+  try {
+    const { days } = req.body;
+    if (!days || days < 1 || days > 30) {
+      return res.status(400).json(error('请假天数无效', 400));
+    }
+
+    const leaveUntil = new Date();
+    leaveUntil.setDate(leaveUntil.getDate() + days);
+    leaveUntil.setHours(23, 59, 59, 999);
+
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { leaveUntil }
+    });
+
+    res.json(success({ leaveUntil }, '请假成功'));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(error('请假失败', 500));
+  }
+});
+
+// 取消请假
+router.post('/cancel-leave', authenticate, tenantScope, async (req, res) => {
+  try {
+    await prisma.user.update({
+      where: { id: req.user.id },
+      data: { leaveUntil: null }
+    });
+
+    res.json(success(null, '已取消请假'));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(error('取消请假失败', 500));
+  }
+});
+
 module.exports = router;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>声纳 AI 客服助手 v2</title>
+<title>声纳 AI · 老板看板</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -16,15 +16,8 @@
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{font-family:'Noto Sans SC',sans-serif;background:var(--gray-50);color:var(--text);min-height:100vh;}
-
-/* 角色切换 */
-.role-switch{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;}
-.role-switch .logo{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:700;color:white;letter-spacing:2px;}
-.role-tabs{display:flex;gap:4px;}
-.role-tab{padding:6px 16px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,0.5);transition:all 0.2s;border:none;background:transparent;}
-.role-tab.active{background:rgba(255,255,255,0.15);color:white;}
-
-/* 布局 */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:1000;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:48px;}
+.topbar .logo{font-family:'Noto Serif SC',serif;font-size:16px;font-weight:700;color:white;letter-spacing:2px;}
 .app{display:flex;padding-top:48px;min-height:100vh;}
 .sidebar{width:var(--sidebar);position:fixed;top:48px;left:0;bottom:0;background:var(--white);border-right:1px solid var(--gray-200);display:flex;flex-direction:column;overflow-y:auto;z-index:100;}
 .sidebar-profile{padding:20px 16px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:10px;}
@@ -38,174 +31,27 @@ body{font-family:'Noto Sans SC',sans-serif;background:var(--gray-50);color:var(-
 .nav-link.active{color:var(--blue);background:var(--blue-pale);border-left-color:var(--blue);font-weight:500;}
 .nav-link .ni{font-size:15px;width:18px;text-align:center;}
 .nav-badge{margin-left:auto;background:var(--red);color:white;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;}
-.nav-badge.green{background:var(--green);}
 .main{margin-left:var(--sidebar);flex:1;min-height:calc(100vh - 48px);}
-.view{display:none;}
-.view.active{display:block;}
-
-/* 页面结构 */
+.view{display:none;}.view.active{display:block;}
 .page-header{background:var(--white);border-bottom:1px solid var(--gray-200);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;}
 .page-title{font-size:18px;font-weight:700;color:var(--navy);}
 .page-sub{font-size:12px;color:var(--gray-400);margin-top:2px;}
 .page-body{padding:24px 28px;}
-
-/* 按钮 */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all 0.15s;font-family:'Noto Sans SC',sans-serif;}
-.btn-primary{background:var(--blue);color:white;}
-.btn-primary:hover{background:#1d4ed8;}
-.btn-outline{background:transparent;color:var(--gray-600);border:1px solid var(--gray-200);}
-.btn-outline:hover{background:var(--gray-50);}
+.btn-primary{background:var(--blue);color:white;}.btn-primary:hover{background:#1d4ed8;}
+.btn-outline{background:transparent;color:var(--gray-600);border:1px solid var(--gray-200);}.btn-outline:hover{background:var(--gray-50);}
 .btn-sm{padding:5px 10px;font-size:12px;}
 .btn-green{background:var(--green);color:white;}
 .btn-red{background:var(--red);color:white;}
-.btn-purple{background:var(--purple);color:white;}
-
-/* 统计卡片 */
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
 .stat-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:20px;position:relative;overflow:hidden;}
 .stat-card .stat-label{font-size:12px;color:var(--gray-400);margin-bottom:8px;font-weight:500;}
 .stat-card .stat-val{font-size:28px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif;}
 .stat-card .stat-sub{font-size:11px;color:var(--gray-400);margin-top:4px;}
 .stat-card .stat-icon{position:absolute;right:16px;top:16px;font-size:24px;opacity:0.15;}
-
-/* 表格 */
-.table-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;overflow:hidden;}
-.table-toolbar{padding:14px 20px;border-bottom:1px solid var(--gray-100);display:flex;align-items:center;gap:12px;}
-.search-box{display:flex;align-items:center;gap:8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:6px 12px;flex:1;max-width:280px;}
-.search-box input{border:none;background:transparent;font-size:13px;color:var(--gray-700);outline:none;width:100%;font-family:'Noto Sans SC',sans-serif;}
-.filter-tabs{display:flex;gap:2px;}
-.filter-tab{padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;color:var(--gray-500);transition:all 0.15s;border:none;background:transparent;}
-.filter-tab.active{background:var(--blue-pale);color:var(--blue);}
-table{width:100%;border-collapse:collapse;}
-th{padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:0.5px;text-transform:uppercase;background:var(--gray-50);border-bottom:1px solid var(--gray-200);white-space:nowrap;}
-td{padding:12px 16px;font-size:13px;color:var(--gray-700);border-bottom:1px solid var(--gray-100);}
-tr:last-child td{border-bottom:none;}
-tr:hover td{background:var(--gray-50);cursor:pointer;}
-
-/* 徽章 */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
-.badge-s{background:#fef2f2;color:#dc2626;}
-.badge-a{background:#fffbeb;color:#d97706;}
-.badge-b{background:#f0fdf4;color:#16a34a;}
-.badge-c{background:var(--gray-100);color:var(--gray-500);}
-.badge-new{background:#eff6ff;color:#2563eb;}
-.badge-pending{background:#fefce8;color:#ca8a04;}
-.badge-valid{background:#f0fdf4;color:#16a34a;}
-.badge-invited{background:#fdf4ff;color:#9333ea;}
-.badge-visited{background:#fff7ed;color:#ea580c;}
-.badge-signed{background:#dcfce7;color:#15803d;}
-.badge-dead{background:var(--gray-100);color:var(--gray-400);}
-.badge-calls{background:var(--blue-pale);color:var(--blue);}
-
-/* 待办 */
-.todo-item{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;margin-bottom:10px;overflow:hidden;transition:all 0.15s;cursor:pointer;}
-.todo-item:hover{border-color:var(--blue-light);box-shadow:0 2px 8px rgba(59,130,246,0.1);}
-.todo-item-header{padding:14px 16px;display:flex;align-items:center;gap:12px;}
-.todo-priority{width:4px;height:48px;border-radius:2px;flex-shrink:0;}
-.priority-S{background:var(--red);}
-.priority-A{background:var(--amber);}
-.priority-B{background:var(--green);}
-.priority-C{background:var(--gray-300);}
-.priority-new{background:var(--blue);}
-.todo-info{flex:1;}
-.todo-name{font-size:14px;font-weight:600;color:var(--navy);}
-.todo-meta{font-size:12px;color:var(--gray-400);margin-top:3px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.todo-ai{background:linear-gradient(135deg,#eff6ff,#f5f3ff);border:1px solid #e0e7ff;border-radius:8px;padding:10px 14px;margin:0 16px 8px;font-size:12px;color:#4338ca;line-height:1.6;}
-.todo-ai .ai-label{font-weight:700;display:flex;align-items:center;gap:4px;margin-bottom:4px;font-size:11px;}
-.todo-portrait-bar{margin:0 16px 12px;background:var(--green-pale);border:1px solid #bbf7d0;border-radius:8px;padding:8px 12px;font-size:12px;color:#166534;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
-.todo-actions{padding:0 16px 12px;display:flex;gap:8px;}
-
-/* 详情侧板 */
-.detail-panel{position:fixed;right:0;top:48px;bottom:0;width:480px;background:var(--white);border-left:1px solid var(--gray-200);z-index:200;transform:translateX(100%);transition:transform 0.25s ease;display:flex;flex-direction:column;overflow:hidden;}
-.detail-panel.open{transform:translateX(0);}
-.detail-header{padding:16px 20px;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;justify-content:space-between;}
-.detail-close{cursor:pointer;color:var(--gray-400);font-size:20px;padding:4px;}
-.detail-body{flex:1;overflow-y:auto;padding:0;}
-
-/* 详情Tab */
-.detail-tabs{display:flex;border-bottom:1px solid var(--gray-200);background:var(--gray-50);}
-.detail-tab{flex:1;padding:10px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;color:var(--gray-500);border-bottom:2px solid transparent;transition:all 0.15s;}
-.detail-tab.active{color:var(--blue);border-bottom-color:var(--blue);background:white;}
-.detail-tab-content{display:none;padding:20px;}
-.detail-tab-content.active{display:block;}
-
-.detail-customer-name{font-size:20px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif;}
-.detail-phone{font-size:13px;color:var(--gray-400);margin-top:4px;}
-.detail-badges{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;}
-
-.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.info-item{background:var(--gray-50);border-radius:8px;padding:10px 12px;}
-.info-item .label{font-size:11px;color:var(--gray-400);margin-bottom:3px;}
-.info-item .val{font-size:13px;font-weight:500;color:var(--gray-800);}
-
-/* 画像完整度 */
-.portrait-completeness{background:linear-gradient(135deg,var(--blue-pale),var(--purple-pale));border:1px solid #c7d2fe;border-radius:12px;padding:16px;margin-bottom:16px;}
-.pc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-.pc-title{font-size:13px;font-weight:700;color:var(--navy);}
-.pc-pct{font-size:24px;font-weight:700;color:var(--blue);font-family:'Noto Serif SC',serif;}
-.pc-bar{height:8px;background:var(--gray-200);border-radius:4px;overflow:hidden;}
-.pc-fill{height:100%;border-radius:4px;background:linear-gradient(90deg,var(--blue),var(--purple));}
-.pc-hint{font-size:11px;color:var(--gray-500);margin-top:6px;}
-
-/* 画像字段 */
-.portrait-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.portrait-item{border-radius:8px;padding:10px 12px;border:1px solid;}
-.portrait-item.filled{background:#f0fdf4;border-color:#bbf7d0;}
-.portrait-item.empty{background:var(--gray-50);border-color:var(--gray-200);opacity:0.7;}
-.portrait-item .p-label{font-size:10px;font-weight:700;color:var(--gray-400);letter-spacing:0.5px;margin-bottom:4px;}
-.portrait-item .p-val{font-size:12px;font-weight:500;color:var(--gray-800);}
-.portrait-item .p-empty{font-size:11px;color:var(--gray-300);font-style:italic;}
-.portrait-item .p-source{font-size:10px;color:var(--green);margin-top:2px;}
-
-/* 通话记录 */
-.call-log{display:flex;flex-direction:column;gap:10px;}
-.call-item{border:1px solid var(--gray-200);border-radius:10px;overflow:hidden;}
-.call-item-header{padding:10px 14px;background:var(--gray-50);display:flex;align-items:center;justify-content:space-between;}
-.call-item-title{font-size:12px;font-weight:600;color:var(--gray-700);}
-.call-item-body{padding:10px 14px;font-size:12px;color:var(--gray-600);line-height:1.7;}
-.call-score{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;}
-.score-high{background:#dcfce7;color:#15803d;}
-.score-mid{background:#fef9c3;color:#a16207;}
-.score-low{background:#fee2e2;color:#dc2626;}
-
-/* 深度报告 */
-.report-panel{background:var(--navy);color:white;border-radius:10px;padding:16px;margin-top:10px;}
-.report-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
-.report-section{margin-bottom:12px;}
-.report-section-title{font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
-.report-section p{font-size:12px;color:rgba(255,255,255,0.85);line-height:1.7;}
-.score-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.score-dim{font-size:11px;color:rgba(255,255,255,0.6);width:64px;flex-shrink:0;}
-.score-bar-wrap{flex:1;background:rgba(255,255,255,0.1);border-radius:3px;height:5px;}
-.score-bar-fill{height:5px;border-radius:3px;}
-.score-num{font-size:11px;font-weight:700;color:white;width:24px;text-align:right;}
-.report-quote{background:rgba(255,255,255,0.08);border-left:3px solid var(--amber);border-radius:4px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,0.8);line-height:1.6;margin-top:6px;font-style:italic;}
-
-/* AI建议 */
-.ai-suggestion{background:linear-gradient(135deg,#eff6ff,#f5f3ff);border:1px solid #c7d2fe;border-radius:10px;padding:14px;font-size:13px;color:#3730a3;line-height:1.7;}
-.ai-suggestion .title{font-weight:700;font-size:12px;margin-bottom:8px;display:flex;align-items:center;gap:4px;}
-.ai-tag{display:inline-block;background:rgba(55,48,163,0.1);border-radius:4px;padding:1px 6px;font-size:11px;font-weight:600;margin-right:4px;margin-bottom:4px;}
-
-/* 确认卡片 */
-.confirm-card-wrap{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;margin-bottom:16px;max-width:580px;}
-.confirm-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.confirm-card-ai{background:var(--blue-pale);border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#1e40af;line-height:1.6;}
-.confirm-fields{display:flex;flex-direction:column;gap:8px;}
-.confirm-field{display:flex;align-items:center;gap:8px;}
-.confirm-field label{font-size:12px;color:var(--gray-600);width:80px;flex-shrink:0;}
-.confirm-field input,.confirm-field select{flex:1;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;color:var(--gray-800);background:white;outline:none;font-family:'Noto Sans SC',sans-serif;}
-.confirm-field input:focus,.confirm-field select:focus{border-color:var(--blue);}
-.confirm-section-label{font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:1px;text-transform:uppercase;margin:12px 0 6px;}
-.portrait-confirm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
-.portrait-confirm-item{background:var(--gray-50);border-radius:8px;padding:10px;}
-.portrait-confirm-item .pc-label{font-size:11px;color:var(--gray-400);margin-bottom:4px;}
-.portrait-confirm-item input,.portrait-confirm-item select{width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:12px;outline:none;font-family:'Noto Sans SC',sans-serif;background:white;}
-.new-field-badge{background:var(--amber-pale);border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;color:#d97706;margin-left:4px;}
-
-/* 管理端 */
-.boss-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
-.chart-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:20px;}
+.chart-card{background:var(--white);border:1px solid var(--gray-200);border-radius:12px;padding:20px;margin-bottom:20px;}
 .chart-title{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px;}
+.boss-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
 .funnel{display:flex;flex-direction:column;gap:8px;}
 .funnel-row{display:flex;align-items:center;gap:12px;}
 .funnel-label{font-size:12px;color:var(--gray-500);width:70px;flex-shrink:0;}
@@ -215,1555 +61,655 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 .funnel-bar .rate{font-size:10px;color:rgba(255,255,255,0.7);}
 .funnel-count{font-size:12px;color:var(--gray-500);width:30px;text-align:right;flex-shrink:0;}
 .agent-list{display:flex;flex-direction:column;gap:10px;}
-.agent-item{display:flex;align-items:center;gap:10px;padding:12px;background:var(--gray-50);border-radius:10px;cursor:pointer;}
-.agent-item:hover{background:var(--blue-pale);}
+.agent-item{display:flex;align-items:center;gap:10px;padding:12px;background:var(--gray-50);border-radius:10px;}
 .warn-list{display:flex;flex-direction:column;gap:8px;}
 .warn-item{padding:12px 14px;border-radius:10px;border-left:4px solid;}
 .warn-item.red{background:var(--red-pale);border-color:var(--red);}
 .warn-item.amber{background:var(--amber-pale);border-color:var(--amber);}
 .warn-item .wname{font-size:13px;font-weight:600;color:var(--gray-800);}
 .warn-item .wmeta{font-size:11px;color:var(--gray-500);margin-top:3px;}
-
-/* overlay */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:150;display:none;}
-.overlay.show{display:block;}
-
-/* 进度环 */
-.progress-ring{position:relative;width:48px;height:48px;flex-shrink:0;}
-.progress-ring svg{transform:rotate(-90deg);}
-.ring-bg{fill:none;stroke:var(--gray-200);stroke-width:4;}
-.ring-fill{fill:none;stroke:var(--blue);stroke-width:4;stroke-linecap:round;transition:stroke-dashoffset 0.5s;}
-.ring-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--navy);}
-
-.section-divider{height:1px;background:var(--gray-100);margin:16px 0;}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:0.5px;background:var(--gray-50);border-bottom:1px solid var(--gray-200);white-space:nowrap;}
+td{padding:12px 16px;font-size:13px;color:var(--gray-700);border-bottom:1px solid var(--gray-100);}
+tr:last-child td{border-bottom:none;}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.badge-s{background:#fef2f2;color:#dc2626;}.badge-a{background:#fffbeb;color:#d97706;}.badge-b{background:#f0fdf4;color:#16a34a;}.badge-c{background:var(--gray-100);color:var(--gray-500);}
+.badge-pending{background:#fefce8;color:#ca8a04;}.badge-valid{background:#f0fdf4;color:#16a34a;}.badge-invited{background:#fdf4ff;color:#9333ea;}.badge-visited{background:#fff7ed;color:#ea580c;}.badge-signed{background:#dcfce7;color:#15803d;}.badge-dead{background:var(--gray-100);color:var(--gray-400);}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:9999;display:none;align-items:center;justify-content:center;}
+.modal-overlay.show{display:flex;}
+.modal{background:white;border-radius:12px;padding:28px;width:420px;max-width:90%;max-height:80vh;overflow-y:auto;}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:16px;color:var(--navy);}
+.form-group{margin-bottom:14px;}
+.form-group label{display:block;font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:4px;}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif;outline:none;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--blue);}
+/* end */
 </style>
 </head>
 <body>
 
-<div class="role-switch">
-  <div class="logo">声纳 <span style="font-weight:400;opacity:0.6">· 管理看板</span></div>
+<div class="topbar">
+  <div class="logo">声纳 <span style="font-weight:400;opacity:0.6">· 老板看板</span></div>
   <div style="display:flex;align-items:center;gap:16px;">
     <div style="color:rgba(255,255,255,0.6);font-size:12px" id="user-info" style="display:none">
       <span id="current-user">老板</span> · <span onclick="doLogout()" style="cursor:pointer;opacity:0.7">退出</span>
     </div>
     <div id="login-btn" style="color:rgba(255,255,255,0.6);font-size:12px">
-      <span onclick="showLoginModal()" style="cursor:pointer;opacity:0.7">登录</span>
+      <span onclick="showLogin()" style="cursor:pointer;opacity:0.7">登录</span>
     </div>
-    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.0.1</div>
+    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.1</div>
   </div>
 </div>
 
 <!-- 登录弹窗 -->
-<div id="login-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:12px;padding:32px;width:360px;max-width:90%">
-    <div style="font-size:20px;font-weight:700;margin-bottom:20px;text-align:center">老板登录</div>
-    <input id="login-username" type="text" placeholder="用户名" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:12px;font-size:14px">
-    <input id="login-password" type="password" placeholder="密码" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:16px;font-size:14px">
-    <button onclick="handleLogin()" style="width:100%;padding:12px;background:#1a56db;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">登录</button>
-    <div onclick="document.getElementById('login-modal').style.display='none'" style="text-align:center;margin-top:12px;color:#64748b;font-size:13px;cursor:pointer">取消</div>
+<div class="modal-overlay" id="login-modal">
+  <div class="modal" style="width:360px">
+    <h3 style="text-align:center">老板登录</h3>
+    <div class="form-group"><input id="login-username" placeholder="用户名"></div>
+    <div class="form-group"><input id="login-password" type="password" placeholder="密码"></div>
+    <button class="btn btn-primary" style="width:100%" onclick="handleLogin()">登录</button>
+    <div onclick="document.getElementById('login-modal').classList.remove('show')" style="text-align:center;margin-top:12px;color:var(--gray-500);font-size:13px;cursor:pointer">取消</div>
   </div>
 </div>
 
-<div class="overlay" id="overlay" onclick="closeDetail()"></div>
-
-<!-- ══════════ 管理端 ══════════ -->
-<div class="app" id="app-boss">
+<div class="app">
   <nav class="sidebar">
-    <div class="sidebar-profile">
-      <div class="avatar" style="background:var(--navy)">王</div>
-      <div class="profile-info"><div class="name">王总</div><div class="role-label">管理员</div></div>
+    <div class="sidebar-profile" id="sidebar-profile">
+      <div class="avatar" style="background:var(--navy)">老</div>
+      <div class="profile-info"><div class="name" id="profile-name">老板</div><div class="role-label">管理看板</div></div>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">看板</div>
-      <a class="nav-link active" onclick="showBossView('dashboard',this)"><span class="ni">📊</span>今日概览</a>
-      <a class="nav-link" onclick="showBossView('agents',this)"><span class="ni">👤</span>客服表现</a>
-      <a class="nav-link" onclick="showBossView('roi',this)"><span class="ni">💰</span>渠道 ROI</a>
+      <a class="nav-link active" onclick="showView('dashboard',this)"><span class="ni">📊</span>今日概览</a>
+      <a class="nav-link" onclick="showView('agents',this)"><span class="ni">👤</span>客服表现</a>
+      <a class="nav-link" onclick="showView('roi',this)"><span class="ni">💰</span>渠道 ROI</a>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">管理</div>
-      <a class="nav-link" onclick="showBossView('allcust',this)"><span class="ni">👥</span>全部客户</a>
-      <a class="nav-link" onclick="showBossView('violations',this)"><span class="ni">⚠️</span>违禁词预警<span class="nav-badge">2</span></a>
-      <a class="nav-link" onclick="showBossView('settings',this)"><span class="ni">⚙️</span>规则设置</a>
+      <a class="nav-link" onclick="showView('allcust',this)"><span class="ni">👥</span>全部客户</a>
+      <a class="nav-link" onclick="showView('violations',this)"><span class="ni">⚠️</span>违禁词预警</a>
+      <a class="nav-link" onclick="showView('settings',this)"><span class="ni">⚙️</span>规则设置</a>
+      <a class="nav-link" onclick="showView('leave',this)"><span class="ni">📅</span>请假管理<span class="nav-badge" id="leave-badge" style="display:none">0</span></a>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">AI 报告</div>
-      <a class="nav-link" onclick="showBossView('report',this)"><span class="ni">📑</span>经营报告</a>
+      <a class="nav-link" onclick="showView('report',this)"><span class="ni">📑</span>经营报告</a>
     </div>
   </nav>
 
   <main class="main">
     <!-- 今日概览 -->
-    <div class="view active" id="boss-dashboard">
-      <div class="page-header"><div><div class="page-title">今日概览</div><div class="page-sub">2026年2月27日 · 数据实时更新</div></div></div>
+    <div class="view active" id="view-dashboard">
+      <div class="page-header"><div><div class="page-title">今日概览</div><div class="page-sub" id="dashboard-date"></div></div></div>
       <div class="page-body">
-        <div class="stats-grid">
-          <div class="stat-card"><div class="stat-label">今日跟进通数</div><div class="stat-val">47</div><div class="stat-sub">目标 120 通 · 完成 39%</div><div class="stat-icon">📞</div></div>
-          <div class="stat-card"><div class="stat-label">今日新增线索</div><div class="stat-val">8</div><div class="stat-sub">抖音 6 · 直播 2</div><div class="stat-icon">✨</div></div>
-          <div class="stat-card"><div class="stat-label">今日到店</div><div class="stat-val">2</div><div class="stat-sub">本月累计 11 次</div><div class="stat-icon">🏠</div></div>
-          <div class="stat-card"><div class="stat-label">今日签单</div><div class="stat-val">0</div><div class="stat-sub">本月累计 3 单 · 42.8万</div><div class="stat-icon">🎉</div></div>
-        </div>
+        <div class="stats-grid" id="dashboard-stats"></div>
         <div class="boss-grid">
           <div>
-            <div class="chart-card" style="margin-bottom:20px">
-              <div class="chart-title">本月线索转化漏斗</div>
-              <div class="funnel">
-                <div class="funnel-row"><div class="funnel-label">新线索</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:#3b82f6"><span>68</span></div></div><div class="funnel-count">68</div></div>
-                <div class="funnel-row"><div class="funnel-label">有效客户</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:66%;background:#06b6d4"><span>45</span><span class="rate">有效率 66%</span></div></div><div class="funnel-count">45</div></div>
-                <div class="funnel-row"><div class="funnel-label">已邀约</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:35%;background:#8b5cf6"><span>24</span><span class="rate">邀约率 53%</span></div></div><div class="funnel-count">24</div></div>
-                <div class="funnel-row"><div class="funnel-label">已到店</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:16%;background:#f59e0b"><span>11</span><span class="rate">到店率 46%</span></div></div><div class="funnel-count">11</div></div>
-                <div class="funnel-row"><div class="funnel-label">已签单</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:4%;background:#10b981"><span>3</span><span class="rate">成单率 27%</span></div></div><div class="funnel-count">3</div></div>
-              </div>
-            </div>
-            <div class="chart-card">
-              <div class="chart-title">⚠️ 超期未跟进预警</div>
-              <div class="warn-list" id="warn-list"></div>
-            </div>
+            <div class="chart-card"><div class="chart-title">本月转化漏斗</div><div class="funnel" id="funnel-body"></div></div>
+            <div class="chart-card"><div class="chart-title">超期未跟进预警</div><div class="warn-list" id="warn-list"></div></div>
           </div>
           <div>
-            <div class="chart-card">
-              <div class="chart-title">客服今日完成情况</div>
-              <div class="agent-list" id="agent-rank-list"></div>
-            </div>
+            <div class="chart-card"><div class="chart-title">客服今日完成情况</div><div class="agent-list" id="agent-rank"></div></div>
           </div>
         </div>
       </div>
     </div>
 
     <!-- 客服表现 -->
-    <div class="view" id="boss-agents">
+    <div class="view" id="view-agents">
       <div class="page-header"><div class="page-title">客服表现分析</div></div>
       <div class="page-body" id="agents-body"></div>
     </div>
 
     <!-- 渠道ROI -->
-    <div class="view" id="boss-roi">
-      <div class="page-header"><div class="page-title">渠道 ROI 分析</div></div>
+    <div class="view" id="view-roi">
+      <div class="page-header"><div><div class="page-title">渠道 ROI 分析</div></div><button class="btn btn-primary btn-sm" onclick="showSpendModal()">录入消费数据</button></div>
       <div class="page-body">
-        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
-          <div class="stat-card"><div class="stat-label">本月总投流</div><div class="stat-val">3.2<span style="font-size:16px">万</span></div><div class="stat-sub">较上月 +8%</div></div>
-          <div class="stat-card"><div class="stat-label">平均获客成本</div><div class="stat-val">471<span style="font-size:16px">元</span></div><div class="stat-sub">每条有效线索</div></div>
-          <div class="stat-card"><div class="stat-label">平均成单成本</div><div class="stat-val">1.07<span style="font-size:16px">万</span></div><div class="stat-sub">每单装修合同</div></div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">各渠道详细数据</div>
-          <table>
-            <thead><tr><th>渠道</th><th>消费</th><th>获客量</th><th>获客成本</th><th>有效量</th><th>有效成本</th><th>到店量</th><th>到店率</th><th>到店成本</th><th>成单数</th><th>成单率</th><th>业绩</th></tr></thead>
-            <tbody id="roi-table-body"></tbody>
-          </table>
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)" id="roi-stats"></div>
+        <div class="chart-card"><div class="chart-title">各渠道详细数据</div>
+          <table><thead><tr><th>渠道</th><th>消费</th><th>获客量</th><th>获客成本</th><th>有效量</th><th>到店量</th><th>成单数</th><th>成单率</th><th>业绩</th></tr></thead>
+          <tbody id="roi-table"></tbody></table>
         </div>
       </div>
     </div>
 
     <!-- 全部客户 -->
-    <div class="view" id="boss-allcust">
-      <div class="page-header">
-        <div><div class="page-title">全部客户</div><div class="page-sub" id="boss-cust-count">共 13 位客户</div></div>
-      </div>
+    <div class="view" id="view-allcust">
+      <div class="page-header"><div><div class="page-title">全部客户</div><div class="page-sub" id="cust-count"></div></div></div>
       <div class="page-body">
         <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px 20px;margin-bottom:16px">
-          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-            <div class="search-box" style="max-width:220px">
-              <span>🔍</span>
-              <input type="text" id="boss-search-kw" placeholder="姓名/电话/小区…" oninput="applyBossFilter()">
-            </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:11px;color:var(--gray-400);font-weight:600">时间：</span>
-              <div class="filter-tabs">
-                <button class="filter-tab active" onclick="setBossTime('today',this)">今天</button>
-                <button class="filter-tab" onclick="setBossTime('week',this)">本周</button>
-                <button class="filter-tab" onclick="setBossTime('month',this)">本月</button>
-                <button class="filter-tab" onclick="setBossTime('all',this)">全部</button>
-                <button class="filter-tab" onclick="setBossTime('custom',this)">自定义</button>
-              </div>
-            </div>
-          </div>
-          <div id="boss-custom-date" style="display:none;align-items:center;gap:8px;margin-bottom:12px">
-            <span style="font-size:12px;color:var(--gray-500)">从</span>
-            <input type="date" id="boss-date-from" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px" onchange="applyBossFilter()">
-            <span style="font-size:12px;color:var(--gray-500)">到</span>
-            <input type="date" id="boss-date-to" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px" onchange="applyBossFilter()">
-            <button class="btn btn-primary btn-sm" onclick="applyBossFilter()">查询</button>
-          </div>
-          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:11px;color:var(--gray-400);font-weight:600">客服：</span>
-              <select id="boss-filter-agent" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
-                <option value="">全部</option>
-                <option value="严妍">严妍</option>
-                <option value="李晓东">李晓东</option>
-                <option value="张小红">张小红</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:11px;color:var(--gray-400);font-weight:600">状态：</span>
-              <select id="boss-filter-status" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
-                <option value="">全部</option>
-                <option value="pending">待确认</option>
-                <option value="valid">有效客户</option>
-                <option value="invited">已邀约</option>
-                <option value="visited">已到店</option>
-                <option value="signed">已签单</option>
-                <option value="dead">死单</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:11px;color:var(--gray-400);font-weight:600">级别：</span>
-              <select id="boss-filter-level" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
-                <option value="">全部</option>
-                <option value="S">S级</option>
-                <option value="A">A级</option>
-                <option value="B">B级</option>
-                <option value="C">C级</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:11px;color:var(--gray-400);font-weight:600">跟进：</span>
-              <select id="boss-filter-followup" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
-                <option value="">全部</option>
-                <option value="overdue">逾期未跟进</option>
-                <option value="today">今天需跟进</option>
-                <option value="week">本周需跟进</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:11px;color:var(--gray-400);font-weight:600">画像：</span>
-              <select id="boss-filter-portrait" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
-                <option value="">全部</option>
-                <option value="high">完整（70%+）</option>
-                <option value="mid">一般（40-70%）</option>
-                <option value="low">待补充（40%以下）</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px">
-              <span style="font-size:11px;color:var(--gray-400);font-weight:600">渠道：</span>
-              <select id="boss-filter-channel" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
-                <option value="">全部</option>
-                <option value="抖音主号">抖音主号</option>
-                <option value="抖音设计号">抖音设计号</option>
-                <option value="直播间">直播间</option>
-                <option value="转介绍">转介绍</option>
-              </select>
-            </div>
-            <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
-              <span style="font-size:11px;color:var(--gray-400);font-weight:600">排序：</span>
-              <select id="boss-sort" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
-                <option value="lastCall">最近跟进时间</option>
-                <option value="nextFollow">下次跟进时间</option>
-                <option value="level">客户级别</option>
-                <option value="portrait">画像完整度</option>
-                <option value="calls">通话次数</option>
-                <option value="buildTime">建档时间</option>
-                <option value="budget">预算金额</option>
-              </select>
-              <button class="btn btn-outline btn-sm" id="boss-sort-dir" onclick="toggleBossSortDir()" style="padding:4px 8px;font-size:12px;min-width:32px">↓</button>
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
-            <span style="font-size:11px;color:var(--gray-400)">快捷：</span>
-            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('overdue')">⚠️ 逾期未跟进</button>
-            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('highvalue')">💎 S级客户</button>
-            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('portrait_low')">👤 画像待补充</button>
-            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('visited')">🏠 已到店</button>
-            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('reset')">清除筛选</button>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:8px;background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:6px 12px;max-width:220px"><span>🔍</span><input type="text" id="cust-search" placeholder="姓名/电话/小区…" oninput="renderCustomers()" style="border:none;background:transparent;font-size:13px;outline:none;width:100%;font-family:'Noto Sans SC',sans-serif"></div>
+            <select id="cust-agent" onchange="renderCustomers()" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:12px;font-family:'Noto Sans SC',sans-serif"><option value="">全部客服</option></select>
+            <select id="cust-status" onchange="renderCustomers()" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:12px;font-family:'Noto Sans SC',sans-serif"><option value="">全部状态</option><option value="pending">待确认</option><option value="valid">有效客户</option><option value="invited">已邀约</option><option value="visited">已到店</option><option value="signed">已签单</option><option value="dead">死单</option></select>
+            <select id="cust-level" onchange="renderCustomers()" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:12px;font-family:'Noto Sans SC',sans-serif"><option value="">全部级别</option><option value="S">S级</option><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option></select>
           </div>
         </div>
-        <div class="table-card">
-          <table><thead><tr><th>客户</th><th>归属客服</th><th>小区</th><th>级别</th><th>状态</th><th>画像完整度</th><th>通话数</th><th>最近跟进</th></tr></thead>
-          <tbody id="boss-cust-body"></tbody></table>
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden">
+          <table><thead><tr><th>客户</th><th>归属客服</th><th>小区</th><th>级别</th><th>状态</th><th>通话数</th><th>最近跟进</th></tr></thead>
+          <tbody id="cust-table"></tbody></table>
         </div>
       </div>
     </div>
 
-    <!-- 经营报告 -->
-    <div class="view" id="boss-report">
-      <div class="page-header">
-        <div><div class="page-title">经营报告</div><div class="page-sub">每月自动生成，3日前完成，历史报告永久留存</div></div>
-      </div>
-      <div class="page-body" style="max-width:900px">
-
-        <!-- 本月状态卡片 -->
-        <div style="background:white;border:1px solid var(--gray-200);border-radius:16px;overflow:hidden;margin-bottom:28px">
-          <div style="background:linear-gradient(135deg,#4c1d95,#8b5cf6);padding:24px 28px;color:white;display:flex;align-items:center;justify-content:space-between">
-            <div>
-              <div style="font-size:11px;opacity:0.6;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">当前月份</div>
-              <div style="font-family:'Noto Serif SC',serif;font-size:22px;font-weight:700">2026年 2月 经营报告</div>
-              <div style="font-size:12px;opacity:0.6;margin-top:6px">2026年2月1日 — 2月28日</div>
-            </div>
-            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;min-width:240px">
-              <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Noto Serif SC',serif">3.2万</div><div style="font-size:10px;opacity:0.7;margin-top:2px">投流</div></div>
-              <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Noto Serif SC',serif">42.8万</div><div style="font-size:10px;opacity:0.7;margin-top:2px">业绩</div></div>
-              <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Noto Serif SC',serif">66%</div><div style="font-size:10px;opacity:0.7;margin-top:2px">有效率</div></div>
-              <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Noto Serif SC',serif">1.07万</div><div style="font-size:10px;opacity:0.7;margin-top:2px">成单成本</div></div>
-            </div>
-          </div>
-          <div style="padding:16px 28px;background:var(--amber-pale);border-bottom:1px solid #fde68a;display:flex;align-items:center;gap:10px">
-            <span style="font-size:18px">⏳</span>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:#92400e">本月报告将于 3月3日前 自动生成</div>
-              <div style="font-size:12px;color:#a16207;margin-top:2px">系统将在每月1日起分批处理所有客户报告，3日前完成推送，无需手动操作</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 历史报告列表 -->
-        <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
-          <div style="font-size:14px;font-weight:700;color:var(--navy)">历史报告</div>
-          <div style="font-size:12px;color:var(--gray-400)">共 <span id="history-count">0</span> 份</div>
-        </div>
-        <div id="history-report-list"></div>
-
-      </div>
-    </div>
-
-    <!-- 违禁词 -->
-    <div class="view" id="boss-violations">
+    <!-- 违禁词预警 -->
+    <div class="view" id="view-violations">
       <div class="page-header"><div class="page-title">违禁词预警</div></div>
       <div class="page-body" id="violations-body"></div>
     </div>
 
-    <!-- 设置 -->
-    <div class="view" id="boss-settings">
+    <!-- 规则设置 -->
+    <div class="view" id="view-settings">
       <div class="page-header"><div class="page-title">规则设置</div></div>
-      <div class="page-body">
-        <div style="max-width:560px">
-          <div class="chart-card" style="margin-bottom:16px">
-            <div class="chart-title">跟进规则</div>
-            <div style="display:flex;flex-direction:column;gap:14px">
-              <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500">每日底线任务数</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">客服每天最少打多少通</div></div><input type="number" value="60" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center"></div>
-              <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500">跟进周期（天）</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">每隔几天必须跟进一次</div></div><input type="number" value="3" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center"></div>
-              <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500">公海回收天数</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">连续几天无跟进自动回收</div></div><input type="number" value="6" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center"></div>
-              <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500">接单模式</div></div><select style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif"><option>主动接单</option><option>被动推送</option></select></div>
-            </div>
-          </div>
-          <div class="chart-card">
-            <div class="chart-title">违禁词管理</div>
-            <div id="forbidden-words" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
-            <div style="display:flex;gap:8px"><input id="new-word" type="text" placeholder="添加违禁词…" style="flex:1;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;font-family:'Noto Sans SC',sans-serif"><button class="btn btn-primary btn-sm" onclick="addForbiddenWord()">添加</button></div>
-          </div>
-          <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="alert('✅ 规则已保存')">保存设置</button></div>
-        </div>
-      </div>
+      <div class="page-body"><div style="max-width:600px" id="settings-body"></div></div>
+    </div>
+
+    <!-- 请假管理 -->
+    <div class="view" id="view-leave">
+      <div class="page-header"><div class="page-title">请假管理</div></div>
+      <div class="page-body" id="leave-body"></div>
+    </div>
+
+    <!-- 经营报告 -->
+    <div class="view" id="view-report">
+      <div class="page-header"><div><div class="page-title">经营报告</div><div class="page-sub">每月自动生成</div></div></div>
+      <div class="page-body" style="max-width:900px" id="report-body"></div>
     </div>
   </main>
 </div>
 
-<!-- 客户详情侧板 -->
-<div class="detail-panel" id="detail-panel">
-  <div class="detail-header">
-    <div id="detail-header-info"></div>
-    <div style="display:flex;gap:8px;align-items:center">
-      <button class="btn btn-outline btn-sm" id="pin-btn" onclick="event.stopPropagation();togglePin(currentCustomerId)" style="padding:4px 10px;font-size:12px" title="设为重点客户">
-        <span id="pin-icon">📌</span>
-      </button>
-      <div class="detail-close" onclick="closeDetail()">✕</div>
+<!-- 消费录入弹窗 -->
+<div class="modal-overlay" id="spend-modal">
+  <div class="modal">
+    <h3>录入渠道消费</h3>
+    <div class="form-group"><label>渠道</label><select id="spend-channel"><option>抖音-装修主号</option><option>抖音-设计号</option><option>直播间留资</option><option>老客户转介绍</option></select></div>
+    <div class="form-group"><label>月份</label><input type="month" id="spend-month"></div>
+    <div class="form-group"><label>消费金额（元）</label><input type="number" id="spend-amount" placeholder="例如 12000"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="document.getElementById('spend-modal').classList.remove('show')">取消</button>
+      <button class="btn btn-primary" onclick="saveSpend()">保存</button>
     </div>
   </div>
-  <div class="detail-tabs" id="detail-tabs">
-    <div class="detail-tab active" onclick="switchDetailTab(0)">📋 概览</div>
-    <div class="detail-tab" onclick="switchDetailTab(1)">👤 客户画像</div>
-    <div class="detail-tab" onclick="switchDetailTab(2)">📞 通话记录</div>
-    <div class="detail-tab" onclick="switchDetailTab(3)">🤖 深度报告</div>
-  </div>
-  <div class="detail-body" id="detail-body"></div>
 </div>
 
 <script>
-// ══ API 配置 ══
 const API_BASE = window.location.origin;
 let token = localStorage.getItem('sonar_token');
 let currentUser = null;
+let customers = [];
+let agentList = [];
+let settings = {};
+const statusMap = {pending:['待确认','badge-pending'],valid:['有效客户','badge-valid'],invited:['已邀约','badge-invited'],visited:['已到店','badge-visited'],signed:['已签单','badge-signed'],dead:['死单','badge-dead']};
+const levelMap = {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c'};
 
-async function api(path, options = {}) {
-  const res = await fetch(API_BASE + path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      ...options.headers
-    }
-  });
+async function api(path, opts = {}) {
+  const res = await fetch(API_BASE + path, { ...opts, headers: { 'Content-Type':'application/json', 'Authorization': token ? `Bearer ${token}` : '', ...opts.headers } });
   return res.json();
+}
+
+// 登录
+function showLogin() { document.getElementById('login-modal').classList.add('show'); }
+async function handleLogin() {
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value;
+  if (!u || !p) return alert('请输入用户名和密码');
+  const d = await api('/api/auth/login', { method:'POST', body: JSON.stringify({username:u,password:p}) });
+  if (d.success && d.data?.token) {
+    token = d.data.token; localStorage.setItem('sonar_token', token); currentUser = d.data.user;
+    document.getElementById('login-modal').classList.remove('show');
+    afterLogin();
+  } else { alert(d.error || '登录失败'); }
+}
+function doLogout() { localStorage.removeItem('sonar_token'); token = null; currentUser = null; location.reload(); }
+
+function afterLogin() {
+  document.getElementById('login-btn').style.display = 'none';
+  document.getElementById('user-info').style.display = 'block';
+  document.getElementById('current-user').textContent = currentUser?.name || '老板';
+  const p = document.getElementById('sidebar-profile');
+  if (currentUser) {
+    p.querySelector('.name').textContent = currentUser.name;
+    p.querySelector('.avatar').textContent = currentUser.name[0];
+  }
+  loadAll();
 }
 
 async function checkAuth() {
   if (!token) return false;
-  try {
-    const data = await api('/api/auth/me');
-    if (data.success) {
-      currentUser = data.data;
-      return true;
-    }
-  } catch (e) {}
+  try { const d = await api('/api/auth/me'); if (d.success) { currentUser = d.data; return true; } } catch(e) {}
   return false;
 }
 
+// 视图切换
+function showView(id, el) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(n => n.classList.remove('active'));
+  const t = document.getElementById('view-' + id);
+  if (t) t.classList.add('active');
+  if (el) el.classList.add('active');
+}
+
+// 加载所有数据
+async function loadAll() {
+  await Promise.all([loadDashboard(), loadCustomers(), loadAgents(), loadSettings(), loadLeaveRequests()]);
+  renderDashboard();
+  renderAgentPerformance();
+  renderROI();
+  renderCustomers();
+  renderViolations();
+  renderSettings();
+  renderReport();
+}
+
+// ══ 今日概览 ══
+let dashData = null;
 async function loadDashboard() {
-  try {
-    const data = await api('/api/stats/dashboard');
-    if (data.success) return data.data;
-  } catch (e) {}
-  return null;
+  try { const d = await api('/api/stats/dashboard'); if (d.success) dashData = d.data; } catch(e) {}
 }
 
-async function loadCustomers() {
-  try {
-    const data = await api('/api/customers');
-    if (data.success && data.data?.list) {
-      window.customers = data.data.list.map(c => ({
-        id: c.id, name: c.name, phone: c.phone, area: c.community || '',
-        budget: c.budget || '', size: c.houseType || '', style: '',
-        agent: c.agentName || '', calls: c.callCount || 0, status: c.status || 'pending',
-        level: c.level || 'C', portraitPct: c.portraitPct || 0, portrait: c.portrait || {}
-      }));
-      return true;
-    }
-  } catch (e) {}
-  return false;
-}
+function renderDashboard() {
+  const now = new Date();
+  document.getElementById('dashboard-date').textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 · 数据实时更新`;
 
-async function loadAgents() {
-  try {
-    const data = await api('/api/users/agents');
-    if (data.success && data.data?.list) {
-      const colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444'];
-      window.agents = data.data.list.map((a, i) => ({
-        name: a.name, avatar: a.name[0], color: colors[i % colors.length],
-        done: a.todayCalls || 0, target: 60, score: a.score || 75, portraitAvg: a.portraitAvg || 50
-      }));
-      return true;
-    }
-  } catch (e) {}
-  return false;
-}
+  const d = dashData || {};
+  const agentCount = d.agentStats?.length || agentList.length || 0;
+  const perTarget = parseInt(settings.per_person_target || '100');
+  const teamTarget = agentCount * perTarget;
+  const calls = d.todayCalls || 0;
+  const pct = teamTarget > 0 ? Math.round(calls / teamTarget * 100) : 0;
 
-// 登录功能
-async function doLogin(username, password) {
-  try {
-    const data = await api('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
-    });
-    if (data.success && data.data?.token) {
-      token = data.data.token;
-      localStorage.setItem('sonar_token', token);
-      currentUser = data.data.user;
-      return true;
-    } else {
-      alert(data.error || '登录失败');
-      return false;
-    }
-  } catch (e) {
-    alert('登录失败');
-    return false;
-  }
-}
+  document.getElementById('dashboard-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">今日团队通话</div><div class="stat-val">${calls}</div><div class="stat-sub">目标 ${teamTarget} 通（${agentCount}人×${perTarget}）· 完成 ${pct}%</div><div class="stat-icon">📞</div></div>
+    <div class="stat-card"><div class="stat-label">今日新增线索</div><div class="stat-val">${d.funnel?.pending || 0}</div><div class="stat-sub">待确认客户</div><div class="stat-icon">✨</div></div>
+    <div class="stat-card"><div class="stat-label">有效客户</div><div class="stat-val">${d.validCustomers || 0}</div><div class="stat-sub">总客户 ${d.totalCustomers || 0}</div><div class="stat-icon">👥</div></div>
+    <div class="stat-card"><div class="stat-label">已签单</div><div class="stat-val">${d.signedCustomers || 0}</div><div class="stat-sub">公海 ${d.inSeaCount || 0} 位</div><div class="stat-icon">🎉</div></div>`;
 
-// 显示登录弹窗
-function showLoginModal() {
-  document.getElementById('login-modal').style.display = 'flex';
-}
-
-// 处理登录
-async function handleLogin() {
-  const username = document.getElementById('login-username').value.trim();
-  const password = document.getElementById('login-password').value;
-  if (!username || !password) {
-    alert('请输入用户名和密码');
-    return;
-  }
-  const success = await doLogin(username, password);
-  if (success) {
-    document.getElementById('login-modal').style.display = 'none';
-    document.getElementById('login-btn').style.display = 'none';
-    document.getElementById('user-info').style.display = 'block';
-    // 重新加载数据
-    await loadDashboard();
-    await loadCustomers();
-    await loadAgents();
-    renderDashboard();
-    renderAgentList();
-  }
-}
-
-// 退出登录
-function doLogout() {
-  localStorage.removeItem('sonar_token');
-  token = null;
-  currentUser = null;
-  location.reload();
-}
-
-// 分配客户
-async function assignCustomer(customerId, agentId) {
-  try {
-    const data = await api('/api/customers/' + customerId + '/assign', {
-      method: 'POST',
-      body: JSON.stringify({ agentId })
-    });
-    if (data.success) {
-      alert('分配成功！');
-      await loadCustomers();
-      return true;
-    } else {
-      alert(data.error || '分配失败');
-      return false;
-    }
-  } catch (e) {
-    alert('分配失败');
-    return false;
-  }
-}
-
-// 转移到公海
-async function moveToSea(customerId, reason) {
-  try {
-    const data = await api('/api/customers/' + customerId + '/to-sea', {
-      method: 'POST',
-      body: JSON.stringify({ reason })
-    });
-    if (data.success) {
-      alert('已转入公海！');
-      await loadCustomers();
-      return true;
-    } else {
-      alert(data.error || '操作失败');
-      return false;
-    }
-  } catch (e) {
-    alert('操作失败');
-    return false;
-  }
-}
-
-// 加载转化漏斗数据
-async function loadFunnel() {
-  try {
-    const data = await api('/api/stats/funnel');
-    if (data.success && data.data) {
-      return data.data;
-    }
-  } catch (e) {
-    console.error('Load funnel error:', e);
-  }
-  return null;
-}
-
-// 加载趋势数据
-async function loadTrend(period = 'month') {
-  try {
-    const data = await api('/api/stats/trend?period=' + period);
-    if (data.success && data.data) {
-      return data.data;
-    }
-  } catch (e) {
-    console.error('Load trend error:', e);
-  }
-  return null;
-}
-
-// 加载 ROI 数据
-async function loadROI() {
-  try {
-    const data = await api('/api/stats/roi');
-    if (data.success && data.data) {
-      return data.data;
-    }
-  } catch (e) {
-    console.error('Load ROI error:', e);
-  }
-  return null;
-}
-
-function formatDate(d) {
-  if (!d) return '';
-  const date = new Date(d);
-  return date.toLocaleDateString();
-}
-
-// ══ Mock 数据 ══
-const mockCustomers = [
-  { id:1, name:'王明', phone:'135****6093', area:'学仕里', budget:'25万', size:'300㎡', type:'自建房', style:'现代简约', agent:'严妍', calls:3, status:'invited', level:'S', next:'今天约好14:30', lastCall:'2026-02-25', promise:'下周二带方案上门', portraitPct:72, pinned:true,
-    portrait:{ building:'学仕里·300㎡·自建房', purpose:'自住', houseState:'毛坯', family:'夫妻+1孩', profession:'个体老板', habit:'夜读、喜欢智能家居', awareness:'对比多家', position:'一线品牌', budget_detail:'25万·全包', time:'3个月后交房', focus:'工程质量、工期', designer:'风格现代、有品位', newFields:[] }},
-  { id:2, name:'李雪梅', phone:'137****2079', area:'碧桂园', budget:'18万', size:'128㎡', type:'商品房', style:'轻奢风', agent:'严妍', calls:2, status:'valid', level:'A', next:'明天', lastCall:'2026-02-26', promise:'发同类案例', portraitPct:55,
-    portrait:{ building:'碧桂园·128㎡·商品房', purpose:'自住', houseState:'毛坯', family:'夫妻', profession:'暂无', habit:'暂无', awareness:'百家咨询', position:'暂无', budget_detail:'18万', time:'暂无', focus:'收纳、材料', designer:'轻奢风格', newFields:['profession','habit'] }},
-  { id:3, name:'张伟', phone:'138****4983', area:'光山新城', budget:'12万', size:'96㎡', type:'商品房', style:'北欧风', agent:'严妍', calls:1, status:'pending', level:'B', next:'后天', lastCall:'2026-02-26', promise:'', portraitPct:30,
-    portrait:{ building:'光山新城·96㎡·商品房', purpose:'自住', houseState:'毛坯', family:'暂无', profession:'暂无', habit:'暂无', awareness:'暂无', position:'暂无', budget_detail:'12万', time:'3个月后', focus:'暂无', designer:'北欧风', newFields:[] }},
-  { id:4, name:'刘芳', phone:'152****3252', area:'中粮福临', budget:'30万', size:'180㎡', type:'商品房', style:'新中式', agent:'严妍', calls:3, status:'visited', level:'S', next:'已到店', lastCall:'2026-02-24', promise:'全包含软装', portraitPct:85, pinned:true,
-    portrait:{ building:'中粮福临·180㎡·商品房', purpose:'自住', houseState:'毛坯', family:'夫妻+2孩+老人', profession:'教师', habit:'家客聚餐多、重收纳', awareness:'有装修经验', position:'一线品牌', budget_detail:'30万·全包含软装', time:'已交房', focus:'公司规模、材料', designer:'新中式·要求高级感', newFields:[] }},
-  { id:5, name:'陈建国', phone:'151****6026', area:'信阳春天', budget:'8万', size:'72㎡', type:'商品房', style:'日系', agent:'严妍', calls:2, status:'valid', level:'B', next:'3天后', lastCall:'2026-02-23', promise:'', portraitPct:45,
-    portrait:{ building:'信阳春天·72㎡·商品房', purpose:'自住', houseState:'毛坯', family:'单身', profession:'暂无', habit:'暂无', awareness:'暂无', position:'小公司', budget_detail:'8万·偏紧', time:'暂无', focus:'性价比', designer:'日系简约', newFields:['profession'] }},
-  { id:6, name:'赵丽', phone:'151****6809', area:'云素小院', budget:'45万', size:'220㎡', type:'别墅', style:'奢华风', agent:'严妍', calls:1, status:'pending', level:'A', next:'今天', lastCall:'2026-02-26', promise:'', portraitPct:25, pinned:true,
-    portrait:{ building:'云素小院·220㎡·别墅', purpose:'暂无', houseState:'暂无', family:'暂无', profession:'暂无', habit:'暂无', awareness:'暂无', position:'暂无', budget_detail:'45万', time:'暂无', focus:'暂无', designer:'暂无', newFields:[] }},
-  { id:7, name:'孙磊', phone:'155****4490', area:'宝龙城', budget:'15万', size:'110㎡', type:'商品房', style:'现代简约', agent:'严妍', calls:2, status:'valid', level:'A', next:'明天', lastCall:'2026-02-25', promise:'发效果图', portraitPct:50,
-    portrait:{ building:'宝龙城·110㎡·商品房', purpose:'自住', houseState:'毛坯', family:'夫妻', profession:'暂无', habit:'暂无', awareness:'对比多家', position:'暂无', budget_detail:'15万', time:'暂无', focus:'暂无', designer:'现代简约', newFields:['profession','habit'] }},
-  { id:8, name:'周婷', phone:'158****6985', area:'碧桂园二期', budget:'22万', size:'145㎡', type:'商品房', style:'法式', agent:'严妍', calls:3, status:'invited', level:'S', next:'周六约好量房', lastCall:'2026-02-24', promise:'免费量房', portraitPct:68,
-    portrait:{ building:'碧桂园二期·145㎡·商品房', purpose:'自住', houseState:'毛坯', family:'夫妻+1孩', profession:'医生', habit:'夜读、健身', awareness:'百家咨询', position:'一线品牌', budget_detail:'22万', time:'2个月后', focus:'工程质量', designer:'法式·设计师要专业', newFields:[] }},
-  { id:9, name:'吴刚', phone:'159****0108', area:'滨河学府', budget:'10万', size:'88㎡', type:'商品房', style:'简欧', agent:'严妍', calls:1, status:'pending', level:'C', next:'5天后', lastCall:'2026-02-25', promise:'', portraitPct:20,
-    portrait:{ building:'滨河学府·88㎡·商品房', purpose:'暂无', houseState:'暂无', family:'暂无', profession:'暂无', habit:'暂无', awareness:'暂无', position:'暂无', budget_detail:'10万', time:'暂无', focus:'暂无', designer:'暂无', newFields:[] }},
-  { id:10, name:'郑欣', phone:'159****7906', area:'光山碧桂园', budget:'35万', size:'200㎡', type:'商品房', style:'美式', agent:'严妍', calls:2, status:'valid', level:'A', next:'今天', lastCall:'2026-02-24', promise:'出预算参考表', portraitPct:60,
-    portrait:{ building:'光山碧桂园·200㎡·商品房', purpose:'自住', houseState:'毛坯', family:'夫妻（丈夫是医生）', profession:'暂无', habit:'暂无', awareness:'对比多家', position:'一线品牌', budget_detail:'35万', time:'暂无', focus:'材料、工程', designer:'美式风格', newFields:['profession','habit'] }},
-  { id:11, name:'冯浩然', phone:'175****2686', area:'万达华府', budget:'20万', size:'130㎡', type:'商品房', style:'现代简约', agent:'李晓东', calls:2, status:'invited', level:'A', next:'明天约好', lastCall:'2026-02-25', promise:'送全屋灯具', portraitPct:55, portrait:{building:'万达华府·130㎡',purpose:'自住',houseState:'毛坯',family:'夫妻',profession:'暂无',habit:'暂无',awareness:'百家咨询',position:'暂无',budget_detail:'20万',time:'暂无',focus:'暂无',designer:'极简风格',newFields:[]}},
-  { id:13, name:'韩志远', phone:'183****6056', area:'信阳锦绣', budget:'16万', size:'105㎡', type:'商品房', style:'轻奢风', agent:'李晓东', calls:3, status:'signed', level:'S', next:'已签单', lastCall:'2026-02-20', promise:'交房前完工', portraitPct:90, portrait:{building:'信阳锦绣·105㎡',purpose:'自住',houseState:'毛坯',family:'夫妻+1孩',profession:'工程师',habit:'正装多、重细节',awareness:'有装修经验',position:'一线品牌',budget_detail:'16万·全包',time:'已交房',focus:'工程质量、工期',designer:'轻奢·要有品位',newFields:[]}},
-  { id:15, name:'许大明', phone:'185****7186', area:'东方明珠', budget:'40万', size:'240㎡', type:'商品房', style:'欧式', agent:'李晓东', calls:2, status:'valid', level:'S', next:'今天', lastCall:'2026-02-25', promise:'提供三套方案', portraitPct:62, portrait:{building:'东方明珠·240㎡',purpose:'自住',houseState:'毛坯',family:'夫妻+老人',profession:'企业主',habit:'有海外生活经验',awareness:'对比多家',position:'一线品牌',budget_detail:'40万',time:'暂无',focus:'设计水平、公司规模',designer:'欧式·要求出国经历设计师',newFields:[]}},
-];
-
-const mockSeaCustomers = [
-  {id:101,name:'谭**',area:'碧桂园',budget:'15万',calls:2,daysAgo:7,reason:'3次未接听'},
-  {id:102,name:'林**',area:'学仕里',budget:'28万',calls:1,daysAgo:8,reason:'客服离职转入'},
-  {id:103,name:'杨**',area:'信阳新城',budget:'10万',calls:3,daysAgo:6,reason:'6天无跟进'},
-  {id:104,name:'何**',area:'万达华府',budget:'35万',calls:1,daysAgo:9,reason:'首通后未跟进'},
-  {id:105,name:'马**',area:'光山碧桂园',budget:'20万',calls:2,daysAgo:7,reason:'客户换号失联'},
-];
-
-const statusMap = {pending:['待确认','badge-pending'],valid:['有效客户','badge-valid'],invited:['已邀约','badge-invited'],visited:['已到店','badge-visited'],signed:['已签单','badge-signed'],dead:['死单','badge-dead']};
-const levelMap = {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c'};
-const agents = [
-  {name:'严妍',avatar:'严',color:'#3b82f6',done:18,target:60,score:82,portraitAvg:51},
-  {name:'李晓东',avatar:'李',color:'#8b5cf6',done:15,target:60,score:78,portraitAvg:69},
-  {name:'张小红',avatar:'张',color:'#10b981',done:14,target:60,score:75,portraitAvg:44},
-];
-const forbiddenWords = ['保证最低价','绝对不增项','市场最低','100%保证'];
-
-// 画像字段映射
-const portraitFields = [
-  {key:'building',label:'楼盘情况'},{key:'purpose',label:'房屋用途'},{key:'houseState',label:'房屋现状'},
-  {key:'family',label:'家庭成员'},{key:'profession',label:'客户职业'},{key:'habit',label:'生活习惯'},
-  {key:'awareness',label:'了解程度'},{key:'position',label:'装修定位'},{key:'budget_detail',label:'装修预算'},
-  {key:'focus',label:'客户关注点'},{key:'designer',label:'设计师要求'},
-];
-
-// ══ 今日待办 ══
-function renderTodo() {
-  const todos = [
-    {id:6,name:'赵丽',area:'云素小院',phone:'151****6809',level:'new',callNum:1,timeStr:'今天·新线索首通',
-     portraitHint:'',
-     ai:'别墅客户220㎡，预算45万，顶级线索。重点：突出公司别墅案例经验，避免直接报价，先约量房。本通话后画像将从25%提升至约50%。'},
-    {id:1,name:'王明',area:'学仕里',phone:'135****6093',level:'S',callNum:3,timeStr:'今天约好14:30',
-     portraitHint:'👤 个体老板 · 喜欢智能家居 · 对比多家公司 · 画像完整度72%',
-     ai:'【基于画像】王明是个体老板，做事爽快但重结果。上次确认下周二到店，本次核心任务：确认到店时间+预告方案亮点。他在对比多家，建议主动说「我们的全屋智能方案是唯一能做到…」制造差异化。'},
-    {id:10,name:'郑欣',area:'光山碧桂园',phone:'159****7906',level:'A',callNum:2,timeStr:'今天',
-     portraitHint:'👤 夫妻户型 · 丈夫是医生 · 对比多家 · 画像完整度60%',
-     ai:'【基于画像】丈夫是医生，逻辑性强、注重细节。上次答应出预算参考表，本次先发过去。策略：用数据说话，推进邀约到店看实景，可提「我们的工艺检测报告」增加可信度。'},
-    {id:2,name:'李雪梅',area:'碧桂园',phone:'137****2079',level:'A',callNum:2,timeStr:'明天',
-     portraitHint:'👤 夫妻 · 重收纳 · 百家咨询 · 画像完整度55%',
-     ai:'上次答应发同类案例。本次重点：追问她看完案例的感受，趁热推进邀约。她非常在意收纳，可以重点介绍我们的全屋收纳设计方案。'},
-    {id:8,name:'周婷',area:'碧桂园二期',phone:'158****6985',level:'S',callNum:3,timeStr:'周六约好量房',
-     portraitHint:'👤 医生职业 · 重质量 · 画像完整度68%',
-     ai:'【基于画像】周婷是医生，对服务质量要求极高，注重专业性。量房前确认：时间、地址、是否有家人陪同。提醒她可以提前把想法告诉我们，让设计师做好准备。'},
-    {id:7,name:'孙磊',area:'宝龙城',phone:'155****4490',level:'A',callNum:2,timeStr:'明天',
-     portraitHint:'👤 夫妻 · 对比多家 · 画像完整度50%',
-     ai:'客户在对比三家公司。策略：本次重点讲施工质保体系和本地服务能力，主动邀约「带你去看在建工地」建立信任。下次通话需要补充职业信息。'},
-    {id:5,name:'陈建国',area:'信阳春天',phone:'151****6026',level:'B',callNum:2,timeStr:'3天后',
-     portraitHint:'👤 单身 · 重性价比 · 画像完整度45%',
-     ai:'预算偏紧（8万），介绍分期方案降低决策门槛。下次通话需补充职业信息，有助于判断付款能力。'},
-    {id:9,name:'吴刚',area:'滨河学府',phone:'159****0108',level:'C',callNum:1,timeStr:'5天后',
-     portraitHint:'👤 画像较少 · 完整度20%',
-     ai:'意向较弱，保持联系节奏即可。本次通话重点：尽量补充画像信息，了解家庭情况和装修时间节点。'},
+  // 漏斗
+  const f = d.funnel || {total:0,pending:0,valid:0,invited:0,visited:0,signed:0};
+  const total = f.total || 1;
+  const colors = ['#3b82f6','#06b6d4','#8b5cf6','#f59e0b','#10b981'];
+  const rows = [
+    ['新线索', f.pending + f.valid + f.invited + f.visited + f.signed, ''],
+    ['有效客户', f.valid + f.invited + f.visited + f.signed, '有效率'],
+    ['已邀约', f.invited + f.visited + f.signed, '邀约率'],
+    ['已到店', f.visited + f.signed, '到店率'],
+    ['已签单', f.signed, '成单率'],
   ];
-  document.getElementById('todo-list').innerHTML = todos.map(t=>`
-    <div class="todo-item" onclick="openDetail(${t.id})">
-      <div class="todo-item-header">
-        <div class="todo-priority priority-${t.level}"></div>
-        <div class="todo-info">
-          <div class="todo-name">${t.name} <span style="font-size:12px;color:var(--gray-400);font-weight:400">· ${t.area}</span></div>
-          <div class="todo-meta">
-            <span>${t.phone}</span>
-            <span class="badge badge-calls">第${t.callNum}通</span>
-            ${t.level==='new'?'<span class="badge badge-new">🔵 新线索首通</span>':''}
-            <span style="color:var(--amber)">⏰ ${t.timeStr}</span>
-          </div>
-        </div>
-        <span class="badge ${t.level==='new'?'badge-new':levelMap[t.level]}">${t.level==='new'?'新':t.level}级</span>
-      </div>
-      ${t.portraitHint?`<div class="todo-portrait-bar">👤 ${t.portraitHint}</div>`:''}
-      <div class="todo-ai"><div class="ai-label">🤖 AI 建议</div>${t.ai}</div>
-      <div class="todo-actions">
-        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();alert('📞 正在拨打 ${t.phone}…')">📞 拨打</button>
-        <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail(${t.id})">查看详情</button>
-      </div>
-    </div>`).join('');
-}
-
-// ══ 待确认卡片 ══
-function renderConfirmCards() {
-  const cards = [
-    {id:3, callNum:1, name:'张伟', phone:'138****4983', area:'光山新城', budget:'12万', size:'96㎡', style:'北欧风', level:'B', next:'后天',
-     portraitNew:{building:'光山新城·96㎡·商品房', purpose:'自住', houseState:'毛坯', budget_detail:'12万', time:'3个月后', designer:'北欧风'},
-     aiNote:'第1通电话。AI识别到：客户3个月后交房，主要需求是毛坯改造，北欧风格。职业、家庭成员、关注点未识别到，请手动补充。'},
-    {id:7, callNum:2, name:'孙磊', phone:'155****4490', area:'宝龙城', budget:'15万', size:'110㎡', style:'现代简约', level:'A', next:'明天',
-     portraitNew:{profession:'工程师（本通新识别）', awareness:'对比多家（本通新识别）', focus:'工程质量'},
-     aiNote:'第2通电话。本通新识别到：孙磊是工程师，正在对比多家公司，非常关注工程质量。画像完整度从 50% 提升至 65%，请确认。'},
-    {id:5, callNum:2, name:'陈建国', phone:'151****6026', area:'信阳春天', budget:'8万', size:'72㎡', style:'日系', level:'B', next:'3天后',
-     portraitNew:{family:'单身（本通新识别）', position:'小公司（本通新识别）'},
-     aiNote:'第2通电话。本通新识别到：单身，倾向小公司或游击队价格。画像完整度从 30% 提升至 45%，请确认。'},
-  ];
-
-  document.getElementById('confirm-body').innerHTML = cards.map(c=>`
-    <div class="confirm-card-wrap">
-      <div class="confirm-card-header">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:var(--navy)">${c.name} · 第${c.callNum}通</div>
-          <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.phone} · ${new Date().toLocaleDateString()}</div>
-        </div>
-        <span class="badge badge-new">待确认</span>
-      </div>
-      <div class="confirm-card-ai">🤖 ${c.aiNote}</div>
-
-      ${c.callNum===1?`
-      <div class="confirm-section-label">📋 基础信息（必填）</div>
-      <div class="confirm-fields">
-        <div class="confirm-field"><label>客户姓名 *</label><input value="${c.name}"></div>
-        <div class="confirm-field"><label>小区名称 *</label><input value="${c.area}"></div>
-        <div class="confirm-field"><label>重要级别 *</label><select><option>S级</option><option>A级</option><option ${c.level==='B'?'selected':''}>B级</option><option>C级</option></select></div>
-        <div class="confirm-field"><label>下次跟进</label><input value="${c.next}"></div>
-      </div>
-      <div class="confirm-section-label">👤 客户画像（AI预填，可修改补充）</div>
-      <div class="portrait-confirm-grid">
-        ${Object.entries(c.portraitNew).map(([k,v])=>{
-          const f = portraitFields.find(x=>x.key===k);
-          return f?`<div class="portrait-confirm-item"><div class="pc-label">${f.label}</div><input value="${v}"></div>`:'';
-        }).join('')}
-        ${portraitFields.filter(f=>!Object.keys(c.portraitNew).includes(f.key)).map(f=>`
-          <div class="portrait-confirm-item"><div class="pc-label">${f.label}</div><input placeholder="暂未识别，可手动填写"></div>
-        `).join('')}
-      </div>`:`
-      <div class="confirm-section-label">⬆️ 本通新增画像字段 <span class="new-field-badge">NEW</span></div>
-      <div class="portrait-confirm-grid">
-        ${Object.entries(c.portraitNew).map(([k,v])=>{
-          const f = portraitFields.find(x=>x.key===k);
-          return f?`<div class="portrait-confirm-item" style="border:1px solid #fde68a;background:var(--amber-pale)"><div class="pc-label">${f.label} <span class="new-field-badge">新</span></div><input value="${v.replace('（本通新识别）','')}"></div>`:'';
-        }).join('')}
-      </div>
-      <div class="confirm-section-label">⏰ 跟进信息</div>
-      <div class="confirm-fields">
-        <div class="confirm-field"><label>重要级别</label><select><option>S级</option><option ${c.level==='A'?'selected':''}>A级</option><option ${c.level==='B'?'selected':''}>B级</option><option>C级</option></select></div>
-        <div class="confirm-field"><label>下次跟进</label><input value="${c.next}"></div>
-      </div>`}
-
-      <div style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn btn-primary" onclick="this.closest('.confirm-card-wrap').remove();alert('✅ 已确认！画像已更新')">确认提交</button>
-        <button class="btn btn-outline" onclick="alert('已暂缓，24小时后再次提醒')">暂缓</button>
-        <button class="btn" style="background:var(--red-pale);color:var(--red);border:none" onclick="this.closest('.confirm-card-wrap').remove();alert('已标记无效')">标记无效</button>
-      </div>
-    </div>`).join('');
-}
-
-// ══ 筛选排序状态 ══
-const staffFilterState = { time:'today', sortBy:'lastCall', sortDir:-1 };
-const bossFilterState = { time:'today', sortBy:'lastCall', sortDir:-1 };
-
-function setStaffTime(val, btn) {
-  staffFilterState.time = val;
-  document.querySelectorAll('#staff-time-tabs .filter-tab').forEach(t=>t.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  document.getElementById('staff-custom-date').style.display = val==='custom'?'flex':'none';
-  applyStaffFilter();
-}
-function setBossTime(val, btn) {
-  bossFilterState.time = val;
-  document.querySelectorAll('#boss-custom-date').forEach(()=>{});
-  const cd = document.getElementById('boss-custom-date');
-  if(cd) cd.style.display = val==='custom'?'flex':'none';
-  applyBossFilter();
-}
-function toggleStaffSortDir() {
-  staffFilterState.sortDir *= -1;
-  document.getElementById('staff-sort-dir').textContent = staffFilterState.sortDir===1?'↑':'↓';
-  applyStaffFilter();
-}
-function toggleBossSortDir() {
-  bossFilterState.sortDir *= -1;
-  document.getElementById('boss-sort-dir').textContent = bossFilterState.sortDir===1?'↑':'↓';
-  applyBossFilter();
-}
-
-function quickFilter(type) {
-  // 重置所有
-  document.getElementById('staff-filter-status').value='';
-  document.getElementById('staff-filter-level').value='';
-  document.getElementById('staff-filter-followup').value='';
-  document.getElementById('staff-filter-portrait').value='';
-  document.getElementById('staff-filter-calls').value='';
-  staffFilterState.time='all';
-  document.querySelectorAll('#staff-time-tabs .filter-tab').forEach((t,i)=>t.classList.toggle('active',i===3));
-  if(type==='urgent'){document.getElementById('staff-filter-followup').value='today';document.getElementById('staff-filter-level').value='';staffFilterState.sortBy='nextFollow';document.getElementById('staff-sort').value='nextFollow';}
-  else if(type==='overdue'){document.getElementById('staff-filter-followup').value='overdue';}
-  else if(type==='highvalue'){document.getElementById('staff-filter-level').value='S';document.getElementById('staff-filter-status').value='valid';}
-  else if(type==='portrait_low'){document.getElementById('staff-filter-portrait').value='low';}
-  applyStaffFilter();
-}
-function bosQuickFilter(type) {
-  document.getElementById('boss-filter-agent').value='';
-  document.getElementById('boss-filter-status').value='';
-  document.getElementById('boss-filter-level').value='';
-  document.getElementById('boss-filter-followup').value='';
-  document.getElementById('boss-filter-portrait').value='';
-  bossFilterState.time='all';
-  if(type==='overdue'){document.getElementById('boss-filter-followup').value='overdue';}
-  else if(type==='highvalue'){document.getElementById('boss-filter-level').value='S';}
-  else if(type==='portrait_low'){document.getElementById('boss-filter-portrait').value='low';}
-  else if(type==='visited'){document.getElementById('boss-filter-status').value='visited';}
-  applyBossFilter();
-}
-
-function getPortraitColor(pct) {
-  return pct>=70?'var(--green)':pct>=45?'var(--blue)':'var(--amber)';
-}
-function portraitBar(pct) {
-  return `<div style="display:flex;align-items:center;gap:6px"><div style="width:60px;background:var(--gray-100);border-radius:3px;height:5px"><div style="width:${pct}%;height:5px;border-radius:3px;background:${getPortraitColor(pct)}"></div></div><span style="font-size:11px;font-weight:600;color:var(--gray-500)">${pct}%</span></div>`;
-}
-
-function sortCustomers(list, sortBy, dir) {
-  const levelOrder = {S:0,A:1,B:2,C:3};
-  return [...list].sort((a,b)=>{
-    let va,vb;
-    if(sortBy==='lastCall'){va=a.lastCall;vb=b.lastCall;}
-    else if(sortBy==='nextFollow'){va=a.next;vb=b.next;}
-    else if(sortBy==='level'){va=levelOrder[a.level]??9;vb=levelOrder[b.level]??9;return (va-vb)*dir;}
-    else if(sortBy==='portrait'){va=a.portraitPct;vb=b.portraitPct;}
-    else if(sortBy==='calls'){va=a.calls;vb=b.calls;}
-    else if(sortBy==='buildTime'){va=a.lastCall;vb=b.lastCall;}
-    else if(sortBy==='budget'){va=parseFloat(a.budget);vb=parseFloat(b.budget);}
-    else{va=a.lastCall;vb=b.lastCall;}
-    if(va<vb) return -1*dir;
-    if(va>vb) return 1*dir;
-    return 0;
-  });
-}
-
-// ══ 客户表格 ══
-function renderCustomerTable() { applyStaffFilter(); }
-
-function applyStaffFilter() {
-  const mine = customers.filter(c=>c.agent==='严妍');
-  const kw = (document.getElementById('staff-search-kw')?.value||'').trim().toLowerCase();
-  const status = document.getElementById('staff-filter-status')?.value||'';
-  const level = document.getElementById('staff-filter-level')?.value||'';
-  const followup = document.getElementById('staff-filter-followup')?.value||'';
-  const portrait = document.getElementById('staff-filter-portrait')?.value||'';
-  const calls = document.getElementById('staff-filter-calls')?.value||'';
-  const sortBy = document.getElementById('staff-sort')?.value||'lastCall';
-  staffFilterState.sortBy = sortBy;
-
-  let filtered = mine.filter(c=>{
-    if(kw && !c.name.includes(kw) && !c.phone.includes(kw) && !c.area.toLowerCase().includes(kw)) return false;
-    if(status && c.status!==status) return false;
-    if(level && c.level!==level) return false;
-    if(portrait==='high' && c.portraitPct<70) return false;
-    if(portrait==='mid' && (c.portraitPct<40||c.portraitPct>=70)) return false;
-    if(portrait==='low' && c.portraitPct>=40) return false;
-    if(calls==='1' && c.calls!==1) return false;
-    if(calls==='2-3' && (c.calls<2||c.calls>3)) return false;
-    if(calls==='4+' && c.calls<4) return false;
-    if(followup==='overdue' && !c.next.includes('今天') && !c.next.includes('逾期')) return false;
-    if(followup==='today' && !c.next.includes('今天')) return false;
-    return true;
-  });
-
-  filtered = sortCustomers(filtered, sortBy, staffFilterState.sortDir);
-  const countEl = document.getElementById('staff-cust-count');
-  if(countEl) countEl.textContent = `共 ${filtered.length} 位客户（总 ${mine.length} 位）`;
-
-  document.getElementById('customer-table-body').innerHTML = filtered.length===0
-    ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray-400)">没有符合条件的客户</td></tr>`
-    : filtered.map(c=>`
-    <tr onclick="openDetail(${c.id})">
-      <td><strong>${c.name}</strong>${c.pinned?' <span style="color:var(--amber);font-size:11px;margin-left:4px">📌</span>':''}</td>
-      <td>${c.area}</td>
-      <td><span class="badge badge-calls">第${c.calls}通</span></td>
-      <td>${portraitBar(c.portraitPct)}</td>
-      <td><span class="badge ${levelMap[c.level]}">${c.level}级</span></td>
-      <td><span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span></td>
-      <td style="color:${c.next.includes('今天')?'var(--red)':'var(--gray-500)'}">${c.next}</td>
-      <td style="color:var(--gray-400)">${c.lastCall}</td>
-    </tr>`).join('');
-}
-
-function applyBossFilter() {
-  const kw = (document.getElementById('boss-search-kw')?.value||'').trim().toLowerCase();
-  const agent = document.getElementById('boss-filter-agent')?.value||'';
-  const status = document.getElementById('boss-filter-status')?.value||'';
-  const level = document.getElementById('boss-filter-level')?.value||'';
-  const followup = document.getElementById('boss-filter-followup')?.value||'';
-  const portrait = document.getElementById('boss-filter-portrait')?.value||'';
-  const sortBy = document.getElementById('boss-sort')?.value||'lastCall';
-  bossFilterState.sortBy = sortBy;
-
-  let filtered = customers.filter(c=>{
-    if(kw && !c.name.includes(kw) && !c.phone.includes(kw) && !c.area.toLowerCase().includes(kw)) return false;
-    if(agent && c.agent!==agent) return false;
-    if(status && c.status!==status) return false;
-    if(level && c.level!==level) return false;
-    if(portrait==='high' && c.portraitPct<70) return false;
-    if(portrait==='mid' && (c.portraitPct<40||c.portraitPct>=70)) return false;
-    if(portrait==='low' && c.portraitPct>=40) return false;
-    if(followup==='overdue' && !c.next.includes('今天')) return false;
-    if(followup==='today' && !c.next.includes('今天')) return false;
-    return true;
-  });
-
-  filtered = sortCustomers(filtered, sortBy, bossFilterState.sortDir);
-  const countEl = document.getElementById('boss-cust-count');
-  if(countEl) countEl.textContent = `共 ${filtered.length} 位客户（总 ${customers.length} 位）`;
-
-  document.getElementById('boss-cust-body').innerHTML = filtered.length===0
-    ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray-400)">没有符合条件的客户</td></tr>`
-    : filtered.map(c=>`
-    <tr onclick="openDetail(${c.id})">
-      <td><strong>${c.name}</strong></td>
-      <td>${c.agent}</td>
-      <td>${c.area}</td>
-      <td><span class="badge ${levelMap[c.level]}">${c.level}级</span></td>
-      <td><span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span></td>
-      <td>${portraitBar(c.portraitPct)}</td>
-      <td><span class="badge badge-calls">第${c.calls}通</span></td>
-      <td style="color:var(--gray-400)">${c.lastCall}</td>
-    </tr>`).join('');
-}
-
-// ══ 公海 ══
-function renderSea() {
-  document.getElementById('sea-body').innerHTML = seaCustomers.map(c=>`
-    <tr>
-      <td><strong>${c.name}</strong></td><td>${c.area}</td><td>${c.budget}</td>
-      <td><span class="badge badge-calls">共${c.calls}通</span></td>
-      <td style="font-size:12px;color:var(--gray-500)">${c.reason}</td>
-      <td><button class="btn btn-primary btn-sm" onclick="claimSea(${c.id},this)">抢单</button></td>
-    </tr>`).join('');
-}
-function claimSea(id,btn) {
-  const phones=['135****2233','138****9988','150****7766','186****4421'];
-  btn.closest('tr').cells[5].innerHTML=`<span style="font-size:12px;font-weight:600;color:var(--green)">✅ 已抢到：${phones[Math.floor(Math.random()*phones.length)]}</span>`;
-  btn.closest('tr').style.background='var(--green-pale)';
-}
-
-// ══ 案例库 ══
-function renderCases() {
-  document.getElementById('cases-body').innerHTML = `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
-    ${[
-      {name:'韩志远·全包签单16.8万',area:'信阳锦绣105㎡',calls:3,score:'8.9',tip:'首通精准挖需，第3通以「邻居案例」打消顾虑，3通成单。关键：客户是工程师，用数据和工艺细节打动他。',tags:['挖需满分','异议处理','3通成单']},
-      {name:'刘芳·到店案例',area:'中粮福临180㎡',calls:3,score:'8.5',tip:'客户起初只问价格，客服用「同小区案例」引导到店。关键话术：「报价不如看实景」。',tags:['转移价格话题','案例引导','邀约成功']},
-      {name:'沈雅楠·别墅高端',area:'金域蓝湾280㎡',calls:3,score:'8.7',tip:'别墅客户沟通：全程「顾问」姿态，用智能家居概念打开话题，不推产品推方案。',tags:['高端客户','顾问姿态','别墅专项']},
-    ].map(c=>`
-      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;cursor:pointer" onclick="alert('查看完整通话分析报告')">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">
-          <div><div style="font-size:14px;font-weight:700;color:var(--navy)">${c.name}</div><div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.area}·${c.calls}通成单</div></div>
-          <span class="call-score score-high">⭐${c.score}</span>
-        </div>
-        <div style="font-size:13px;color:var(--gray-600);line-height:1.7;margin-bottom:10px">${c.tip}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${c.tags.map(t=>`<span style="background:var(--blue-pale);color:var(--blue);font-size:11px;font-weight:600;padding:2px 8px;border-radius:20px">${t}</span>`).join('')}</div>
-      </div>`).join('')}
-  </div>`;
-}
-
-// ══ 搜索 ══
-function doSearch(val) {
-  const el = document.getElementById('search-result');
-  if(!val.trim()){el.innerHTML='';return;}
-  const found = customers.filter(c=>c.name.includes(val)||c.phone.includes(val)||c.area.includes(val));
-  if(!found.length) {
-    el.innerHTML=`<div style="text-align:center;padding:24px;color:var(--gray-400)"><div style="font-size:32px;margin-bottom:8px">🔍</div><div style="font-size:14px;margin-bottom:12px">系统中没有该号码，可以直接新建</div><button class="btn btn-primary btn-sm" onclick="alert('打开新建客户表单')">＋ 新建客户</button></div>`;
-  } else {
-    el.innerHTML=found.map(c=>`
-      <div style="border:1px solid var(--green);background:var(--green-pale);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer" onclick="openDetail(${c.id})">
-        <div style="display:flex;align-items:center;justify-content:space-between">
-          <div><div style="font-size:14px;font-weight:700;color:var(--navy)">${c.name}·${c.area}</div><div style="font-size:12px;color:var(--gray-500);margin-top:3px">归属：${c.agent}·第${c.calls}通·${statusMap[c.status][0]}</div></div>
-          <span class="badge ${levelMap[c.level]}">${c.level}级</span>
-        </div>
-        <div style="font-size:12px;color:var(--red);margin-top:6px">⚠️ 该客户已在系统中，归属${c.agent}，请勿重复跟进</div>
-      </div>`).join('');
-  }
-}
-
-// ══ 客户详情 ══
-let currentDetailTab = 0;
-let currentCustomerId = null;
-
-function openDetail(id) {
-  const c = customers.find(x=>x.id===id);
-  if(!c) return;
-  currentDetailTab = 0;
-  currentCustomerId = id;
-
-  document.getElementById('detail-header-info').innerHTML = `
-    <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">${c.name}</div>
-    <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.phone} · ${c.area}</div>`;
-
-  // 更新钉子按钮状态
-  updatePinButton(c.pinned || false);
-
-  const callLogs = {
-    1:[
-      {n:1,date:'2026-02-18',dur:'4分12秒',score:'6.8',text:'首通，客户主动介绍了基本情况：300㎡自建房，询问过价格，客服转移话题。承诺加微信发案例。',hasReport:true},
-      {n:2,date:'2026-02-22',dur:'8分35秒',score:'7.5',text:'聊了护墙板工艺和防潮处理。约好下周带他去看在建工地。',hasReport:true},
-      {n:3,date:'2026-02-25',dur:'11分20秒',score:'8.2',text:'确认到店时间为下周二下午2点，承诺携带详细预算方案。客户还在对比另一家公司。',hasReport:true},
-    ],
-    4:[
-      {n:1,date:'2026-02-15',dur:'6分28秒',score:'7.2',text:'首通，了解到客户要装180㎡商品房，新中式风格，预算30万。',hasReport:true},
-      {n:2,date:'2026-02-20',dur:'9分15秒',score:'8.0',text:'深度沟通，客户提出全包含软装需求，客服详细介绍软装合作品牌。',hasReport:true},
-      {n:3,date:'2026-02-24',dur:'5分10秒',score:'7.8',text:'确认到店时间，今日到店中。',hasReport:true},
-    ],
-    13:[
-      {n:1,date:'2026-02-10',dur:'5分50秒',score:'7.5',text:'首通，韩总105㎡轻奢风，预算16万，非常在意施工质量。',hasReport:true},
-      {n:2,date:'2026-02-14',dur:'12分20秒',score:'8.8',text:'核心通话：以「同小区邻居案例」切入，成功打消价格顾虑，约定周末到店。',hasReport:true},
-      {n:3,date:'2026-02-17',dur:'3分40秒',score:'8.5',text:'到店后确认细节，当天签订16.8万全包合同，成交！',hasReport:true},
-    ],
-  };
-  const logs = callLogs[id]||[{n:1,date:'2026-02-26',dur:'3分22秒',score:'7.0',text:'首通，了解基本情况，客户表达了装修意向。',hasReport:true}];
-
-  const aiTexts = {
-    1:'【基于画像】王明是个体老板，做事爽快但重结果，有智能家居偏好。本次核心：确认到店时间 + 预告方案亮点。他在对比多家，建议强调「我们的全屋智能方案」制造差异化。承诺事项：记得携带详细预算方案。',
-    4:'刘芳今日已到店，正在方案谈判阶段。请与设计师同步：新中式风格、全包含软装、预算30万，不超预算。家里有两个孩子和老人，设计要兼顾实用性。',
-    default:'基于历史通话分析：建议本次重点补充画像信息，了解客户职业和家庭情况，为后续跟进提供更精准的建议。',
-  };
-
-  // 深度报告内容（第3通 / 最新一通）
-  const reportData = {
-    scene:'跟进·价格异议·竞争对手比较',
-    lineScore:'7.5分（有明确需求，已完成多次接触，成交概率中高）',
-    staffScore:'8.2分',
-    dims:[
-      {name:'开场白',score:7.5,color:'#3b82f6'},
-      {name:'需求挖掘',score:8.0,color:'#06b6d4'},
-      {name:'价值塑造',score:8.5,color:'#8b5cf6'},
-      {name:'异议处理',score:7.0,color:'#f59e0b'},
-      {name:'邀约能力',score:9.0,color:'#10b981'},
-      {name:'私域留存',score:7.5,color:'#ef4444'},
-    ],
-    summary:'本通电话客服在价值塑造和邀约推进上表现突出，成功确认到店时间。异议处理上略显被动，当客户提到「还在对比另一家」时，可以更主动地强化差异化优势。',
-    goldQuote:'「我们的护墙板防潮工艺是行业独有的三层处理工艺，这一点是我们和其他公司最大的不同。」',
-    suggest:'下次跟进建议：准备好「工艺对比表」和同小区案例照片，到店前微信提前发一份预算框架，让客户有心理预期。',
-  };
-
-  document.getElementById('detail-body').innerHTML = `
-    <!-- Tab 0: 概览 -->
-    <div class="detail-tab-content active" id="dtab-0">
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <span class="badge ${levelMap[c.level]}">${c.level}级</span>
-        <span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span>
-        <span class="badge badge-calls">共${c.calls}通</span>
-      </div>
-      <div class="ai-suggestion">
-        <div class="title">🤖 AI 本次通话建议</div>
-        ${aiTexts[id]||aiTexts.default}
-      </div>
-      <div style="margin-top:14px">
-        <div class="info-grid">
-          <div class="info-item"><div class="label">小区</div><div class="val">${c.area}</div></div>
-          <div class="info-item"><div class="label">面积</div><div class="val">${c.size}</div></div>
-          <div class="info-item"><div class="label">装修预算</div><div class="val">${c.budget}</div></div>
-          <div class="info-item"><div class="label">意向风格</div><div class="val">${c.style}</div></div>
-          <div class="info-item"><div class="label">下次跟进</div><div class="val" style="color:var(--red)">${c.next}</div></div>
-          <div class="info-item"><div class="label">归属客服</div><div class="val">${c.agent}</div></div>
-        </div>
-        ${c.promise?`<div style="margin-top:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;font-size:12px;color:#9a3412"><strong>📌 承诺记录：</strong>${c.promise}</div>`:''}
-      </div>
-      <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-100)">
-        <button class="btn btn-primary btn-sm" onclick="alert('📞 拨打 ${c.phone}')">📞 拨打</button>
-        <button class="btn btn-outline btn-sm" onclick="alert('生成设计师交接简报')">📄 简报</button>
-        <button class="btn btn-outline btn-sm" onclick="alert('标记死单并进入公海')">❌ 死单</button>
-      </div>
-    </div>
-
-    <!-- Tab 1: 客户画像 -->
-    <div class="detail-tab-content" id="dtab-1">
-      <div class="portrait-completeness">
-        <div class="pc-header">
-          <div class="pc-title">客户画像完整度</div>
-          <div class="pc-pct">${c.portraitPct}%</div>
-        </div>
-        <div class="pc-bar"><div class="pc-fill" style="width:${c.portraitPct}%"></div></div>
-        <div class="pc-hint">${c.portraitPct>=70?'✅ 画像较完整，AI建议准确度高':'⚠️ 画像待补充，建议下次通话重点挖掘：'+
-          portraitFields.filter(f=>!c.portrait[f.key]||c.portrait[f.key]==='暂无').map(f=>f.label).slice(0,3).join('、')}</div>
-      </div>
-      <div class="portrait-grid">
-        ${portraitFields.map(f=>{
-          const val = c.portrait[f.key];
-          const isEmpty = !val || val==='暂无';
-          const isNew = c.portrait.newFields && c.portrait.newFields.includes(f.key);
-          return `<div class="portrait-item ${isEmpty?'empty':'filled'}">
-            <div class="p-label">${f.label}${isNew?'<span class="new-field-badge">新</span>':''}</div>
-            ${isEmpty?'<div class="p-empty">暂未识别</div>':'<div class="p-val">${val}</div><div class="p-source">✓ AI识别</div>'}
-          </div>`;
-        }).join('')}
-      </div>
-    </div>
-
-    <!-- Tab 2: 通话记录 -->
-    <div class="detail-tab-content" id="dtab-2">
-      <div class="call-log">
-        ${logs.map(l=>`
-          <div class="call-item">
-            <div class="call-item-header">
-              <div class="call-item-title">第${l.n}通 · ${l.date} · ${l.dur}</div>
-              <div style="display:flex;align-items:center;gap:8px">
-                <span class="call-score ${parseFloat(l.score)>=8?'score-high':parseFloat(l.score)>=7?'score-mid':'score-low'}">${l.score}分</span>
-                <button class="btn btn-outline btn-sm" onclick="switchDetailTab(3)">深度报告 →</button>
-              </div>
-            </div>
-            <div class="call-item-body">${l.text}</div>
-          </div>`).join('')}
-      </div>
-    </div>
-
-    <!-- Tab 3: 深度报告 -->
-    <div class="detail-tab-content" id="dtab-3">
-      <div style="font-size:12px;color:var(--gray-400);margin-bottom:12px">以下为最新一通（第${logs.length}通）的金牌教练深度报告</div>
-      <div class="report-panel">
-        <div class="report-title">🏅 金牌教练深度报告</div>
-        <div class="report-section">
-          <div class="report-section-title">场景判定</div>
-          <p>${reportData.scene}</p>
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">线索质量评分</div>
-          <p>${reportData.lineScore}</p>
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">客服综合评分 · ${reportData.staffScore}</div>
-          ${reportData.dims.map(d=>`
-            <div class="score-row">
-              <div class="score-dim">${d.name}</div>
-              <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${d.score*10}%;background:${d.color}"></div></div>
-              <div class="score-num">${d.score}</div>
-            </div>`).join('')}
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">通话总结</div>
-          <p>${reportData.summary}</p>
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">金句萃取</div>
-          <div class="report-quote">${reportData.goldQuote}</div>
-        </div>
-        <div class="report-section">
-          <div class="report-section-title">下次跟进建议</div>
-          <p>${reportData.suggest}</p>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.querySelectorAll('.detail-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
-  document.getElementById('detail-panel').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
-}
-
-function switchDetailTab(idx) {
-  currentDetailTab = idx;
-  document.querySelectorAll('.detail-tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
-  document.querySelectorAll('.detail-tab-content').forEach((t,i)=>t.classList.toggle('active',i===idx));
-}
-
-function closeDetail() {
-  currentCustomerId = null;
-  document.getElementById('detail-panel').classList.remove('open');
-  document.getElementById('overlay').classList.remove('show');
-}
-
-// ══ 重点客户功能 ══
-function togglePin(id) {
-  const c = customers.find(x=>x.id===id);
-  if(!c) return;
-  c.pinned = !c.pinned;
-  updatePinButton(c.pinned);
-  updatePinnedCount();
-  renderPinnedCustomers();
-  renderCustomerTable(); // 刷新我的客户列表
-}
-
-function updatePinButton(isPinned) {
-  const btn = document.getElementById('pin-btn');
-  const icon = document.getElementById('pin-icon');
-  if(!btn || !icon) return;
-  if(isPinned) {
-    btn.style.background = 'var(--amber-pale)';
-    btn.style.borderColor = 'var(--amber)';
-    btn.style.color = 'var(--amber)';
-    icon.textContent = '📌';
-    btn.title = '取消重点客户';
-  } else {
-    btn.style.background = 'transparent';
-    btn.style.borderColor = 'var(--gray-200)';
-    btn.style.color = 'var(--gray-600)';
-    icon.textContent = '📍';
-    btn.title = '设为重点客户';
-  }
-}
-
-function updatePinnedCount() {
-  const mine = customers.filter(c=>c.agent==='严妍' && c.pinned);
-  const countEl = document.getElementById('pinned-count');
-  const subEl = document.getElementById('staff-pinned-count');
-  if(countEl) {
-    countEl.textContent = mine.length;
-    countEl.style.display = mine.length > 0 ? 'inline-flex' : 'none';
-  }
-  if(subEl) subEl.textContent = `共 ${mine.length} 位重点客户`;
-}
-
-function renderPinnedCustomers() {
-  const mine = customers.filter(c=>c.agent==='严妍' && c.pinned);
-  const sorted = sortCustomers(mine, 'lastCall', -1);
-
-  document.getElementById('pinned-table-body').innerHTML = sorted.length===0
-    ? `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--gray-400)">暂无重点客户，在"我的客户"中点击📌标记</td></tr>`
-    : sorted.map(c=>`
-    <tr onclick="openDetail(${c.id})">
-      <td><strong>${c.name}</strong></td>
-      <td>${c.area}</td>
-      <td><span class="badge badge-calls">第${c.calls}通</span></td>
-      <td>${portraitBar(c.portraitPct)}</td>
-      <td><span class="badge ${levelMap[c.level]}">${c.level}级</span></td>
-      <td><span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span></td>
-      <td style="color:${c.next.includes('今天')?'var(--red)':'var(--gray-500)'}">${c.next}</td>
-      <td style="color:var(--gray-400)">${c.lastCall}</td>
-      <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();togglePin(${c.id})" style="padding:3px 8px;font-size:11px">取消</button></td>
-    </tr>`).join('');
-}
-
-// ══ 管理端渲染 ══
-function renderBoss() {
-  // 预警
-  document.getElementById('warn-list').innerHTML = [
-    {name:'许大明',area:'东方明珠',level:'S',days:3,agent:'李晓东',type:'red'},
-    {name:'魏凤英',area:'信阳碧水',level:'A',days:2,agent:'李晓东',type:'red'},
-    {name:'郑欣',area:'光山碧桂园',level:'A',days:2,agent:'严妍',type:'amber'},
-  ].map(w=>`<div class="warn-item ${w.type}"><div class="wname">${w.name}·${w.area} <span class="badge ${levelMap[w.level]}">${w.level}级</span></div><div class="wmeta">归属：${w.agent}·已${w.days}天未跟进</div></div>`).join('');
-
-  // 客服排名
-  document.getElementById('agent-rank-list').innerHTML = agents.map((a,i)=>`
-    <div class="agent-item" onclick="showBossView('agents',null)">
-      <div style="width:20px;text-align:center;font-size:12px;font-weight:700;color:var(--gray-400)">${i+1}</div>
-      <div class="avatar" style="background:${a.color};width:32px;height:32px;font-size:12px">${a.avatar}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--gray-800)">${a.name}</div><div style="font-size:11px;color:var(--gray-400)">今日${a.done}/${a.target}通·画像均值${a.portraitAvg}%</div></div>
-      <div style="font-size:20px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">${a.score}</div>
-    </div>`).join('');
-
-  // ROI
-  const roiData = [
-    {ch:'抖音-装修主号',spend:'1.2万',leads:28,valid:20,toStore:9,signed:2},
-    {ch:'抖音-设计号',spend:'0.8万',leads:18,valid:13,toStore:5,signed:1},
-    {ch:'直播间留资',spend:'0.6万',leads:12,valid:8,toStore:3,signed:0},
-    {ch:'老客户转介绍',spend:'0万',leads:10,valid:4,toStore:2,signed:0},
-  ];
-  document.getElementById('roi-table-body').innerHTML = roiData.map(r=>{
-    const spendNum = parseFloat(r.spend)||0;
-    const gc = spendNum>0?(spendNum*10000/r.leads).toFixed(0)+'元':'—';
-    const vc = spendNum>0?(spendNum*10000/r.valid).toFixed(0)+'元':'—';
-    const sc = spendNum>0?(spendNum*10000/Math.max(r.toStore,1)).toFixed(0)+'元':'—';
-    const perf = r.signed*16+'万';
-    return `<tr><td><strong>${r.ch}</strong></td><td>${r.spend}</td><td>${r.leads}</td><td>${gc}</td><td>${r.valid}</td><td>${vc}</td><td>${r.toStore}</td><td>${Math.round(r.toStore/r.leads*100)}%</td><td>${sc}</td><td>${r.signed}</td><td>${Math.round(r.signed/r.leads*100)}%</td><td>${perf}</td></tr>`;
+  const base = rows[0][1] || 1;
+  document.getElementById('funnel-body').innerHTML = rows.map((r, i) => {
+    const w = Math.max(4, Math.round(r[1] / base * 100));
+    const rate = i > 0 ? Math.round(r[1] / rows[i-1][1] * 100) || 0 : 100;
+    return `<div class="funnel-row"><div class="funnel-label">${r[0]}</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${w}%;background:${colors[i]}"><span>${r[1]}</span>${i>0?`<span class="rate">${r[2]} ${rate}%</span>`:''}</div></div><div class="funnel-count">${r[1]}</div></div>`;
   }).join('');
 
-  // 全部客户：交给 applyBossFilter 统一渲染
-  applyBossFilter();
+  // 客服排名
+  const stats = d.agentStats || [];
+  const agentColors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444'];
+  document.getElementById('agent-rank').innerHTML = stats.length === 0
+    ? '<div style="text-align:center;padding:20px;color:var(--gray-400)">暂无客服数据</div>'
+    : stats.map((a, i) => `
+    <div class="agent-item">
+      <div style="width:20px;text-align:center;font-size:12px;font-weight:700;color:var(--gray-400)">${i+1}</div>
+      <div class="avatar" style="background:${agentColors[i%5]};width:32px;height:32px;font-size:12px">${(a.name||'?')[0]}</div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:var(--gray-800)">${a.name}</div><div style="font-size:11px;color:var(--gray-400)">今日 ${a.todayCalls} 通 · 客户 ${a._count?.customers || 0}</div></div>
+    </div>`).join('');
 
-  // 客服表现
+  // 预警（mock）
+  document.getElementById('warn-list').innerHTML = `
+    <div style="text-align:center;padding:16px;color:var(--gray-400);font-size:13px">暂无超期预警</div>`;
+}
+
+// ══ 客服表现 ══
+let agentPerf = [];
+async function loadAgents() {
+  try { const d = await api('/api/stats/agent-performance'); if (d.success) agentPerf = d.data || []; } catch(e) {}
+}
+
+function renderAgentPerformance() {
+  const target = parseInt(settings.daily_call_min || '60');
+  // 用 mock 6维评分（真实数据需要 AI 分析结果聚合，暂用 mock）
+  const mockDims = {
+    default: [7.5, 7.8, 7.2, 7.0, 7.5, 7.0]
+  };
+  const dimNames = ['开场白','需求挖掘','价值塑造','异议处理','邀约能力','私域留存'];
+  const colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4'];
+
+  if (agentPerf.length === 0) {
+    document.getElementById('agents-body').innerHTML = '<div style="text-align:center;padding:40px;color:var(--gray-400)">暂无客服数据，请先登录</div>';
+    return;
+  }
+
   document.getElementById('agents-body').innerHTML = `
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px">
-    ${agents.map(a=>`
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px">
+    ${agentPerf.map((a, idx) => {
+      const dims = mockDims[a.name] || mockDims.default;
+      return `
       <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-          <div class="avatar" style="background:${a.color}">${a.avatar}</div>
-          <div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--navy)">${a.name}</div><div style="font-size:11px;color:var(--gray-400)">今日${a.done}/${a.target}通</div></div>
-          <div style="font-size:24px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">${a.score}</div>
+          <div class="avatar" style="background:${colors[idx%6]}">${(a.name||'?')[0]}</div>
+          <div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--navy)">${a.name}</div><div style="font-size:11px;color:var(--gray-400)">今日 ${a.todayCalls}/${target} 通 · 本月 ${a.monthCalls} 通</div></div>
         </div>
-        <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px">6维评分（仅管理端）</div>
-        ${['开场白','需求挖掘','价值塑造','异议处理','邀约能力','私域留存'].map((dim,i)=>{
-          const s={严妍:[7,8,7.5,6.5,8,7.5],李晓东:[8,7.5,8,7,7.5,8],张小红:[7.5,8,7,7.5,8,7.5]}[a.name][i];
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+          <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--navy)">${a.customerCount}</div><div style="font-size:10px;color:var(--gray-400)">客户总数</div></div>
+          <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--green)">${a.signedCount}</div><div style="font-size:10px;color:var(--gray-400)">已签单</div></div>
+        </div>
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px">6维评分（基于AI分析）</div>
+        ${dimNames.map((dim, i) => {
+          const s = dims[i] || 7;
           return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
             <div style="font-size:11px;color:var(--gray-600);width:60px">${dim}</div>
             <div style="flex:1;background:var(--gray-100);border-radius:3px;height:5px"><div style="width:${s*10}%;height:5px;border-radius:3px;background:${s>=8?'var(--green)':s>=7?'var(--blue)':'var(--amber)'}"></div></div>
             <div style="font-size:11px;font-weight:700;color:var(--gray-700);width:24px">${s}</div>
           </div>`;
         }).join('')}
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100)">
-          <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px">画像均值完整度</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="flex:1;background:var(--gray-100);border-radius:3px;height:6px"><div style="width:${a.portraitAvg}%;height:6px;border-radius:3px;background:var(--purple)"></div></div>
-            <span style="font-size:12px;font-weight:700;color:var(--purple)">${a.portraitAvg}%</span>
-          </div>
-        </div>
-        <div style="margin-top:12px;background:var(--blue-pale);border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af">
-          <strong>💡 AI提升建议：</strong>${{严妍:'异议处理得分偏低，建议重点练习「竞争对手比较」场景的话术应对，可参考韩志远成交案例。',李晓东:'整体稳定，邀约能力可进一步加强，建议多用「到店看实景」作为促成动作。',张小红:'画像完整度偏低，每通电话后需更认真补充客户画像，信息越完整AI建议越准确。'}[a.name]}
-        </div>
-      </div>`).join('')}
+      </div>`;
+    }).join('')}
     </div>`;
-
-  // 违禁词
-  document.getElementById('violations-body').innerHTML = `
-    <div style="margin-bottom:16px;background:var(--red-pale);border:1px solid #fecaca;border-radius:10px;padding:14px;max-width:640px">
-      <div style="font-size:13px;font-weight:700;color:var(--red);margin-bottom:4px">⚠️ 本周共触发 2 次违禁词预警</div>
-      <div style="font-size:12px;color:var(--gray-600)">建议及时与相关客服沟通，避免客资纠纷</div>
-    </div>
-    <div style="max-width:640px">
-      ${[
-        {agent:'严妍',cust:'赵丽',time:'2026-02-25 15:32',quote:'您放心，我们<mark style="background:#fef9c3">绝对不会增项</mark>的，合同签了之后不会多收一分钱。'},
-        {agent:'李晓东',cust:'许大明',time:'2026-02-24 11:18',quote:'我们现在做活动，这个价格是<mark style="background:#fef9c3">市场最低价</mark>了，别家肯定比我们贵。'},
-      ].map(v=>`
-        <div style="background:var(--red-pale);border:1px solid #fecaca;border-radius:10px;padding:12px 14px;margin-bottom:8px">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-            <div style="font-size:13px;font-weight:700;color:var(--red)">${v.agent}·客户：${v.cust}</div>
-            <div style="font-size:11px;color:var(--gray-400)">${v.time}</div>
-          </div>
-          <div style="font-size:12px;color:var(--gray-700);background:white;border-radius:6px;padding:8px 10px;line-height:1.6">${v.quote}</div>
-        </div>`).join('')}
-    </div>`;
-
-  renderForbiddenWords();
 }
 
-function renderForbiddenWords() {
-  const el = document.getElementById('forbidden-words');
-  if(!el) return;
-  el.innerHTML = forbiddenWords.map(w=>`<span style="background:var(--red-pale);color:var(--red);font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${w}<span style="cursor:pointer;opacity:0.6" onclick="removeFW('${w}')">✕</span></span>`).join('');
-}
-function removeFW(w){const i=forbiddenWords.indexOf(w);if(i>-1){forbiddenWords.splice(i,1);renderForbiddenWords();}}
-function addForbiddenWord(){const el=document.getElementById('new-word');const v=el.value.trim();if(v&&!forbiddenWords.includes(v)){forbiddenWords.push(v);renderForbiddenWords();el.value='';}}
+// ══ 渠道 ROI ══
+const roiMock = [
+  {ch:'抖音-装修主号',spend:12000,leads:28,valid:20,toStore:9,signed:2,perf:328000},
+  {ch:'抖音-设计号',spend:8000,leads:18,valid:13,toStore:5,signed:1,perf:168000},
+  {ch:'直播间留资',spend:6000,leads:12,valid:8,toStore:3,signed:0,perf:0},
+  {ch:'老客户转介绍',spend:0,leads:10,valid:4,toStore:2,signed:0,perf:0},
+];
 
-// ══ 视图切换 ══
-function showBossView(id, el) {
-  document.querySelectorAll('#app-boss .view').forEach(v=>v.classList.remove('active'));
-  document.querySelectorAll('#app-boss .nav-link').forEach(n=>n.classList.remove('active'));
-  const target = document.getElementById('boss-'+id);
-  if(target) target.classList.add('active');
-  if(el) el.classList.add('active');
-  closeDetail();
-}
+function renderROI() {
+  const totalSpend = roiMock.reduce((s,r) => s + r.spend, 0);
+  const totalLeads = roiMock.reduce((s,r) => s + r.leads, 0);
+  const totalSigned = roiMock.reduce((s,r) => s + r.signed, 0);
+  const avgCost = totalLeads > 0 ? Math.round(totalSpend / totalLeads) : 0;
+  const signCost = totalSigned > 0 ? (totalSpend / totalSigned / 10000).toFixed(2) : '—';
 
-// ══ 经营报告 ══
-const monthReportCache = {}; // { '2026-02': { html, time, score } }
+  document.getElementById('roi-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">本月总投流</div><div class="stat-val">${(totalSpend/10000).toFixed(1)}<span style="font-size:16px">万</span></div></div>
+    <div class="stat-card"><div class="stat-label">平均获客成本</div><div class="stat-val">${avgCost}<span style="font-size:16px">元</span></div><div class="stat-sub">每条线索</div></div>
+    <div class="stat-card"><div class="stat-label">平均成单成本</div><div class="stat-val">${signCost}<span style="font-size:16px">万</span></div><div class="stat-sub">每单</div></div>`;
 
-// Demo用：预置1月份历史报告
-monthReportCache['2026-01'] = {
-  time: '2026年1月31日 23:45',
-  score: '7.1',
-  summary: '投流2.8万 · 业绩38.5万 · 有效率61% · 成单成本1.28万',
-  html: null, // 点击展开时再渲染
-};
-
-function initReportPage() {
-  // Demo里直接预置1月和2月报告，模拟系统已自动生成
-  if(!monthReportCache['2026-02']) {
-    monthReportCache['2026-02'] = {
-      time: '2026年3月2日 03:14',
-      score: '7.4',
-      summary: '投流3.2万 · 业绩42.8万 · 有效率66% · 成单成本1.07万',
-      html: null,
-    };
-  }
-  renderHistoryList();
-}
-
-function renderHistoryList() {
-  const keys = Object.keys(monthReportCache).sort((a,b)=>b.localeCompare(a));
-  document.getElementById('history-count').textContent = keys.length;
-  document.getElementById('history-report-list').innerHTML = keys.map(k=>{
-    const r = monthReportCache[k];
-    const [y,m] = k.split('-');
-    const isExpanded = !!r.html;
-    return `
-    <div id="history-item-${k}" style="background:white;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden;margin-bottom:12px">
-      <div style="padding:16px 20px;display:flex;align-items:center;gap:16px;cursor:pointer" onclick="toggleHistory('${k}')">
-        <div style="width:48px;height:48px;background:linear-gradient(135deg,#4c1d95,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;color:white;font-family:'Noto Serif SC',serif;font-weight:700;font-size:13px;flex-shrink:0">${m}月</div>
-        <div style="flex:1">
-          <div style="font-size:14px;font-weight:700;color:var(--navy)">${y}年${m}月 经营报告</div>
-          <div style="font-size:12px;color:var(--gray-400);margin-top:3px">${r.summary}</div>
-        </div>
-        <div style="text-align:right;flex-shrink:0">
-          <div style="font-family:'Noto Serif SC',serif;font-size:24px;font-weight:700;color:var(--purple)">${r.score}</div>
-          <div style="font-size:10px;color:var(--gray-400)">综合评分</div>
-        </div>
-        <div style="color:var(--gray-300);font-size:18px;margin-left:8px" id="arrow-${k}">▼</div>
-      </div>
-      <div id="history-content-${k}" style="display:none;border-top:1px solid var(--gray-100)">
-        <div style="padding:4px 20px 8px;display:flex;align-items:center;gap:10px;background:var(--gray-50)">
-          <span style="font-size:11px;color:var(--gray-400)">生成于 ${r.time}</span>
-          <button class="btn btn-outline btn-sm" style="font-size:11px" onclick="copyMonthReport('${k}')">📋 复制报告</button>
-          <button class="btn btn-outline btn-sm" style="font-size:11px" onclick="window.print()">🖨️ 打印/导出PDF</button>
-        </div>
-        <div id="history-body-${k}" style="padding:20px">${r.html || getPreviewReport(k)}</div>
-      </div>
-    </div>`;
+  document.getElementById('roi-table').innerHTML = roiMock.map(r => {
+    const gc = r.spend > 0 && r.leads > 0 ? Math.round(r.spend/r.leads)+'元' : '—';
+    const vc = r.spend > 0 && r.valid > 0 ? Math.round(r.spend/r.valid)+'元' : '—';
+    const sr = r.leads > 0 ? Math.round(r.signed/r.leads*100)+'%' : '0%';
+    return `<tr><td><strong>${r.ch}</strong></td><td>${r.spend>0?(r.spend/10000).toFixed(1)+'万':'0'}</td><td>${r.leads}</td><td>${gc}</td><td>${r.valid}</td><td>${r.toStore}</td><td>${r.signed}</td><td>${sr}</td><td>${r.perf>0?(r.perf/10000).toFixed(1)+'万':'0'}</td></tr>`;
   }).join('');
 }
 
-function toggleHistory(k) {
-  const content = document.getElementById(`history-content-${k}`);
-  const arrow = document.getElementById(`arrow-${k}`);
-  const body = document.getElementById(`history-body-${k}`);
-  const isOpen = content.style.display !== 'none';
-  content.style.display = isOpen ? 'none' : 'block';
-  arrow.textContent = isOpen ? '▼' : '▲';
-  // 如果是预置的1月份，展开时生成预览内容
-  if(!isOpen && !monthReportCache[k].html) {
-    body.innerHTML = buildJanReport();
-    monthReportCache[k].html = body.innerHTML;
-  }
+function showSpendModal() {
+  document.getElementById('spend-month').value = new Date().toISOString().slice(0,7);
+  document.getElementById('spend-modal').classList.add('show');
+}
+function saveSpend() {
+  const ch = document.getElementById('spend-channel').value;
+  const amt = parseInt(document.getElementById('spend-amount').value) || 0;
+  if (amt <= 0) return alert('请输入消费金额');
+  const item = roiMock.find(r => r.ch === ch);
+  if (item) item.spend = amt;
+  renderROI();
+  document.getElementById('spend-modal').classList.remove('show');
+  alert('已更新 ' + ch + ' 消费数据');
 }
 
-function scrollToHistory(key) {
-  renderHistoryList();
-  setTimeout(()=>{
-    const el = document.getElementById(`history-item-${key}`);
-    if(el) {
-      el.scrollIntoView({behavior:'smooth'});
-      // 自动展开
-      const content = document.getElementById(`history-content-${key}`);
-      const arrow = document.getElementById(`arrow-${key}`);
-      if(content && content.style.display==='none') {
-        content.style.display='block';
-        if(arrow) arrow.textContent='▲';
-      }
+// ══ 全部客户 ══
+async function loadCustomers() {
+  try {
+    const d = await api('/api/customers');
+    if (d.success && d.data?.list) {
+      customers = d.data.list;
+      // 填充客服下拉
+      const agents = [...new Set(customers.map(c => c.agentName).filter(Boolean))];
+      const sel = document.getElementById('cust-agent');
+      sel.innerHTML = '<option value="">全部客服</option>' + agents.map(a => `<option>${a}</option>`).join('');
     }
-  }, 150);
+  } catch(e) {}
 }
 
-function copyMonthReport(k) {
-  const texts = {
-    '2026-02': '【声纳AI · 2月经营报告】\n\n投流3.2万 | 业绩42.8万 | ROI 13.4x | 有效率66% | 成单成本1.07万\n\n渠道：抖音主号ROI最优；直播间0成单需优化\n客服：李晓东签单最多(2单)；张小红0签单需辅导\n画像洞察：已交房+预算15万+有经验=最高成交率\n\n下月建议：提升到店率至60% | 加大主号投入 | 建立转介绍激励',
-    '2026-01': '【声纳AI · 1月经营报告】\n\n投流2.8万 | 业绩38.5万 | 有效率61% | 成单成本1.28万\n\n整体表现略低于2月，主要因春节期间客户决策周期延长。\n建议2月加强春节后回访，抓住装修旺季节点。',
-  };
-  const text = texts[k] || '报告内容';
-  navigator.clipboard.writeText(text).then(()=>alert('✅ 已复制到剪贴板')).catch(()=>{
-    const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('✅ 已复制');
+function renderCustomers() {
+  const kw = (document.getElementById('cust-search')?.value || '').trim().toLowerCase();
+  const agent = document.getElementById('cust-agent')?.value || '';
+  const status = document.getElementById('cust-status')?.value || '';
+  const level = document.getElementById('cust-level')?.value || '';
+
+  let list = customers.filter(c => {
+    if (kw && !(c.name||'').includes(kw) && !(c.phone||'').includes(kw) && !(c.community||'').toLowerCase().includes(kw)) return false;
+    if (agent && (c.agentName||'') !== agent) return false;
+    if (status && c.status !== status) return false;
+    if (level && c.level !== level) return false;
+    return true;
   });
+
+  document.getElementById('cust-count').textContent = `共 ${list.length} 位客户（总 ${customers.length}）`;
+  document.getElementById('cust-table').innerHTML = list.length === 0
+    ? '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">暂无客户数据</td></tr>'
+    : list.map(c => {
+      const st = statusMap[c.status] || ['未知',''];
+      const lv = levelMap[c.level] || '';
+      return `<tr>
+        <td><strong>${c.name||'未知'}</strong></td>
+        <td>${c.agentName||'未分配'}</td>
+        <td>${c.community||''}</td>
+        <td><span class="badge ${lv}">${c.level||'C'}级</span></td>
+        <td><span class="badge ${st[1]}">${st[0]}</span></td>
+        <td>${c.callCount||0}</td>
+        <td style="color:var(--gray-400)">${c.lastCallAt ? new Date(c.lastCallAt).toLocaleDateString() : ''}</td>
+      </tr>`;
+    }).join('');
 }
 
-function getPreviewReport(k) {
-  return '<div style="text-align:center;padding:20px;color:var(--gray-400)">点击展开查看完整报告</div>';
+// ══ 违禁词预警 ══
+function renderViolations() {
+  document.getElementById('violations-body').innerHTML = `
+    <div style="max-width:640px">
+      <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:20px;text-align:center;color:var(--gray-400)">
+        <div style="font-size:32px;margin-bottom:8px">✅</div>
+        <div style="font-size:14px">暂无违禁词预警记录</div>
+        <div style="font-size:12px;margin-top:4px">系统会自动检测通话中的违禁词并在此展示</div>
+      </div>
+    </div>`;
 }
 
-function reportSection(icon, title, content, bg) {
-  return `<div style="background:${bg||'var(--gray-50)'};border-radius:12px;padding:20px;margin-bottom:16px">
-    <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:6px">${icon} ${title}</div>
-    <div style="font-size:13px;color:var(--gray-700);line-height:1.85">${content}</div>
-  </div>`;
+// ══ 规则设置 ══
+async function loadSettings() {
+  try { const d = await api('/api/stats/boss-settings'); if (d.success) settings = d.data || {}; } catch(e) {}
 }
 
-function buildMonthReport() {
-  return `
-  <div style="background:white;border:1px solid var(--gray-200);border-radius:16px;overflow:hidden">
-    <div style="background:linear-gradient(135deg,#4c1d95,#8b5cf6);padding:24px 28px;color:white;display:flex;align-items:flex-start;justify-content:space-between">
-      <div>
-        <div style="font-size:11px;opacity:0.6;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">AI 生成 · 月报</div>
-        <div style="font-family:'Noto Serif SC',serif;font-size:24px;font-weight:700">本月经营分析报告</div>
-        <div style="font-size:12px;opacity:0.6;margin-top:6px">2026年2月1日 — 2月27日 · 生成时间 ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:11px;opacity:0.6;margin-bottom:4px">综合评分</div>
-        <div style="font-family:'Noto Serif SC',serif;font-size:40px;font-weight:700">7.4</div>
-      </div>
-    </div>
-    <div style="padding:24px 28px">
-
-      <!-- 核心数据 -->
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
-        ${[
-          ['本月投流','3.2万',''],
-          ['签单业绩','42.8万','ROI 13.4x'],
-          ['成单成本','1.07万','每单'],
-          ['线索有效率','66%',''],
-          ['客服综合分','78.3','平均'],
-        ].map(([l,v,s])=>`
-          <div style="background:var(--gray-50);border-radius:10px;padding:14px;text-align:center">
-            <div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">${l}</div>
-            <div style="font-size:20px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">${v}</div>
-            ${s?`<div style="font-size:11px;color:var(--purple);margin-top:3px">${s}</div>`:''}
-          </div>`).join('')}
-      </div>
-
-      ${reportSection('📊','本月整体概况',
-        '本月共接收线索 68 条，签单 3 单，业绩 42.8 万元，ROI 约 13.4 倍。整体表现处于正常水平，但转化漏斗中<strong>邀约到店环节流失较多</strong>（邀约 24 条，到店仅 11 条，到店率 46%），这是本月最大的改进空间。'
-      )}
-
-      ${reportSection('💰','渠道 ROI 深度分析',
-        '<strong>最佳渠道：抖音主号</strong>，投入 1.2 万，有效率 71%，成单 2 单，每单成本约 6000 元，ROI 最优，建议下月加大投入比例。<br><br><strong>待优化：直播间留资</strong>，本月投入 0.6 万，带来 12 条线索，有效率 67%，但<strong>0 成单</strong>，原因是到店率极低（25%）。建议分析直播间留资客户特征，是否存在意向质量问题，考虑优化直播话术或调整留资门槛。<br><br><strong>亮点：老客户转介绍</strong>，零成本带来 10 条线索，虽然目前尚无成单，但质量较高，建议加强老客户维护机制。',
-        '#f0fdf4'
-      )}
-
-      ${reportSection('👤','客服绩效月度对比',
-        `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
-          <thead><tr style="background:var(--gray-100)">
-            <th style="padding:8px 12px;text-align:left;font-weight:600;color:var(--gray-600)">客服</th>
-            <th style="padding:8px 12px;text-align:center;font-weight:600;color:var(--gray-600)">跟进通数</th>
-            <th style="padding:8px 12px;text-align:center;font-weight:600;color:var(--gray-600)">有效客户</th>
-            <th style="padding:8px 12px;text-align:center;font-weight:600;color:var(--gray-600)">促成到店</th>
-            <th style="padding:8px 12px;text-align:center;font-weight:600;color:var(--gray-600)">签单</th>
-            <th style="padding:8px 12px;text-align:center;font-weight:600;color:var(--gray-600)">综合评分</th>
-            <th style="padding:8px 12px;text-align:center;font-weight:600;color:var(--gray-600)">画像均值</th>
-          </tr></thead>
-          <tbody>
-            <tr style="border-bottom:1px solid var(--gray-100)"><td style="padding:8px 12px;font-weight:600">严妍</td><td style="padding:8px 12px;text-align:center">89</td><td style="padding:8px 12px;text-align:center">18</td><td style="padding:8px 12px;text-align:center">5</td><td style="padding:8px 12px;text-align:center">1</td><td style="padding:8px 12px;text-align:center"><span style="color:var(--green);font-weight:700">82</span></td><td style="padding:8px 12px;text-align:center">51%</td></tr>
-            <tr style="border-bottom:1px solid var(--gray-100)"><td style="padding:8px 12px;font-weight:600">李晓东</td><td style="padding:8px 12px;text-align:center">78</td><td style="padding:8px 12px;text-align:center">15</td><td style="padding:8px 12px;text-align:center">4</td><td style="padding:8px 12px;text-align:center">2</td><td style="padding:8px 12px;text-align:center"><span style="color:var(--blue);font-weight:700">78</span></td><td style="padding:8px 12px;text-align:center">69%</td></tr>
-            <tr><td style="padding:8px 12px;font-weight:600">张小红</td><td style="padding:8px 12px;text-align:center">67</td><td style="padding:8px 12px;text-align:center">12</td><td style="padding:8px 12px;text-align:center">2</td><td style="padding:8px 12px;text-align:center">0</td><td style="padding:8px 12px;text-align:center"><span style="color:var(--amber);font-weight:700">75</span></td><td style="padding:8px 12px;text-align:center">44%</td></tr>
-          </tbody>
-        </table></div>
-        <div style="margin-top:10px;font-size:12px;color:var(--gray-600)">李晓东本月签单最多（2单），但有2个S级客户出现超期未跟进情况，需重点关注。张小红画像完整度最低，跟进通数也最少，建议下月重点辅导。</div>`,
-        '#eff6ff'
-      )}
-
-      ${reportSection('🧠','客户画像洞察',
-        '基于本月 68 条线索画像数据分析：<br><br><strong>最容易成交的客户特征：</strong>已交房毛坯房 + 预算 15 万以上 + 有装修经验 + 了解过多家公司。本月 3 单成交客户均符合此特征。<br><br><strong>流失率最高的客户特征：</strong>首通意向模糊 + 画像完整度低于 30% + 通话时长不足 3 分钟。建议客服在首通中重点挖掘客户的装修时间节点，有明确时间节点的客户成交概率高出 40%。<br><br><strong>建议下月投流方向：</strong>优先触达「已交房 + 改善型需求 + 家庭成员多」的人群画像，与当前成交客户特征高度匹配。',
-        '#fdf4ff'
-      )}
-
-      ${reportSection('💡','下月经营建议',
-        '① <strong>提升到店转化率</strong>（当前 46%，目标 60%）：邀约话术需要优化，建议推行「量房免费 + 送全屋设计方案」的标准化邀约话术，设计师配合做好到店接待。<br><br>② <strong>加大抖音主号投入</strong>：本月主号 ROI 最优，建议将直播间预算的 30% 转移至主号，预计可提升 8-10 条高质量线索。<br><br>③ <strong>张小红专项辅导</strong>：本月 0 签单，建议安排与李晓东 1 对 1 跟单学习，重点提升邀约话术和客户画像补充能力。<br><br>④ <strong>建立老客户转介绍激励机制</strong>：本月转介绍线索 10 条，质量高但尚无成单，建议设立老客户推荐奖励，进一步放大转介绍渠道。'
-      )}
-
-      <div style="display:flex;align-items:center;gap:10px;margin-top:20px;padding-top:20px;border-top:1px solid var(--gray-200)">
-        <button class="btn btn-outline" onclick="copyMonthReport('2026-02')">📋 复制报告摘要</button>
-        <button class="btn btn-outline" onclick="window.print()">🖨️ 打印 / 导出PDF</button>
-        <span style="font-size:12px;color:var(--gray-400);margin-left:auto">系统自动生成 · 2026年3月2日 03:14</span>
+function renderSettings() {
+  const s = settings;
+  document.getElementById('settings-body').innerHTML = `
+    <div class="chart-card">
+      <div class="chart-title">跟进规则</div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:13px;font-weight:500">每人每日目标通数</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">用于计算团队目标（人数×此值）</div></div>
+          <input type="number" id="s-per-target" value="${s.per_person_target||100}" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:13px;font-weight:500">每日底线任务数</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">客服每天最少打多少通</div></div>
+          <input type="number" id="s-daily-min" value="${s.daily_call_min||60}" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:13px;font-weight:500">跟进周期（天）</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">每隔几天必须跟进一次，默认3天</div></div>
+          <input type="number" id="s-followup" value="${s.followup_cycle_days||3}" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:13px;font-weight:500">公海回收天数</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">连续几天无跟进自动回收到公海</div></div>
+          <input type="number" id="s-sea" value="${s.sea_recovery_days||6}" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div><div style="font-size:13px;font-weight:500">接单模式</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">完成每日目标后的接单方式</div></div>
+          <select id="s-mode" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
+            <option value="active" ${s.order_mode==='active'?'selected':''}>主动接单</option>
+            <option value="passive" ${s.order_mode==='passive'?'selected':''}>被动推送</option>
+          </select>
+        </div>
       </div>
     </div>
-  </div>`;
+    <div class="chart-card">
+      <div class="chart-title">S/A级客户优先规则</div>
+      <div style="font-size:13px;color:var(--gray-600);line-height:1.8">
+        <div style="background:var(--amber-pale);border-radius:8px;padding:12px;margin-bottom:8px">
+          <strong>规则说明：</strong>S级和A级客户的跟进周期自动缩短为设定值的一半。例如跟进周期设为3天，则S/A级客户1.5天未跟进即触发预警。
+        </div>
+        <div>· S级客户：超期未跟进时，系统自动通知老板</div>
+        <div>· A级客户：超期未跟进时，系统发送提醒给客服</div>
+        <div>· B/C级客户：按正常跟进周期执行</div>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">违禁词管理</div>
+      <div id="fw-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px"><input id="new-fw" type="text" placeholder="添加违禁词…" style="flex:1;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;font-family:'Noto Sans SC',sans-serif"><button class="btn btn-primary btn-sm" onclick="addFW()">添加</button></div>
+    </div>
+    <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="saveSettings()">保存设置</button></div>`;
+  loadForbiddenWords();
 }
 
-function buildJanReport() {
-  return `<div style="padding:4px">
-    ${reportSection('📊','1月整体概况',
-      '1月共接收线索 54 条，签单 2 单，业绩 38.5 万元。受春节假期影响，月中跟进节奏放缓，客户决策周期普遍延长。有效率 61%，低于2月的 66%，主要因节前线索质量偏弱。'
-    )}
-    ${reportSection('💰','渠道表现',
-      '抖音主号依然是最优渠道，投入 1.1 万，有效率 68%，成单 2 单。直播间本月暂停投放，节后恢复。转介绍带来 7 条线索，质量高，但暂无成单，需持续跟进。',
-      '#f0fdf4'
-    )}
-    ${reportSection('👤','客服表现',
-      '严妍综合评分 80 分，春节前完成邀约较多。李晓东评分 76 分，成单 2 单。张小红评分 72 分，假期期间跟进频率偏低，需要改进。',
-      '#eff6ff'
-    )}
-    ${reportSection('💡','对2月的建议',
-      '① 春节后回访窗口期（正月初八至十五）是高意向客户集中决策时段，建议重点跟进1月积累的 A/S 级客户。<br>② 装修旺季即将到来，建议2月加大主号投流预算，预计可提升线索量 20-30%。<br>③ 张小红需要加强跟进频率，建议设置每日任务提醒。'
-    )}
-  </div>`;
+let fwList = [];
+async function loadForbiddenWords() {
+  try { const d = await api('/api/config/forbidden-words'); if (d.success) fwList = d.data || []; } catch(e) { fwList = []; }
+  renderFW();
+}
+function renderFW() {
+  const el = document.getElementById('fw-list');
+  if (!el) return;
+  el.innerHTML = fwList.map(w => `<span style="background:var(--red-pale);color:var(--red);font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${w.word}<span style="cursor:pointer;opacity:0.6" onclick="removeFW('${w.id}')">✕</span></span>`).join('') || '<span style="color:var(--gray-400);font-size:12px">暂无违禁词</span>';
+}
+async function addFW() {
+  const el = document.getElementById('new-fw');
+  const v = el.value.trim();
+  if (!v) return;
+  try { await api('/api/config/forbidden-words', { method:'POST', body: JSON.stringify({word:v}) }); el.value = ''; await loadForbiddenWords(); } catch(e) { alert('添加失败'); }
+}
+async function removeFW(id) {
+  try { await api('/api/config/forbidden-words/' + id, { method:'DELETE' }); await loadForbiddenWords(); } catch(e) {}
 }
 
-// 初始化
+async function saveSettings() {
+  const body = {
+    per_person_target: document.getElementById('s-per-target').value,
+    daily_call_min: document.getElementById('s-daily-min').value,
+    followup_cycle_days: document.getElementById('s-followup').value,
+    sea_recovery_days: document.getElementById('s-sea').value,
+    order_mode: document.getElementById('s-mode').value,
+  };
+  const d = await api('/api/stats/boss-settings', { method:'PUT', body: JSON.stringify(body) });
+  if (d.success) {
+    settings = body;
+    alert('规则已保存');
+    renderDashboard(); // 刷新目标
+  } else { alert(d.error || '保存失败'); }
+}
+
+// ══ 请假管理 ══
+let leaveList = [];
+async function loadLeaveRequests() {
+  try { const d = await api('/api/stats/leave-requests'); if (d.success) leaveList = d.data || []; } catch(e) {}
+  renderLeave();
+}
+
+function renderLeave() {
+  const pending = leaveList.filter(l => l.status === 'pending');
+  const badge = document.getElementById('leave-badge');
+  if (pending.length > 0) { badge.textContent = pending.length; badge.style.display = 'inline-flex'; }
+  else { badge.style.display = 'none'; }
+
+  const statusLabel = {pending:'待审批',approved:'已批准',rejected:'已拒绝'};
+  const statusColor = {pending:'var(--amber)',approved:'var(--green)',rejected:'var(--red)'};
+
+  document.getElementById('leave-body').innerHTML = `
+    <div style="max-width:700px">
+      ${leaveList.length === 0 ? '<div style="text-align:center;padding:40px;color:var(--gray-400)">暂无请假申请</div>' :
+      `<table style="background:white;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden">
+        <thead><tr><th>客服</th><th>类型</th><th>起止日期</th><th>原因</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody>${leaveList.map(l => `
+          <tr>
+            <td><strong>${l.userName}</strong></td>
+            <td>${l.type === 'vacation' ? '休假' : '请假'}</td>
+            <td>${new Date(l.startDate).toLocaleDateString()} ~ ${new Date(l.endDate).toLocaleDateString()}</td>
+            <td>${l.reason || '—'}</td>
+            <td><span style="color:${statusColor[l.status]};font-weight:600;font-size:12px">${statusLabel[l.status]}</span></td>
+            <td>${l.status === 'pending' ? `
+              <button class="btn btn-green btn-sm" onclick="reviewLeave('${l.id}','approved')">批准</button>
+              <button class="btn btn-red btn-sm" onclick="reviewLeave('${l.id}','rejected')">拒绝</button>
+            ` : '—'}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>`}
+    </div>`;
+}
+
+async function reviewLeave(id, status) {
+  // mock 模式
+  if (id.startsWith('mock-')) {
+    const item = leaveList.find(l => l.id === id);
+    if (item) { item.status = status; item.reviewedAt = new Date().toISOString(); }
+    renderLeave();
+    return;
+  }
+  const d = await api('/api/stats/leave-requests/' + id, { method:'PUT', body: JSON.stringify({status}) });
+  if (d.success) { await loadLeaveRequests(); } else { alert(d.error || '操作失败'); }
+}
+
+// ══ 经营报告 ══
+function renderReport() {
+  document.getElementById('report-body').innerHTML = `
+    <div style="background:white;border:1px solid var(--gray-200);border-radius:16px;overflow:hidden;margin-bottom:28px">
+      <div style="background:linear-gradient(135deg,#4c1d95,#8b5cf6);padding:24px 28px;color:white;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:11px;opacity:0.6;letter-spacing:1px;margin-bottom:6px">当前月份</div>
+          <div style="font-family:'Noto Serif SC',serif;font-size:22px;font-weight:700">${new Date().getFullYear()}年 ${new Date().getMonth()+1}月 经营报告</div>
+        </div>
+      </div>
+      <div style="padding:16px 28px;background:var(--amber-pale);border-bottom:1px solid #fde68a;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">⏳</span>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#92400e">本月报告将于月末自动生成</div>
+          <div style="font-size:12px;color:#a16207;margin-top:2px">系统将基于本月所有通话分析数据、客户转化数据、渠道投放数据自动生成经营分析报告</div>
+        </div>
+      </div>
+    </div>
+    <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px">报告数据来源</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px">
+      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">📊 转化数据</div>
+        <div style="font-size:12px;color:var(--gray-500);line-height:1.8">线索总量、有效率、邀约率、到店率、成单率，按渠道和客服维度拆分</div>
+      </div>
+      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">🤖 AI 分析</div>
+        <div style="font-size:12px;color:var(--gray-500);line-height:1.8">客服6维评分趋势、通话质量分析、客户画像洞察、成交特征提取</div>
+      </div>
+      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">💰 渠道 ROI</div>
+        <div style="font-size:12px;color:var(--gray-500);line-height:1.8">各渠道投入产出比、获客成本、成单成本对比，优化投放建议</div>
+      </div>
+      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px">
+        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:8px">💡 经营建议</div>
+        <div style="font-size:12px;color:var(--gray-500);line-height:1.8">基于数据的下月经营策略建议、客服辅导重点、投放调整方向</div>
+      </div>
+    </div>`;
+}
+
+// ══ 初始化 ══
 async function init() {
   const loggedIn = await checkAuth();
   if (loggedIn) {
-    // 已登录，显示用户信息
-    document.getElementById('login-btn').style.display = 'none';
-    document.getElementById('user-info').style.display = 'block';
-    // 加载真实数据
-    await Promise.all([loadCustomers(), loadAgents(), loadDashboard()]);
+    afterLogin();
   } else {
-    // 未登录，使用 mock 数据
-    window.customers = mockCustomers;
-    window.seaCustomers = mockSeaCustomers;
+    // 未登录，填充 mock 数据
+    leaveList = [
+      {id:'mock-l1',userName:'严妍',type:'leave',startDate:new Date().toISOString(),endDate:new Date(Date.now()+3*86400000).toISOString(),reason:'家中有事',status:'pending'},
+      {id:'mock-l2',userName:'李晓东',type:'leave',startDate:new Date(Date.now()+86400000).toISOString(),endDate:new Date(Date.now()+2*86400000).toISOString(),reason:'身体不适',status:'pending'},
+    ];
+    // 未登录也渲染空状态
+    renderDashboard();
+    renderAgentPerformance();
+    renderROI();
+    renderCustomers();
+    renderViolations();
+    renderSettings();
+    renderLeave();
+    renderReport();
   }
-  renderTodo();
-  renderConfirmCards();
-  renderCustomerTable();
-  updatePinnedCount();
-  renderPinnedCustomers();
-  renderSea();
-  renderCases();
-  renderBoss();
-  renderHistoryList();
 }
 init();
 </script>

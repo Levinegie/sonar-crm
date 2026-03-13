@@ -213,6 +213,8 @@ router.get('/me', authenticate, async (req, res) => {
       name: user.name,
       role: user.role,
       avatar: user.avatar,
+      leaveUntil: user.leaveUntil,
+      carryoverCalls: user.carryoverCalls || 0,
       tenant: {
         id: user.tenant.id,
         name: user.tenant.name,
