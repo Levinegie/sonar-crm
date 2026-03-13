@@ -60,7 +60,19 @@ async function analyzeAudioWithGemini(ossUrl, systemPrompt) {
   }
 
   try {
-    // 对于云雾接口，使用多模态能力
+    // 1. 下载音频文件并转为 base64
+    console.log('Downloading audio from OSS:', ossUrl);
+    const audioResponse = await axios.get(ossUrl, { responseType: 'arraybuffer', timeout: 30000 });
+    const base64Audio = Buffer.from(audioResponse.data).toString('base64');
+
+    // 根据文件扩展名判断 MIME 类型
+    const ext = ossUrl.split('.').pop().toLowerCase().split('?')[0];
+    const mimeMap = { mp3: 'audio/mp3', wav: 'audio/wav', m4a: 'audio/mp4', ogg: 'audio/ogg', flac: 'audio/flac' };
+    const mimeType = mimeMap[ext] || 'audio/mp3';
+
+    console.log(`Audio downloaded, size: ${audioResponse.data.byteLength} bytes, type: ${mimeType}`);
+
+    // 2. 通过 OpenAI 兼容格式发送音频（base64 内联）
     const response = await axios.post(
       `${AI_API_URL}/v1/chat/completions`,
       {
@@ -74,9 +86,9 @@ async function analyzeAudioWithGemini(ossUrl, systemPrompt) {
                 text: systemPrompt
               },
               {
-                type: 'image_url',  // 某些 API 使用这个格式处理音频
+                type: 'image_url',
                 image_url: {
-                  url: ossUrl
+                  url: `data:${mimeType};base64,${base64Audio}`
                 }
               }
             ]
@@ -89,7 +101,8 @@ async function analyzeAudioWithGemini(ossUrl, systemPrompt) {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${AI_API_KEY}`
-        }
+        },
+        timeout: 120000
       }
     );
 
@@ -101,10 +114,7 @@ async function analyzeAudioWithGemini(ossUrl, systemPrompt) {
 
   } catch (error) {
     console.error('Audio analysis failed:', error.response?.data || error.message);
-
-    // 如果多模态失败，返回提示信息
-    console.log('Multimodal API not available, using text-only mode');
-    throw new Error('Audio analysis not fully supported, please use text transcript');
+    throw new Error('音频分析失败: ' + (error.response?.data?.error?.message || error.message));
   }
 }
 
