@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>声纳 AI 客服助手 v2</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
 :root {
   --navy:#0d1f3c; --blue:#1a56db; --blue-light:#3b82f6; --blue-pale:#eff6ff;
@@ -202,34 +201,6 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 .portrait-confirm-item .pc-label{font-size:11px;color:var(--gray-400);margin-bottom:4px;}
 .portrait-confirm-item input,.portrait-confirm-item select{width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:12px;outline:none;font-family:'Noto Sans SC',sans-serif;background:white;}
 .new-field-badge{background:var(--amber-pale);border:1px solid #fde68a;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:700;color:#d97706;margin-left:4px;}
-.confirm-existing-info{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:8px;padding:12px 14px;margin-bottom:12px;font-size:12px;color:var(--gray-600);line-height:1.8;}
-.confirm-existing-info .ei-label{font-size:11px;font-weight:700;color:var(--gray-400);margin-bottom:6px;}
-.confirm-existing-info .ei-row{display:flex;gap:12px;flex-wrap:wrap;}
-.confirm-existing-info .ei-item{display:flex;gap:4px;}
-.confirm-existing-info .ei-key{color:var(--gray-400);}
-.confirm-existing-info .ei-val{color:var(--gray-700);font-weight:500;}
-.confirm-field.ai-new input,.confirm-field.ai-new select{border-color:var(--amber);background:#fffdf5;}
-.portrait-confirm-item.ai-new{border:1px solid var(--amber);background:var(--amber-pale);}
-.portrait-confirm-item.ai-new .pc-label::after{content:' ✨新';font-size:10px;color:var(--amber);font-weight:700;}
-.confirm-call-count{display:inline-flex;align-items:center;gap:4px;background:var(--purple-pale);border:1px solid #c4b5fd;border-radius:6px;padding:2px 8px;font-size:11px;font-weight:600;color:var(--purple);margin-left:6px;}
-.follow-picker{margin-top:6px;}
-.follow-quick{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
-.follow-quick-btn{padding:4px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;cursor:pointer;background:white;color:var(--gray-600);transition:all 0.15s;font-family:'Noto Sans SC',sans-serif;}
-.follow-quick-btn:hover{border-color:var(--blue-light);color:var(--blue);}
-.follow-quick-btn.active{background:var(--blue);color:white;border-color:var(--blue);}
-.follow-cal{display:none;background:white;border:1px solid var(--gray-200);border-radius:8px;padding:10px;width:100%;}
-.follow-cal.show{display:block;}
-.follow-cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--navy);}
-.follow-cal-header span{cursor:pointer;padding:2px 8px;border-radius:4px;color:var(--gray-500);}
-.follow-cal-header span:hover{background:var(--gray-100);}
-.follow-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;}
-.follow-cal-grid .cal-wk{font-size:10px;color:var(--gray-400);padding:4px 0;font-weight:600;}
-.follow-cal-grid .cal-day{font-size:12px;padding:6px 0;border-radius:6px;cursor:pointer;color:var(--gray-600);transition:all 0.1s;}
-.follow-cal-grid .cal-day:hover{background:var(--blue-pale);color:var(--blue);}
-.follow-cal-grid .cal-day.today{font-weight:700;color:var(--blue);border:1px solid var(--blue-light);}
-.follow-cal-grid .cal-day.selected{background:var(--blue);color:white;font-weight:600;}
-.follow-cal-grid .cal-day.past{color:var(--gray-300);cursor:default;}
-.follow-cal-grid .cal-day.other{color:var(--gray-300);}
 
 /* 管理端 */
 .boss-grid{display:grid;grid-template-columns:2fr 1fr;gap:20px;}
@@ -270,113 +241,10 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 <body>
 
 <div class="role-switch">
-  <div class="logo">声纳 <span style="font-weight:400;opacity:0.6">· 客服工作台</span></div>
-  <div style="display:flex;align-items:center;gap:16px;">
-    <div style="color:rgba(255,255,255,0.6);font-size:12px" id="user-info" style="display:none">
-      <span id="current-user">客服</span> · <span onclick="doLogout()" style="cursor:pointer;opacity:0.7">退出</span>
-    </div>
-    <div id="login-btn" style="color:rgba(255,255,255,0.6);font-size:12px">
-      <span onclick="showLoginModal()" style="cursor:pointer;opacity:0.7">登录</span>
-    </div>
-    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.1.1</div>
-  </div>
-</div>
-
-<!-- 登录弹窗 -->
-<div id="login-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:12px;padding:32px;width:360px;max-width:90%">
-    <div style="font-size:20px;font-weight:700;margin-bottom:20px;text-align:center">客服登录</div>
-    <input id="login-username" type="text" placeholder="用户名" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:12px;font-size:14px">
-    <input id="login-password" type="password" placeholder="密码" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:16px;font-size:14px">
-    <button onclick="handleLogin()" style="width:100%;padding:12px;background:#1a56db;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">登录</button>
-    <div style="text-align:center;margin-top:12px;font-size:13px">
-      <span onclick="document.getElementById('login-modal').style.display='none'" style="color:#64748b;cursor:pointer">取消</span>
-      <span style="color:#e2e8f0;margin:0 8px">|</span>
-      <span onclick="showRegisterModal()" style="color:#1a56db;cursor:pointer">邀请注册</span>
-    </div>
-  </div>
-</div>
-
-<!-- 注册弹窗 -->
-<div id="register-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:12px;padding:32px;width:360px;max-width:90%">
-    <div style="font-size:20px;font-weight:700;margin-bottom:20px;text-align:center">邀请注册</div>
-    <input id="reg-invite" type="text" placeholder="邀请码" readonly style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:12px;font-size:14px;background:#f8fafc;color:#64748b">
-    <input id="reg-name" type="text" placeholder="姓名" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:12px;font-size:14px">
-    <input id="reg-username" type="text" placeholder="用户名（登录用）" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:12px;font-size:14px">
-    <input id="reg-password" type="password" placeholder="密码（至少6位）" style="width:100%;padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:16px;font-size:14px">
-    <button onclick="handleRegister()" id="reg-btn" style="width:100%;padding:12px;background:#10b981;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer">注册</button>
-    <div style="text-align:center;margin-top:12px;font-size:12px;color:#94a3b8">注册后需管理员审核通过才能登录</div>
-    <div style="text-align:center;margin-top:12px;font-size:13px">
-      <span onclick="document.getElementById('register-modal').style.display='none'" style="color:#64748b;cursor:pointer">取消</span>
-      <span style="color:#e2e8f0;margin:0 8px">|</span>
-      <span onclick="showLoginModal()" style="color:#1a56db;cursor:pointer">已有账号，去登录</span>
-    </div>
-  </div>
-</div>
-
-<!-- 新建客户弹窗 -->
-<div id="new-customer-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:12px;padding:28px;width:520px;max-width:92%;max-height:85vh;overflow-y:auto">
-    <div style="font-size:18px;font-weight:700;margin-bottom:18px;text-align:center">新建客户</div>
-    <div class="confirm-section-label">📋 基础信息</div>
-    <div class="confirm-fields">
-      <div class="confirm-field"><label>姓名 *</label><input id="nc-name" placeholder="请输入姓名"></div>
-      <div class="confirm-field"><label>电话 *</label><input id="nc-phone" placeholder="请输入电话"></div>
-      <div class="confirm-field"><label>小区</label><input id="nc-community" placeholder="请输入小区"></div>
-      <div class="confirm-field"><label>面积</label><input id="nc-area" placeholder="如 120" style="width:80px"> ㎡</div>
-      <div class="confirm-field"><label>预算</label><input id="nc-budget" placeholder="如 25万"></div>
-    </div>
-    <div class="confirm-section-label">👤 客户画像</div>
-    <div class="portrait-confirm-grid" id="nc-portrait-grid"></div>
-    <div class="confirm-section-label">⭐ 客户等级与跟进</div>
-    <div class="confirm-fields">
-      <div class="confirm-field"><label>客户等级</label>
-        <select id="nc-level"><option value="S">S级</option><option value="A">A级</option><option value="B">B级</option><option value="C" selected>C级</option></select>
-      </div>
-      <div class="confirm-field" style="flex-direction:column;align-items:flex-start"><label>下次跟进</label>
-        <div class="follow-picker" id="follow-picker-nc">
-          <div class="follow-quick">
-            <span class="follow-quick-btn active" onclick="pickFollowQuick('nc','明天',this)">明天</span>
-            <span class="follow-quick-btn" onclick="pickFollowQuick('nc','后天',this)">后天</span>
-            <span class="follow-quick-btn" onclick="pickFollowQuick('nc','3天后',this)">3天后</span>
-            <span class="follow-quick-btn" onclick="pickFollowQuick('nc','1周后',this)">1周后</span>
-            <span class="follow-quick-btn" onclick="toggleFollowCal('nc')">📅 选日期</span>
-          </div>
-          <div class="follow-cal" id="follow-cal-nc"></div>
-          <input type="hidden" id="nc-next" value="明天">
-        </div>
-      </div>
-    </div>
-    <div style="display:flex;gap:8px;margin-top:18px;justify-content:flex-end">
-      <button class="btn btn-outline btn-sm" onclick="closeNewCustomerModal()">取消</button>
-      <button class="btn btn-primary btn-sm" onclick="submitNewCustomer()">确认创建</button>
-    </div>
-  </div>
-</div>
-
-<!-- 导入客户弹窗 -->
-<div id="import-modal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center">
-  <div style="background:white;border-radius:12px;padding:28px;width:560px;max-width:92%;max-height:85vh;overflow-y:auto">
-    <div style="font-size:18px;font-weight:700;margin-bottom:18px;text-align:center">批量导入客户</div>
-    <div style="background:var(--blue-pale);border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-bottom:16px;font-size:12px;color:#1e40af;line-height:1.6">
-      支持 .xlsx 和 .csv 文件，必填列：姓名、电话。<br>
-      <a href="javascript:void(0)" onclick="downloadImportTemplate()" style="color:var(--blue);font-weight:600">📄 下载导入模板</a>
-    </div>
-    <div style="border:2px dashed var(--gray-300);border-radius:10px;padding:32px;text-align:center;margin-bottom:16px;cursor:pointer" onclick="document.getElementById('import-file-input').click()" id="import-drop-zone">
-      <div style="font-size:28px;margin-bottom:8px">📁</div>
-      <div style="font-size:13px;color:var(--gray-500)">点击选择文件或拖拽到此处</div>
-      <div style="font-size:11px;color:var(--gray-400);margin-top:4px" id="import-file-name">支持 .xlsx / .csv</div>
-      <input type="file" id="import-file-input" accept=".xlsx,.csv" style="display:none" onchange="handleImportFile(this)">
-    </div>
-    <div id="import-preview" style="display:none;margin-bottom:16px">
-      <div style="font-size:12px;font-weight:600;color:var(--gray-600);margin-bottom:8px">预览（前5行）</div>
-      <div style="overflow-x:auto"><table id="import-preview-table" style="width:100%;font-size:11px;border-collapse:collapse"></table></div>
-    </div>
-    <div style="display:flex;gap:8px;justify-content:flex-end">
-      <button class="btn btn-outline btn-sm" onclick="closeImportModal()">取消</button>
-      <button class="btn btn-primary btn-sm" id="import-submit-btn" onclick="submitImport()" disabled>确认导入</button>
-    </div>
+  <div class="logo">声纳</div>
+  <div class="role-tabs">
+    <button class="role-tab active" onclick="switchRole('staff',this)">📱 客服端</button>
+    <button class="role-tab" onclick="switchRole('boss',this)">📊 管理端</button>
   </div>
 </div>
 
@@ -392,7 +260,7 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     <div class="nav-group">
       <div class="nav-group-label">工作台</div>
       <a class="nav-link active" onclick="showStaffView('todo',this)"><span class="ni">📋</span>今日待办<span class="nav-badge">8</span></a>
-      <a class="nav-link" onclick="showStaffView('confirm',this)"><span class="ni">✅</span>待确认卡片<span class="nav-badge" id="confirm-count">0</span></a>
+      <a class="nav-link" onclick="showStaffView('confirm',this)"><span class="ni">✅</span>待确认卡片<span class="nav-badge">3</span></a>
       <a class="nav-link" onclick="showStaffView('search',this)"><span class="ni">🔍</span>搜索查重</a>
     </div>
     <div class="nav-group">
@@ -453,10 +321,7 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     <div class="view" id="staff-customers">
       <div class="page-header">
         <div><div class="page-title">我的客户</div><div class="page-sub" id="staff-cust-count">共 13 位客户</div></div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-outline btn-sm" onclick="openNewCustomerModal()">＋ 手动新建</button>
-          <button class="btn btn-outline btn-sm" onclick="openImportModal()">📥 导入</button>
-        </div>
+        <button class="btn btn-outline btn-sm" onclick="alert('打开新建客户表单')">＋ 手动新建</button>
       </div>
       <div class="page-body">
         <!-- 筛选栏 -->
@@ -619,6 +484,287 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
   </main>
 </div>
 
+<!-- ══════════ 管理端 ══════════ -->
+<div class="app" id="app-boss" style="display:none">
+  <nav class="sidebar">
+    <div class="sidebar-profile">
+      <div class="avatar" style="background:var(--navy)">王</div>
+      <div class="profile-info"><div class="name">王总</div><div class="role-label">管理员</div></div>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">看板</div>
+      <a class="nav-link active" onclick="showBossView('dashboard',this)"><span class="ni">📊</span>今日概览</a>
+      <a class="nav-link" onclick="showBossView('agents',this)"><span class="ni">👤</span>客服表现</a>
+      <a class="nav-link" onclick="showBossView('roi',this)"><span class="ni">💰</span>渠道 ROI</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">管理</div>
+      <a class="nav-link" onclick="showBossView('allcust',this)"><span class="ni">👥</span>全部客户</a>
+      <a class="nav-link" onclick="showBossView('violations',this)"><span class="ni">⚠️</span>违禁词预警<span class="nav-badge">2</span></a>
+      <a class="nav-link" onclick="showBossView('settings',this)"><span class="ni">⚙️</span>规则设置</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-group-label">AI 报告</div>
+      <a class="nav-link" onclick="showBossView('report',this)"><span class="ni">📑</span>经营报告</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <!-- 今日概览 -->
+    <div class="view active" id="boss-dashboard">
+      <div class="page-header"><div><div class="page-title">今日概览</div><div class="page-sub">2026年2月27日 · 数据实时更新</div></div></div>
+      <div class="page-body">
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-label">今日跟进通数</div><div class="stat-val">47</div><div class="stat-sub">目标 120 通 · 完成 39%</div><div class="stat-icon">📞</div></div>
+          <div class="stat-card"><div class="stat-label">今日新增线索</div><div class="stat-val">8</div><div class="stat-sub">抖音 6 · 直播 2</div><div class="stat-icon">✨</div></div>
+          <div class="stat-card"><div class="stat-label">今日到店</div><div class="stat-val">2</div><div class="stat-sub">本月累计 11 次</div><div class="stat-icon">🏠</div></div>
+          <div class="stat-card"><div class="stat-label">今日签单</div><div class="stat-val">0</div><div class="stat-sub">本月累计 3 单 · 42.8万</div><div class="stat-icon">🎉</div></div>
+        </div>
+        <div class="boss-grid">
+          <div>
+            <div class="chart-card" style="margin-bottom:20px">
+              <div class="chart-title">本月线索转化漏斗</div>
+              <div class="funnel">
+                <div class="funnel-row"><div class="funnel-label">新线索</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:100%;background:#3b82f6"><span>68</span></div></div><div class="funnel-count">68</div></div>
+                <div class="funnel-row"><div class="funnel-label">有效客户</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:66%;background:#06b6d4"><span>45</span><span class="rate">有效率 66%</span></div></div><div class="funnel-count">45</div></div>
+                <div class="funnel-row"><div class="funnel-label">已邀约</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:35%;background:#8b5cf6"><span>24</span><span class="rate">邀约率 53%</span></div></div><div class="funnel-count">24</div></div>
+                <div class="funnel-row"><div class="funnel-label">已到店</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:16%;background:#f59e0b"><span>11</span><span class="rate">到店率 46%</span></div></div><div class="funnel-count">11</div></div>
+                <div class="funnel-row"><div class="funnel-label">已签单</div><div class="funnel-bar-wrap"><div class="funnel-bar" style="width:4%;background:#10b981"><span>3</span><span class="rate">成单率 27%</span></div></div><div class="funnel-count">3</div></div>
+              </div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title">⚠️ 超期未跟进预警</div>
+              <div class="warn-list" id="warn-list"></div>
+            </div>
+          </div>
+          <div>
+            <div class="chart-card">
+              <div class="chart-title">客服今日完成情况</div>
+              <div class="agent-list" id="agent-rank-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 客服表现 -->
+    <div class="view" id="boss-agents">
+      <div class="page-header"><div class="page-title">客服表现分析</div></div>
+      <div class="page-body" id="agents-body"></div>
+    </div>
+
+    <!-- 渠道ROI -->
+    <div class="view" id="boss-roi">
+      <div class="page-header"><div class="page-title">渠道 ROI 分析</div></div>
+      <div class="page-body">
+        <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+          <div class="stat-card"><div class="stat-label">本月总投流</div><div class="stat-val">3.2<span style="font-size:16px">万</span></div><div class="stat-sub">较上月 +8%</div></div>
+          <div class="stat-card"><div class="stat-label">平均获客成本</div><div class="stat-val">471<span style="font-size:16px">元</span></div><div class="stat-sub">每条有效线索</div></div>
+          <div class="stat-card"><div class="stat-label">平均成单成本</div><div class="stat-val">1.07<span style="font-size:16px">万</span></div><div class="stat-sub">每单装修合同</div></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">各渠道详细数据</div>
+          <table>
+            <thead><tr><th>渠道</th><th>消费</th><th>获客量</th><th>获客成本</th><th>有效量</th><th>有效成本</th><th>到店量</th><th>到店率</th><th>到店成本</th><th>成单数</th><th>成单率</th><th>业绩</th></tr></thead>
+            <tbody id="roi-table-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 全部客户 -->
+    <div class="view" id="boss-allcust">
+      <div class="page-header">
+        <div><div class="page-title">全部客户</div><div class="page-sub" id="boss-cust-count">共 13 位客户</div></div>
+      </div>
+      <div class="page-body">
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:16px 20px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <div class="search-box" style="max-width:220px">
+              <span>🔍</span>
+              <input type="text" id="boss-search-kw" placeholder="姓名/电话/小区…" oninput="applyBossFilter()">
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--gray-400);font-weight:600">时间：</span>
+              <div class="filter-tabs">
+                <button class="filter-tab active" onclick="setBossTime('today',this)">今天</button>
+                <button class="filter-tab" onclick="setBossTime('week',this)">本周</button>
+                <button class="filter-tab" onclick="setBossTime('month',this)">本月</button>
+                <button class="filter-tab" onclick="setBossTime('all',this)">全部</button>
+                <button class="filter-tab" onclick="setBossTime('custom',this)">自定义</button>
+              </div>
+            </div>
+          </div>
+          <div id="boss-custom-date" style="display:none;align-items:center;gap:8px;margin-bottom:12px">
+            <span style="font-size:12px;color:var(--gray-500)">从</span>
+            <input type="date" id="boss-date-from" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px" onchange="applyBossFilter()">
+            <span style="font-size:12px;color:var(--gray-500)">到</span>
+            <input type="date" id="boss-date-to" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px" onchange="applyBossFilter()">
+            <button class="btn btn-primary btn-sm" onclick="applyBossFilter()">查询</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--gray-400);font-weight:600">客服：</span>
+              <select id="boss-filter-agent" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
+                <option value="">全部</option>
+                <option value="严妍">严妍</option>
+                <option value="李晓东">李晓东</option>
+                <option value="张小红">张小红</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--gray-400);font-weight:600">状态：</span>
+              <select id="boss-filter-status" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
+                <option value="">全部</option>
+                <option value="pending">待确认</option>
+                <option value="valid">有效客户</option>
+                <option value="invited">已邀约</option>
+                <option value="visited">已到店</option>
+                <option value="signed">已签单</option>
+                <option value="dead">死单</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--gray-400);font-weight:600">级别：</span>
+              <select id="boss-filter-level" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
+                <option value="">全部</option>
+                <option value="S">S级</option>
+                <option value="A">A级</option>
+                <option value="B">B级</option>
+                <option value="C">C级</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--gray-400);font-weight:600">跟进：</span>
+              <select id="boss-filter-followup" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
+                <option value="">全部</option>
+                <option value="overdue">逾期未跟进</option>
+                <option value="today">今天需跟进</option>
+                <option value="week">本周需跟进</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--gray-400);font-weight:600">画像：</span>
+              <select id="boss-filter-portrait" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
+                <option value="">全部</option>
+                <option value="high">完整（70%+）</option>
+                <option value="mid">一般（40-70%）</option>
+                <option value="low">待补充（40%以下）</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px">
+              <span style="font-size:11px;color:var(--gray-400);font-weight:600">渠道：</span>
+              <select id="boss-filter-channel" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
+                <option value="">全部</option>
+                <option value="抖音主号">抖音主号</option>
+                <option value="抖音设计号">抖音设计号</option>
+                <option value="直播间">直播间</option>
+                <option value="转介绍">转介绍</option>
+              </select>
+            </div>
+            <div style="display:flex;align-items:center;gap:4px;margin-left:auto">
+              <span style="font-size:11px;color:var(--gray-400);font-weight:600">排序：</span>
+              <select id="boss-sort" onchange="applyBossFilter()" style="padding:4px 8px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;font-family:'Noto Sans SC',sans-serif">
+                <option value="lastCall">最近跟进时间</option>
+                <option value="nextFollow">下次跟进时间</option>
+                <option value="level">客户级别</option>
+                <option value="portrait">画像完整度</option>
+                <option value="calls">通话次数</option>
+                <option value="buildTime">建档时间</option>
+                <option value="budget">预算金额</option>
+              </select>
+              <button class="btn btn-outline btn-sm" id="boss-sort-dir" onclick="toggleBossSortDir()" style="padding:4px 8px;font-size:12px;min-width:32px">↓</button>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+            <span style="font-size:11px;color:var(--gray-400)">快捷：</span>
+            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('overdue')">⚠️ 逾期未跟进</button>
+            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('highvalue')">💎 S级客户</button>
+            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('portrait_low')">👤 画像待补充</button>
+            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('visited')">🏠 已到店</button>
+            <button class="btn btn-outline btn-sm" style="font-size:11px;padding:3px 10px" onclick="bosQuickFilter('reset')">清除筛选</button>
+          </div>
+        </div>
+        <div class="table-card">
+          <table><thead><tr><th>客户</th><th>归属客服</th><th>小区</th><th>级别</th><th>状态</th><th>画像完整度</th><th>通话数</th><th>最近跟进</th></tr></thead>
+          <tbody id="boss-cust-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 经营报告 -->
+    <div class="view" id="boss-report">
+      <div class="page-header">
+        <div><div class="page-title">经营报告</div><div class="page-sub">每月自动生成，3日前完成，历史报告永久留存</div></div>
+      </div>
+      <div class="page-body" style="max-width:900px">
+
+        <!-- 本月状态卡片 -->
+        <div style="background:white;border:1px solid var(--gray-200);border-radius:16px;overflow:hidden;margin-bottom:28px">
+          <div style="background:linear-gradient(135deg,#4c1d95,#8b5cf6);padding:24px 28px;color:white;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:11px;opacity:0.6;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">当前月份</div>
+              <div style="font-family:'Noto Serif SC',serif;font-size:22px;font-weight:700">2026年 2月 经营报告</div>
+              <div style="font-size:12px;opacity:0.6;margin-top:6px">2026年2月1日 — 2月28日</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;min-width:240px">
+              <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Noto Serif SC',serif">3.2万</div><div style="font-size:10px;opacity:0.7;margin-top:2px">投流</div></div>
+              <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Noto Serif SC',serif">42.8万</div><div style="font-size:10px;opacity:0.7;margin-top:2px">业绩</div></div>
+              <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Noto Serif SC',serif">66%</div><div style="font-size:10px;opacity:0.7;margin-top:2px">有效率</div></div>
+              <div style="background:rgba(255,255,255,0.12);border-radius:8px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:700;font-family:'Noto Serif SC',serif">1.07万</div><div style="font-size:10px;opacity:0.7;margin-top:2px">成单成本</div></div>
+            </div>
+          </div>
+          <div style="padding:16px 28px;background:var(--amber-pale);border-bottom:1px solid #fde68a;display:flex;align-items:center;gap:10px">
+            <span style="font-size:18px">⏳</span>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#92400e">本月报告将于 3月3日前 自动生成</div>
+              <div style="font-size:12px;color:#a16207;margin-top:2px">系统将在每月1日起分批处理所有客户报告，3日前完成推送，无需手动操作</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 历史报告列表 -->
+        <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+          <div style="font-size:14px;font-weight:700;color:var(--navy)">历史报告</div>
+          <div style="font-size:12px;color:var(--gray-400)">共 <span id="history-count">0</span> 份</div>
+        </div>
+        <div id="history-report-list"></div>
+
+      </div>
+    </div>
+
+    <!-- 违禁词 -->
+    <div class="view" id="boss-violations">
+      <div class="page-header"><div class="page-title">违禁词预警</div></div>
+      <div class="page-body" id="violations-body"></div>
+    </div>
+
+    <!-- 设置 -->
+    <div class="view" id="boss-settings">
+      <div class="page-header"><div class="page-title">规则设置</div></div>
+      <div class="page-body">
+        <div style="max-width:560px">
+          <div class="chart-card" style="margin-bottom:16px">
+            <div class="chart-title">跟进规则</div>
+            <div style="display:flex;flex-direction:column;gap:14px">
+              <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500">每日底线任务数</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">客服每天最少打多少通</div></div><input type="number" value="60" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500">跟进周期（天）</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">每隔几天必须跟进一次</div></div><input type="number" value="3" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500">公海回收天数</div><div style="font-size:11px;color:var(--gray-400);margin-top:2px">连续几天无跟进自动回收</div></div><input type="number" value="6" style="width:80px;padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:14px;text-align:center"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between"><div><div style="font-size:13px;font-weight:500">接单模式</div></div><select style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif"><option>主动接单</option><option>被动推送</option></select></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">违禁词管理</div>
+            <div id="forbidden-words" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+            <div style="display:flex;gap:8px"><input id="new-word" type="text" placeholder="添加违禁词…" style="flex:1;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;font-family:'Noto Sans SC',sans-serif"><button class="btn btn-primary btn-sm" onclick="addForbiddenWord()">添加</button></div>
+          </div>
+          <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="alert('✅ 规则已保存')">保存设置</button></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
 <!-- 客户详情侧板 -->
 <div class="detail-panel" id="detail-panel">
   <div class="detail-header">
@@ -640,367 +786,8 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 </div>
 
 <script>
-// ══ API 配置 ══
-const API_BASE = window.location.origin;
-let token = localStorage.getItem('sonar_token');
-let currentUser = null;
-let useMockData = false;
-
-// API 调用
-async function api(path, options = {}) {
-  const res = await fetch(API_BASE + path, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      ...options.headers
-    }
-  });
-  return res.json();
-}
-
-// 登录检查
-async function checkAuth() {
-  if (!token) return false;
-  try {
-    const data = await api('/api/auth/me');
-    if (data.success) {
-      currentUser = data.data;
-      updateUserInfo();
-      return true;
-    }
-  } catch (e) {}
-  return false;
-}
-
-function updateUserInfo() {
-  if (currentUser) {
-    document.querySelector('.sidebar-profile .name').textContent = currentUser.name;
-    document.querySelector('.sidebar-profile .role-label').textContent =
-      currentUser.role === 'admin' ? '管理员' : currentUser.role === 'boss' ? '主管' : '客服专员';
-    document.querySelector('.sidebar-profile .avatar').textContent = currentUser.name[0];
-    document.getElementById('current-user').textContent = currentUser.name;
-  }
-}
-
-async function doLogout() {
-  localStorage.removeItem('sonar_token');
-  token = null;
-  location.reload();
-}
-
-// 加载真实数据
-async function loadCustomers() {
-  try {
-    const data = await api('/api/customers');
-    console.log('loadCustomers response:', data);
-    if (data.success && data.data?.list) {
-      window.customers = data.data.list.map(c => ({
-        id: c.id,
-        name: c.name,
-        phone: c.phone,
-        area: c.community || '',
-        budget: c.budget || '',
-        size: c.houseType || (c.area ? c.area + '㎡' : ''),
-        style: c.portrait?.stylePreference || '',
-        agent: c.agentName || currentUser?.name || '',
-        calls: c.callCount || 0,
-        status: c.status || 'pending',
-        level: c.level || 'C',
-        next: c.nextFollowAt ? formatDate(c.nextFollowAt) : '',
-        lastCall: c.lastCallAt || '',
-        portraitPct: c.portraitPct || 0,
-        pinned: c.pinned || false,
-        portrait: c.portrait || {},
-        promise: c.portrait?.promise || ''
-      }));
-      return true;
-    }
-  } catch (e) { console.error('loadCustomers error:', e); }
-  return false;
-}
-
-async function loadSeaCustomers() {
-  try {
-    const data = await api('/api/customers/sea');
-    if (data.success && data.data?.list) {
-      window.seaCustomers = data.data.list.map(c => ({
-        id: c.id,
-        name: c.name || '未知',
-        area: c.community || '',
-        budget: c.budget || '',
-        calls: c.callCount || 0,
-        daysAgo: c.seaAt ? Math.floor((Date.now() - new Date(c.seaAt)) / 86400000) : 0,
-        reason: c.seaReason || '转入公海'
-      }));
-      return true;
-    }
-  } catch (e) { console.error('loadSea error:', e); }
-  return false;
-}
-
-async function loadAgents() {
-  try {
-    const data = await api('/api/users/agents');
-    if (data.success && data.data?.list) {
-      const colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444'];
-      window.agents = data.data.list.map((a, i) => ({
-        name: a.name,
-        avatar: a.name[0],
-        color: colors[i % colors.length],
-        done: a.todayCalls || 0,
-        target: 60,
-        score: a.score || 75,
-        portraitAvg: a.portraitAvg || 50
-      }));
-      return true;
-    }
-  } catch (e) { console.error('loadAgents error:', e); }
-  return false;
-}
-
-async function claimSeaCustomer(id) {
-  try {
-    const data = await api('/api/customers/' + id + '/claim', { method: 'POST' });
-    if (data.success) {
-      alert('抢单成功！');
-      await loadSeaCustomers();
-      await loadCustomers();
-      renderSea();
-      renderCustomerTable();
-    } else {
-      alert(data.error || '抢单失败');
-    }
-  } catch (e) {
-    alert('抢单失败');
-  }
-}
-
-// 登录功能
-async function doLogin(username, password) {
-  try {
-    const data = await api('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password })
-    });
-    if (data.success && data.data?.token) {
-      token = data.data.token;
-      localStorage.setItem('sonar_token', token);
-      currentUser = data.data.user;
-      updateUserInfo();
-      return true;
-    } else {
-      alert(data.error || '登录失败');
-      return false;
-    }
-  } catch (e) {
-    alert('登录失败');
-    return false;
-  }
-}
-
-// 显示登录弹窗
-function showLoginModal() {
-  document.getElementById('register-modal').style.display = 'none';
-  document.getElementById('login-modal').style.display = 'flex';
-}
-
-function showRegisterModal() {
-  document.getElementById('login-modal').style.display = 'none';
-  document.getElementById('register-modal').style.display = 'flex';
-  // 自动填充 URL 中的邀请码
-  const params = new URLSearchParams(location.search);
-  const invite = params.get('invite');
-  if (invite) document.getElementById('reg-invite').value = invite;
-}
-
-async function handleRegister() {
-  const inviteCode = document.getElementById('reg-invite').value.trim();
-  const name = document.getElementById('reg-name').value.trim();
-  const username = document.getElementById('reg-username').value.trim();
-  const password = document.getElementById('reg-password').value;
-  if (!inviteCode || !name || !username || !password) { alert('请填写所有字段'); return; }
-  if (password.length < 6) { alert('密码至少6位'); return; }
-  const btn = document.getElementById('reg-btn');
-  btn.disabled = true; btn.textContent = '注册中...';
-  try {
-    const data = await api('/api/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inviteCode, name, username, password })
-    });
-    if (data.success) {
-      document.getElementById('register-modal').style.display = 'none';
-      alert(data.message || '注册成功，请等待管理员审核后登录');
-    } else {
-      alert(data.error || '注册失败');
-    }
-  } catch (e) { alert('注册失败: ' + e.message); }
-  finally { btn.disabled = false; btn.textContent = '注册'; }
-}
-
-// 处理登录
-async function handleLogin() {
-  const username = document.getElementById('login-username').value.trim();
-  const password = document.getElementById('login-password').value;
-  if (!username || !password) {
-    alert('请输入用户名和密码');
-    return;
-  }
-  const success = await doLogin(username, password);
-  if (success) {
-    document.getElementById('login-modal').style.display = 'none';
-    document.getElementById('login-btn').style.display = 'none';
-    document.getElementById('user-info').style.display = 'block';
-    // 重新加载数据
-    await loadCustomers();
-    await loadSeaCustomers();
-    renderCustomerTable();
-    renderSea();
-    renderTodo();
-  }
-}
-
-// 退出登录
-function doLogout() {
-  localStorage.removeItem('sonar_token');
-  token = null;
-  currentUser = null;
-  location.reload();
-}
-
-// 录音上传功能
-async function uploadRecording(file, customerPhone, customerName) {
-  try {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('customerPhone', customerPhone);
-    formData.append('customerName', customerName || '');
-    formData.append('callTime', new Date().toISOString());
-
-    const response = await fetch(API_BASE + '/api/recordings/upload', {
-      method: 'POST',
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : ''
-      },
-      body: formData
-    });
-
-    const data = await response.json();
-    if (data.success) {
-      alert('录音上传成功！AI 分析中...');
-      return data.data;
-    } else {
-      alert(data.error || '上传失败');
-      return null;
-    }
-  } catch (e) {
-    console.error('Upload error:', e);
-    alert('上传失败');
-    return null;
-  }
-}
-
-// 加载客户详情
-async function loadCustomerDetail(id) {
-  try {
-    const data = await api('/api/customers/' + id);
-    if (data.success && data.data) {
-      return data.data;
-    }
-  } catch (e) {
-    console.error('Load customer detail error:', e);
-  }
-  return null;
-}
-
-// 加载客户录音列表
-async function loadCustomerRecordings(customerId) {
-  try {
-    const data = await api(`/api/recordings?customerId=${customerId}`);
-    if (data.success && data.data?.list) {
-      return data.data.list;
-    }
-  } catch (e) {
-    console.error('Load recordings error:', e);
-  }
-  return [];
-}
-
-// 添加跟进记录
-async function addFollowUp(customerId, content, nextAction, nextAt) {
-  try {
-    const data = await api('/api/follow-ups', {
-      method: 'POST',
-      body: JSON.stringify({
-        customerId,
-        type: 'call',
-        content,
-        nextAction,
-        nextAt
-      })
-    });
-    if (data.success) {
-      alert('跟进记录添加成功！');
-      return true;
-    } else {
-      alert(data.error || '添加失败');
-      return false;
-    }
-  } catch (e) {
-    alert('添加失败');
-    return false;
-  }
-}
-
-// 更新客户信息
-async function updateCustomer(id, updateData) {
-  try {
-    const data = await api('/api/customers/' + id, {
-      method: 'PUT',
-      body: JSON.stringify(updateData)
-    });
-    if (data.success) {
-      alert('更新成功！');
-      await loadCustomers();
-      return true;
-    } else {
-      alert(data.error || '更新失败');
-      return false;
-    }
-  } catch (e) {
-    alert('更新失败');
-    return false;
-  }
-}
-
-// 加载统计数据
-async function loadStats() {
-  try {
-    const data = await api('/api/stats/dashboard');
-    if (data.success && data.data) {
-      return data.data;
-    }
-  } catch (e) {
-    console.error('Load stats error:', e);
-  }
-  return null;
-}
-
-function formatDate(d) {
-  if (!d) return '';
-  const date = new Date(d);
-  const today = new Date();
-  const diff = Math.floor((date - today) / 86400000);
-  if (diff === 0) return '今天';
-  if (diff === 1) return '明天';
-  if (diff > 1) return `${diff}天后`;
-  if (diff === -1) return '昨天';
-  return date.toLocaleDateString();
-}
-
-// ══ Mock 数据（API 失败时使用）══
-const mockCustomers = [
+// ══ 数据 ══
+const customers = [
   { id:1, name:'王明', phone:'135****6093', area:'学仕里', budget:'25万', size:'300㎡', type:'自建房', style:'现代简约', agent:'严妍', calls:3, status:'invited', level:'S', next:'今天约好14:30', lastCall:'2026-02-25', promise:'下周二带方案上门', portraitPct:72, pinned:true,
     portrait:{ building:'学仕里·300㎡·自建房', purpose:'自住', houseState:'毛坯', family:'夫妻+1孩', profession:'个体老板', habit:'夜读、喜欢智能家居', awareness:'对比多家', position:'一线品牌', budget_detail:'25万·全包', time:'3个月后交房', focus:'工程质量、工期', designer:'风格现代、有品位', newFields:[] }},
   { id:2, name:'李雪梅', phone:'137****2079', area:'碧桂园', budget:'18万', size:'128㎡', type:'商品房', style:'轻奢风', agent:'严妍', calls:2, status:'valid', level:'A', next:'明天', lastCall:'2026-02-26', promise:'发同类案例', portraitPct:55,
@@ -1026,7 +813,7 @@ const mockCustomers = [
   { id:15, name:'许大明', phone:'185****7186', area:'东方明珠', budget:'40万', size:'240㎡', type:'商品房', style:'欧式', agent:'李晓东', calls:2, status:'valid', level:'S', next:'今天', lastCall:'2026-02-25', promise:'提供三套方案', portraitPct:62, portrait:{building:'东方明珠·240㎡',purpose:'自住',houseState:'毛坯',family:'夫妻+老人',profession:'企业主',habit:'有海外生活经验',awareness:'对比多家',position:'一线品牌',budget_detail:'40万',time:'暂无',focus:'设计水平、公司规模',designer:'欧式·要求出国经历设计师',newFields:[]}},
 ];
 
-const mockSeaCustomers = [
+const seaCustomers = [
   {id:101,name:'谭**',area:'碧桂园',budget:'15万',calls:2,daysAgo:7,reason:'3次未接听'},
   {id:102,name:'林**',area:'学仕里',budget:'28万',calls:1,daysAgo:8,reason:'客服离职转入'},
   {id:103,name:'杨**',area:'信阳新城',budget:'10万',calls:3,daysAgo:6,reason:'6天无跟进'},
@@ -1034,9 +821,8 @@ const mockSeaCustomers = [
   {id:105,name:'马**',area:'光山碧桂园',budget:'20万',calls:2,daysAgo:7,reason:'客户换号失联'},
 ];
 
-const statusMap = {pending:['待跟进','badge-pending'],valid:['有效客户','badge-valid'],invited:['已邀约','badge-invited'],visited:['已到店','badge-visited'],signed:['已签单','badge-signed'],dead:['死单','badge-dead'],invalid:['无效','badge-dead']};
-const levelMap = {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c',invalid:'badge-dead'};
-const levelLabel = l => l === 'invalid' ? '无效' : (l + '级');
+const statusMap = {pending:['待确认','badge-pending'],valid:['有效客户','badge-valid'],invited:['已邀约','badge-invited'],visited:['已到店','badge-visited'],signed:['已签单','badge-signed'],dead:['死单','badge-dead']};
+const levelMap = {S:'badge-s',A:'badge-a',B:'badge-b',C:'badge-c'};
 const agents = [
   {name:'严妍',avatar:'严',color:'#3b82f6',done:18,target:60,score:82,portraitAvg:51},
   {name:'李晓东',avatar:'李',color:'#8b5cf6',done:15,target:60,score:78,portraitAvg:69},
@@ -1046,322 +832,11 @@ const forbiddenWords = ['保证最低价','绝对不增项','市场最低','100%
 
 // 画像字段映射
 const portraitFields = [
-  {key:'houseType',label:'房屋类型'},{key:'houseUsage',label:'房屋用途'},{key:'houseState',label:'房屋现状'},
-  {key:'familyMembers',label:'家庭成员'},{key:'profession',label:'客户职业'},{key:'habits',label:'生活习惯'},
-  {key:'awareness',label:'了解程度'},{key:'position',label:'装修定位'},{key:'budgetDetail',label:'装修预算'},
-  {key:'timeline',label:'装修时间'},{key:'focusPoints',label:'关注点'},
-  {key:'stylePreference',label:'风格偏好'},
+  {key:'building',label:'楼盘情况'},{key:'purpose',label:'房屋用途'},{key:'houseState',label:'房屋现状'},
+  {key:'family',label:'家庭成员'},{key:'profession',label:'客户职业'},{key:'habit',label:'生活习惯'},
+  {key:'awareness',label:'了解程度'},{key:'position',label:'装修定位'},{key:'budget_detail',label:'装修预算'},
+  {key:'focus',label:'客户关注点'},{key:'designer',label:'设计师要求'},
 ];
-
-// ══ 待确认卡片 ══
-let pendingConfirmCards = [];
-
-// 加载待确认卡片
-async function loadConfirmCards() {
-  try {
-    const data = await api('/api/recordings/pending/confirm');
-    if (data.success && data.data) {
-      pendingConfirmCards = data.data;
-      updateConfirmBadge();
-      return true;
-    }
-  } catch (e) {
-    console.error('Load confirm cards error:', e);
-  }
-  return false;
-}
-
-function updateConfirmBadge() {
-  const badge = document.getElementById('confirm-count');
-  if (badge) {
-    const count = pendingConfirmCards.length;
-    badge.textContent = count;
-    badge.style.display = count > 0 ? '' : 'none';
-  }
-}
-
-// 渲染待确认卡片
-function renderConfirmCards() {
-  const container = document.getElementById('confirm-body');
-  console.log('renderConfirmCards: count=', pendingConfirmCards.length);
-
-  if (pendingConfirmCards.length === 0) {
-    container.innerHTML = `
-      <div style="text-align:center;padding:60px 20px;color:var(--gray-400)">
-        <div style="font-size:48px;margin-bottom:16px">✅</div>
-        <div style="font-size:15px;font-weight:500;color:var(--gray-500)">暂无待确认的通话</div>
-        <div style="font-size:13px;margin-top:6px">上传录音后，AI 会自动分析并生成待确认卡片</div>
-      </div>`;
-    return;
-  }
-
-  container.innerHTML = pendingConfirmCards.map(card => {
-    const isNewCustomer = card.isNewCustomer;
-    const basicInfo = card.basicInfo || {};
-    const portrait = card.portrait || {};
-    const existing = card.existingCustomer || {};
-    const existPortrait = existing.portrait || {};
-    const levelOptions = ['S', 'A', 'B', 'C', '无效'];
-    const followOptions = ['明天', '后天', '3天后', '1周后'];
-
-    // 判断字段是否为 AI 新识别（老客户场景）
-    const isNewBasic = (key, aiVal) => !isNewCustomer && aiVal && aiVal !== existing[key];
-    const isNewPortrait = (key, aiVal) => !isNewCustomer && aiVal && aiVal !== existPortrait[key] && aiVal !== '暂无';
-
-    // 老客户：合并已有值和 AI 新值（AI 优先）
-    const mergedBasic = (key) => basicInfo[key] || (isNewCustomer ? '' : existing[key] || '');
-    const mergedPortrait = (key) => portrait[key] || (isNewCustomer ? '' : existPortrait[key] || '');
-
-    return `
-    <div class="confirm-card-wrap" data-id="${card.id}">
-      <div class="confirm-card-header">
-        <div>
-          <div style="font-size:16px;font-weight:700;color:var(--navy)">
-            ${basicInfo.name || basicInfo.customerName || existing.name || '未知客户'} · ${isNewCustomer ? '首通电话' : '跟进电话'}
-            ${!isNewCustomer && existing.callCount ? `<span class="confirm-call-count">第${(existing.callCount||0)+1}通</span>` : ''}
-          </div>
-          <div style="font-size:12px;color:var(--gray-400);margin-top:2px">
-            ${card.customerPhoneMasked} · ${formatDate(card.callTime || new Date())}
-          </div>
-        </div>
-        <span class="badge ${isNewCustomer ? 'badge-new' : 'badge-valid'}">${isNewCustomer ? '新客户' : '老客户'}</span>
-      </div>
-
-      ${!isNewCustomer ? `
-      <div class="confirm-existing-info">
-        <div class="ei-label">📂 已有客户信息</div>
-        <div class="ei-row">
-          <div class="ei-item"><span class="ei-key">等级</span><span class="ei-val">${existing.level || '-'}级</span></div>
-          <div class="ei-item"><span class="ei-key">小区</span><span class="ei-val">${existing.community || '-'}</span></div>
-          <div class="ei-item"><span class="ei-key">面积</span><span class="ei-val">${existing.area || '-'}㎡</span></div>
-          <div class="ei-item"><span class="ei-key">预算</span><span class="ei-val">${existing.budget || '-'}</span></div>
-          <div class="ei-item"><span class="ei-key">画像</span><span class="ei-val">${existing.portraitPct || 0}%</span></div>
-          <div class="ei-item"><span class="ei-key">通话</span><span class="ei-val">${existing.callCount || 0}次</span></div>
-        </div>
-      </div>` : ''}
-
-      <div class="confirm-card-ai">
-        🤖 <strong>AI 识别摘要：</strong>${card.callSummary || '暂无'}
-        ${card.levelReason ? `<br><span style="opacity:0.8">等级判断理由：${card.levelReason}</span>` : ''}
-      </div>
-
-      ${isNewCustomer ? `
-      <!-- 新客户：完整表单 -->
-      <div class="confirm-section-label">📋 基础信息（AI 预填，可修改）</div>
-      <div class="confirm-fields">
-        <div class="confirm-field"><label>客户姓名</label><input id="confirm-name-${card.id}" value="${basicInfo.name || basicInfo.customerName || ''}" placeholder="请输入姓名" required></div>
-        <div class="confirm-field"><label>电话号码</label><input id="confirm-phone-${card.id}" value="${basicInfo.phone || basicInfo.customerPhone || card.customerPhone || ''}" placeholder="请输入电话" required></div>
-        <div class="confirm-field"><label>小区名称</label><input id="confirm-community-${card.id}" value="${basicInfo.community || ''}" placeholder="请输入小区"></div>
-        <div class="confirm-field"><label>房屋面积</label><input id="confirm-area-${card.id}" value="${basicInfo.area || ''}" placeholder="如 120" style="width:80px"> ㎡</div>
-        <div class="confirm-field"><label>预算金额</label><input id="confirm-budget-${card.id}" value="${basicInfo.budget || ''}" placeholder="如 25万"></div>
-      </div>
-      <div class="confirm-section-label">👤 客户画像（AI 预填，可修改）</div>
-      <div class="portrait-confirm-grid">
-        ${portraitFields.map(f => `
-          <div class="portrait-confirm-item">
-            <div class="pc-label">${f.label}</div>
-            <input id="confirm-${f.key}-${card.id}" value="${portrait[f.key] || ''}" placeholder="未识别，可填写">
-          </div>
-        `).join('')}
-      </div>
-      ` : `
-      <!-- 老客户：只显示新识别的画像 -->
-      <input type="hidden" id="confirm-name-${card.id}" value="${existing.name || ''}">
-      <input type="hidden" id="confirm-phone-${card.id}" value="${card.customerPhone || ''}">
-      <input type="hidden" id="confirm-community-${card.id}" value="${existing.community || ''}">
-      <input type="hidden" id="confirm-area-${card.id}" value="${existing.area || ''}">
-      <input type="hidden" id="confirm-budget-${card.id}" value="${existing.budget || ''}">
-      ${portraitFields.filter(f => isNewPortrait(f.key, portrait[f.key])).length > 0 ? `
-      <div class="confirm-section-label">👤 本次新识别画像</div>
-      <div class="portrait-confirm-grid">
-        ${portraitFields.filter(f => isNewPortrait(f.key, portrait[f.key])).map(f => `
-          <div class="portrait-confirm-item ai-new">
-            <div class="pc-label">${f.label}</div>
-            <input id="confirm-${f.key}-${card.id}" value="${portrait[f.key]}" placeholder="可修改">
-          </div>
-        `).join('')}
-      </div>` : ''}
-      ${portraitFields.filter(f => !isNewPortrait(f.key, portrait[f.key])).map(f => `<input type="hidden" id="confirm-${f.key}-${card.id}" value="${mergedPortrait(f.key)}">`).join('')}
-      `}
-
-      <!-- 客户等级和跟进 -->
-      <div class="confirm-section-label">⭐ 客户等级与跟进</div>
-      <div class="confirm-fields">
-        ${!isNewCustomer && card.customerLevel && card.customerLevel !== existing.level ? `
-        <div class="confirm-field ai-new">
-          <label>客户等级</label>
-          <span style="font-size:12px;color:var(--gray-400);margin-right:4px">${existing.level}级 →</span>
-          <select id="confirm-level-${card.id}">
-            ${levelOptions.map(l => `<option value="${l}" ${card.customerLevel === l ? 'selected' : ''}>${l === '无效' ? '无效' : l + '级'}</option>`).join('')}
-          </select>
-        </div>` : `
-        <div class="confirm-field">
-          <label>客户等级</label>
-          <select id="confirm-level-${card.id}">
-            ${levelOptions.map(l => `<option value="${l}" ${card.customerLevel === l ? 'selected' : ''}>${l === '无效' ? '无效' : l + '级'}</option>`).join('')}
-          </select>
-        </div>`}
-        <div class="confirm-field" style="flex-direction:column;align-items:flex-start">
-          <label>下次跟进</label>
-          <div class="follow-picker" id="follow-picker-${card.id}">
-            <div class="follow-quick">
-              ${followOptions.map(f => `<span class="follow-quick-btn ${card.nextFollow === f ? 'active' : ''}" onclick="pickFollowQuick('${card.id}','${f}',this)">${f}</span>`).join('')}
-              <span class="follow-quick-btn" onclick="toggleFollowCal('${card.id}')">📅 选日期</span>
-            </div>
-            <div class="follow-cal" id="follow-cal-${card.id}"></div>
-            <input type="hidden" id="confirm-next-${card.id}" value="${card.nextFollow || '明天'}">
-          </div>
-        </div>
-        <div class="confirm-field">
-          <label>承诺事项</label>
-          <input id="confirm-promise-${card.id}" value="${card.promise || ''}" placeholder="AI未识别到承诺事项，可手动填写">
-        </div>
-      </div>
-
-      <!-- 操作按钮 -->
-      <div style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn btn-primary" onclick="submitConfirmCard('${card.id}')">${isNewCustomer ? '确认提交' : '确认更新'}</button>
-        <button class="btn" style="background:var(--red-pale);color:var(--red);border:none" onclick="markCardInvalid('${card.id}')">标记无效</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-// 提交确认卡片
-async function submitConfirmCard(recordingId) {
-  const level = document.getElementById(`confirm-level-${recordingId}`).value;
-
-  // 如果选择无效，调用无效标记
-  if (level === '无效') {
-    await markCardInvalid(recordingId);
-    return;
-  }
-
-  const customerName = document.getElementById(`confirm-name-${recordingId}`).value.trim();
-  const customerPhone = document.getElementById(`confirm-phone-${recordingId}`).value.trim();
-
-  if (!customerName) {
-    document.getElementById(`confirm-name-${recordingId}`).style.borderColor = 'var(--red)';
-    document.getElementById(`confirm-name-${recordingId}`).focus();
-    return;
-  }
-  if (!customerPhone) {
-    document.getElementById(`confirm-phone-${recordingId}`).style.borderColor = 'var(--red)';
-    document.getElementById(`confirm-phone-${recordingId}`).focus();
-    return;
-  }
-
-  const data = {
-    customerName,
-    customerPhone,
-    community: document.getElementById(`confirm-community-${recordingId}`).value,
-    area: document.getElementById(`confirm-area-${recordingId}`).value,
-    budget: document.getElementById(`confirm-budget-${recordingId}`).value,
-    customerLevel: level,
-    nextFollow: document.getElementById(`confirm-next-${recordingId}`).value,
-    promise: document.getElementById(`confirm-promise-${recordingId}`).value,
-    portrait: {}
-  };
-
-  // 收集画像字段
-  portraitFields.forEach(f => {
-    const val = document.getElementById(`confirm-${f.key}-${recordingId}`).value;
-    if (val) data.portrait[f.key] = val;
-  });
-
-  try {
-    // mock 模式下跳过 API
-    let result;
-    if (useMockData || recordingId.startsWith('mock-')) {
-      result = { success: true };
-    } else {
-      result = await api(`/api/recordings/${recordingId}/confirm`, {
-        method: 'POST',
-        body: JSON.stringify(data)
-      });
-    }
-
-    if (result.success) {
-      // 从列表中移除（带动画）
-      pendingConfirmCards = pendingConfirmCards.filter(c => c.id !== recordingId);
-      const card = document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`);
-      if (card) {
-        card.style.transition = 'all 0.4s ease';
-        card.style.transform = 'translateX(100%)';
-        card.style.opacity = '0';
-        card.style.maxHeight = card.offsetHeight + 'px';
-        setTimeout(() => {
-          card.style.maxHeight = '0';
-          card.style.padding = '0';
-          card.style.margin = '0';
-        }, 200);
-        setTimeout(() => card.remove(), 500);
-      }
-      updateConfirmBadge();
-      // 刷新客户列表
-      if (window.loadCustomers) await loadCustomers();
-    } else {
-      alert(result.error || '确认失败');
-    }
-  } catch (e) {
-    console.error('Submit confirm error:', e);
-    alert('确认失败，请重试');
-  }
-}
-
-// 标记为无效
-async function markCardInvalid(recordingId) {
-  if (!confirm('确定标记为无效客户？该客户将进入无效公海。')) return;
-
-  const phone = document.getElementById(`confirm-phone-${recordingId}`).value;
-  const name = document.getElementById(`confirm-name-${recordingId}`).value;
-
-  try {
-    // mock 模式下跳过 API
-    let result;
-    if (useMockData || recordingId.startsWith('mock-')) {
-      result = { success: true };
-    } else {
-      result = await api(`/api/recordings/${recordingId}/confirm`, {
-        method: 'POST',
-        body: JSON.stringify({
-          customerPhone: phone,
-          customerName: name,
-          markInvalid: true
-        })
-      });
-    }
-
-    if (result.success) {
-      pendingConfirmCards = pendingConfirmCards.filter(c => c.id !== recordingId);
-      const card = document.querySelector(`.confirm-card-wrap[data-id="${recordingId}"]`);
-      if (card) {
-        card.style.transition = 'all 0.4s ease';
-        card.style.transform = 'translateX(-100%)';
-        card.style.opacity = '0';
-        card.style.maxHeight = card.offsetHeight + 'px';
-        setTimeout(() => {
-          card.style.maxHeight = '0';
-          card.style.padding = '0';
-          card.style.margin = '0';
-        }, 200);
-        setTimeout(() => card.remove(), 500);
-      }
-      updateConfirmBadge();
-    } else {
-      alert(result.error || '操作失败');
-    }
-  } catch (e) {
-    console.error('Mark invalid error:', e);
-    alert('操作失败，请重试');
-  }
-}
-
-function formatDate(d) {
-  if (!d) return '';
-  const date = new Date(d);
-  return date.toLocaleDateString();
-}
 
 // ══ 今日待办 ══
 function renderTodo() {
@@ -1411,6 +886,70 @@ function renderTodo() {
       <div class="todo-actions">
         <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();alert('📞 正在拨打 ${t.phone}…')">📞 拨打</button>
         <button class="btn btn-outline btn-sm" onclick="event.stopPropagation();openDetail(${t.id})">查看详情</button>
+      </div>
+    </div>`).join('');
+}
+
+// ══ 待确认卡片 ══
+function renderConfirmCards() {
+  const cards = [
+    {id:3, callNum:1, name:'张伟', phone:'138****4983', area:'光山新城', budget:'12万', size:'96㎡', style:'北欧风', level:'B', next:'后天',
+     portraitNew:{building:'光山新城·96㎡·商品房', purpose:'自住', houseState:'毛坯', budget_detail:'12万', time:'3个月后', designer:'北欧风'},
+     aiNote:'第1通电话。AI识别到：客户3个月后交房，主要需求是毛坯改造，北欧风格。职业、家庭成员、关注点未识别到，请手动补充。'},
+    {id:7, callNum:2, name:'孙磊', phone:'155****4490', area:'宝龙城', budget:'15万', size:'110㎡', style:'现代简约', level:'A', next:'明天',
+     portraitNew:{profession:'工程师（本通新识别）', awareness:'对比多家（本通新识别）', focus:'工程质量'},
+     aiNote:'第2通电话。本通新识别到：孙磊是工程师，正在对比多家公司，非常关注工程质量。画像完整度从 50% 提升至 65%，请确认。'},
+    {id:5, callNum:2, name:'陈建国', phone:'151****6026', area:'信阳春天', budget:'8万', size:'72㎡', style:'日系', level:'B', next:'3天后',
+     portraitNew:{family:'单身（本通新识别）', position:'小公司（本通新识别）'},
+     aiNote:'第2通电话。本通新识别到：单身，倾向小公司或游击队价格。画像完整度从 30% 提升至 45%，请确认。'},
+  ];
+
+  document.getElementById('confirm-body').innerHTML = cards.map(c=>`
+    <div class="confirm-card-wrap">
+      <div class="confirm-card-header">
+        <div>
+          <div style="font-size:16px;font-weight:700;color:var(--navy)">${c.name} · 第${c.callNum}通</div>
+          <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.phone} · ${new Date().toLocaleDateString()}</div>
+        </div>
+        <span class="badge badge-new">待确认</span>
+      </div>
+      <div class="confirm-card-ai">🤖 ${c.aiNote}</div>
+
+      ${c.callNum===1?`
+      <div class="confirm-section-label">📋 基础信息（必填）</div>
+      <div class="confirm-fields">
+        <div class="confirm-field"><label>客户姓名 *</label><input value="${c.name}"></div>
+        <div class="confirm-field"><label>小区名称 *</label><input value="${c.area}"></div>
+        <div class="confirm-field"><label>重要级别 *</label><select><option>S级</option><option>A级</option><option ${c.level==='B'?'selected':''}>B级</option><option>C级</option></select></div>
+        <div class="confirm-field"><label>下次跟进</label><input value="${c.next}"></div>
+      </div>
+      <div class="confirm-section-label">👤 客户画像（AI预填，可修改补充）</div>
+      <div class="portrait-confirm-grid">
+        ${Object.entries(c.portraitNew).map(([k,v])=>{
+          const f = portraitFields.find(x=>x.key===k);
+          return f?`<div class="portrait-confirm-item"><div class="pc-label">${f.label}</div><input value="${v}"></div>`:'';
+        }).join('')}
+        ${portraitFields.filter(f=>!Object.keys(c.portraitNew).includes(f.key)).map(f=>`
+          <div class="portrait-confirm-item"><div class="pc-label">${f.label}</div><input placeholder="暂未识别，可手动填写"></div>
+        `).join('')}
+      </div>`:`
+      <div class="confirm-section-label">⬆️ 本通新增画像字段 <span class="new-field-badge">NEW</span></div>
+      <div class="portrait-confirm-grid">
+        ${Object.entries(c.portraitNew).map(([k,v])=>{
+          const f = portraitFields.find(x=>x.key===k);
+          return f?`<div class="portrait-confirm-item" style="border:1px solid #fde68a;background:var(--amber-pale)"><div class="pc-label">${f.label} <span class="new-field-badge">新</span></div><input value="${v.replace('（本通新识别）','')}"></div>`:'';
+        }).join('')}
+      </div>
+      <div class="confirm-section-label">⏰ 跟进信息</div>
+      <div class="confirm-fields">
+        <div class="confirm-field"><label>重要级别</label><select><option>S级</option><option ${c.level==='A'?'selected':''}>A级</option><option ${c.level==='B'?'selected':''}>B级</option><option>C级</option></select></div>
+        <div class="confirm-field"><label>下次跟进</label><input value="${c.next}"></div>
+      </div>`}
+
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-primary" onclick="this.closest('.confirm-card-wrap').remove();alert('✅ 已确认！画像已更新')">确认提交</button>
+        <button class="btn btn-outline" onclick="alert('已暂缓，24小时后再次提醒')">暂缓</button>
+        <button class="btn" style="background:var(--red-pale);color:var(--red);border:none" onclick="this.closest('.confirm-card-wrap').remove();alert('已标记无效')">标记无效</button>
       </div>
     </div>`).join('');
 }
@@ -1477,8 +1016,7 @@ function getPortraitColor(pct) {
   return pct>=70?'var(--green)':pct>=45?'var(--blue)':'var(--amber)';
 }
 function portraitBar(pct) {
-  const p = Math.min(pct, 100);
-  return `<div style="display:flex;align-items:center;gap:6px"><div style="width:60px;background:var(--gray-100);border-radius:3px;height:5px"><div style="width:${p}%;height:5px;border-radius:3px;background:${getPortraitColor(p)}"></div></div><span style="font-size:11px;font-weight:600;color:var(--gray-500)">${p}%</span></div>`;
+  return `<div style="display:flex;align-items:center;gap:6px"><div style="width:60px;background:var(--gray-100);border-radius:3px;height:5px"><div style="width:${pct}%;height:5px;border-radius:3px;background:${getPortraitColor(pct)}"></div></div><span style="font-size:11px;font-weight:600;color:var(--gray-500)">${pct}%</span></div>`;
 }
 
 function sortCustomers(list, sortBy, dir) {
@@ -1503,8 +1041,7 @@ function sortCustomers(list, sortBy, dir) {
 function renderCustomerTable() { applyStaffFilter(); }
 
 function applyStaffFilter() {
-  const mine = useMockData ? customers.filter(c=>c.agent==='严妍') : customers;
-  console.log('applyStaffFilter: useMockData=', useMockData, 'customers.length=', customers.length, 'mine.length=', mine.length);
+  const mine = customers.filter(c=>c.agent==='严妍');
   const kw = (document.getElementById('staff-search-kw')?.value||'').trim().toLowerCase();
   const status = document.getElementById('staff-filter-status')?.value||'';
   const level = document.getElementById('staff-filter-level')?.value||'';
@@ -1536,13 +1073,13 @@ function applyStaffFilter() {
   document.getElementById('customer-table-body').innerHTML = filtered.length===0
     ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray-400)">没有符合条件的客户</td></tr>`
     : filtered.map(c=>`
-    <tr onclick="openDetail('${c.id}')">
+    <tr onclick="openDetail(${c.id})">
       <td><strong>${c.name}</strong>${c.pinned?' <span style="color:var(--amber);font-size:11px;margin-left:4px">📌</span>':''}</td>
       <td>${c.area}</td>
       <td><span class="badge badge-calls">第${c.calls}通</span></td>
       <td>${portraitBar(c.portraitPct)}</td>
-      <td><span class="badge ${levelMap[c.level]||''}">${levelLabel(c.level)}</span></td>
-      <td><span class="badge ${(statusMap[c.status]||['未知',''])[1]}">${(statusMap[c.status]||['未知'])[0]}</span></td>
+      <td><span class="badge ${levelMap[c.level]}">${c.level}级</span></td>
+      <td><span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span></td>
       <td style="color:${c.next.includes('今天')?'var(--red)':'var(--gray-500)'}">${c.next}</td>
       <td style="color:var(--gray-400)">${c.lastCall}</td>
     </tr>`).join('');
@@ -1578,12 +1115,12 @@ function applyBossFilter() {
   document.getElementById('boss-cust-body').innerHTML = filtered.length===0
     ? `<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--gray-400)">没有符合条件的客户</td></tr>`
     : filtered.map(c=>`
-    <tr onclick="openDetail('${c.id}')">
+    <tr onclick="openDetail(${c.id})">
       <td><strong>${c.name}</strong></td>
       <td>${c.agent}</td>
       <td>${c.area}</td>
-      <td><span class="badge ${levelMap[c.level]||''}">${levelLabel(c.level)}</span></td>
-      <td><span class="badge ${(statusMap[c.status]||['未知',''])[1]}">${(statusMap[c.status]||['未知'])[0]}</span></td>
+      <td><span class="badge ${levelMap[c.level]}">${c.level}级</span></td>
+      <td><span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span></td>
       <td>${portraitBar(c.portraitPct)}</td>
       <td><span class="badge badge-calls">第${c.calls}通</span></td>
       <td style="color:var(--gray-400)">${c.lastCall}</td>
@@ -1591,83 +1128,19 @@ function applyBossFilter() {
 }
 
 // ══ 公海 ══
-let currentSeaTab = 'normal'; // 'normal' 或 'invalid'
-let invalidSeaCustomers = [];
-
-// 加载无效公海客户
-async function loadInvalidSeaCustomers() {
-  try {
-    const data = await api('/api/customers/invalid-sea');
-    if (data.success && data.data?.list) {
-      invalidSeaCustomers = data.data.list.map(c => ({
-        id: c.id,
-        name: c.name || '未知',
-        area: c.community || '',
-        budget: c.budget || '',
-        calls: c.callCount || 0,
-        daysAgo: c.daysAgo || 0,
-        reason: c.reason || '标记无效'
-      }));
-      return true;
-    }
-  } catch (e) {
-    console.error('Load invalid sea error:', e);
-  }
-  return false;
-}
-
 function renderSea() {
-  const body = document.getElementById('sea-body');
-  const list = currentSeaTab === 'invalid' ? invalidSeaCustomers : seaCustomers;
-
-  if (list.length === 0) {
-    body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--gray-400)">
-      ${currentSeaTab === 'invalid' ? '暂无无效客户' : '暂无公海客户'}
-    </td></tr>`;
-    return;
-  }
-
-  body.innerHTML = list.map(c => `
+  document.getElementById('sea-body').innerHTML = seaCustomers.map(c=>`
     <tr>
-      <td><strong>${c.name}</strong></td>
-      <td>${c.area || ''}</td>
-      <td>${c.budget || ''}</td>
+      <td><strong>${c.name}</strong></td><td>${c.area}</td><td>${c.budget}</td>
       <td><span class="badge badge-calls">共${c.calls}通</span></td>
       <td style="font-size:12px;color:var(--gray-500)">${c.reason}</td>
-      <td><button class="btn btn-primary btn-sm" onclick="claimSea('${c.id}',this)">抢单</button></td>
+      <td><button class="btn btn-primary btn-sm" onclick="claimSea(${c.id},this)">抢单</button></td>
     </tr>`).join('');
 }
-
-function switchSeaTab(tab) {
-  currentSeaTab = tab;
-  // 更新 tab 样式
-  document.querySelectorAll('#sea-tabs .filter-tab').forEach((t, i) => {
-    t.classList.toggle('active', (tab === 'normal' && i === 0) || (tab === 'invalid' && i === 1));
-  });
-  renderSea();
-}
-
-async function claimSea(id, btn) {
-  try {
-    const result = await api(`/api/customers/${id}/claim`, { method: 'POST' });
-    if (result.success) {
-      // 获取完整电话
-      const phone = result.data.phone || '已抢到';
-      btn.closest('tr').cells[5].innerHTML = `<span style="font-size:12px;font-weight:600;color:var(--green)">✅ 已抢到：${phone}</span>`;
-      btn.closest('tr').style.background = 'var(--green-pale)';
-      // 从列表中移除
-      if (currentSeaTab === 'invalid') {
-        invalidSeaCustomers = invalidSeaCustomers.filter(c => c.id !== id);
-      } else {
-        seaCustomers = seaCustomers.filter(c => c.id !== id);
-      }
-    } else {
-      alert(result.error || '抢单失败');
-    }
-  } catch (e) {
-    console.error('Claim sea error:', e);
-    alert('抢单失败，请重试');
-  }
+function claimSea(id,btn) {
+  const phones=['135****2233','138****9988','150****7766','186****4421'];
+  btn.closest('tr').cells[5].innerHTML=`<span style="font-size:12px;font-weight:600;color:var(--green)">✅ 已抢到：${phones[Math.floor(Math.random()*phones.length)]}</span>`;
+  btn.closest('tr').style.background='var(--green-pale)';
 }
 
 // ══ 案例库 ══
@@ -1701,7 +1174,7 @@ function doSearch(val) {
       <div style="border:1px solid var(--green);background:var(--green-pale);border-radius:10px;padding:14px;margin-bottom:8px;cursor:pointer" onclick="openDetail(${c.id})">
         <div style="display:flex;align-items:center;justify-content:space-between">
           <div><div style="font-size:14px;font-weight:700;color:var(--navy)">${c.name}·${c.area}</div><div style="font-size:12px;color:var(--gray-500);margin-top:3px">归属：${c.agent}·第${c.calls}通·${statusMap[c.status][0]}</div></div>
-          <span class="badge ${levelMap[c.level]||''}">${levelLabel(c.level)}</span>
+          <span class="badge ${levelMap[c.level]}">${c.level}级</span>
         </div>
         <div style="font-size:12px;color:var(--red);margin-top:6px">⚠️ 该客户已在系统中，归属${c.agent}，请勿重复跟进</div>
       </div>`).join('');
@@ -1712,213 +1185,174 @@ function doSearch(val) {
 let currentDetailTab = 0;
 let currentCustomerId = null;
 
-async function openDetail(id) {
+function openDetail(id) {
   const c = customers.find(x=>x.id===id);
   if(!c) return;
   currentDetailTab = 0;
   currentCustomerId = id;
 
   document.getElementById('detail-header-info').innerHTML = `
-    <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">${c.name || '未知客户'}</div>
+    <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">${c.name}</div>
     <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.phone} · ${c.area}</div>`;
 
+  // 更新钉子按钮状态
   updatePinButton(c.pinned || false);
 
-  // 先用本地数据渲染概览，同时异步加载详情
-  renderDetailTabs(c, [], null);
-  document.querySelectorAll('.detail-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
-  document.getElementById('detail-panel').classList.add('open');
-  document.getElementById('overlay').classList.add('show');
+  const callLogs = {
+    1:[
+      {n:1,date:'2026-02-18',dur:'4分12秒',score:'6.8',text:'首通，客户主动介绍了基本情况：300㎡自建房，询问过价格，客服转移话题。承诺加微信发案例。',hasReport:true},
+      {n:2,date:'2026-02-22',dur:'8分35秒',score:'7.5',text:'聊了护墙板工艺和防潮处理。约好下周带他去看在建工地。',hasReport:true},
+      {n:3,date:'2026-02-25',dur:'11分20秒',score:'8.2',text:'确认到店时间为下周二下午2点，承诺携带详细预算方案。客户还在对比另一家公司。',hasReport:true},
+    ],
+    4:[
+      {n:1,date:'2026-02-15',dur:'6分28秒',score:'7.2',text:'首通，了解到客户要装180㎡商品房，新中式风格，预算30万。',hasReport:true},
+      {n:2,date:'2026-02-20',dur:'9分15秒',score:'8.0',text:'深度沟通，客户提出全包含软装需求，客服详细介绍软装合作品牌。',hasReport:true},
+      {n:3,date:'2026-02-24',dur:'5分10秒',score:'7.8',text:'确认到店时间，今日到店中。',hasReport:true},
+    ],
+    13:[
+      {n:1,date:'2026-02-10',dur:'5分50秒',score:'7.5',text:'首通，韩总105㎡轻奢风，预算16万，非常在意施工质量。',hasReport:true},
+      {n:2,date:'2026-02-14',dur:'12分20秒',score:'8.8',text:'核心通话：以「同小区邻居案例」切入，成功打消价格顾虑，约定周末到店。',hasReport:true},
+      {n:3,date:'2026-02-17',dur:'3分40秒',score:'8.5',text:'到店后确认细节，当天签订16.8万全包合同，成交！',hasReport:true},
+    ],
+  };
+  const logs = callLogs[id]||[{n:1,date:'2026-02-26',dur:'3分22秒',score:'7.0',text:'首通，了解基本情况，客户表达了装修意向。',hasReport:true}];
 
-  // 异步加载完整详情（录音、分析结果）
-  try {
-    const detail = await api(`/api/customers/${id}`);
-    if (detail.success && detail.data) {
-      const d = detail.data;
-      // 更新画像数据
-      if (d.portrait) c.portrait = d.portrait;
-      c.portraitPct = d.portraitPct || 0;
-      // 构建通话记录
-      const recordings = (d.recordings || []).map((r, i) => {
-        const results = r.analysisResults || [];
-        const stage1 = results.find(a => a.stage === 'stage1');
-        const confirmCard = results.find(a => a.stage === 'confirm_card');
-        const stage2 = results.find(a => a.stage === 'stage2');
-        // 摘要优先取 confirm_card > stage2 > stage1
-        const summary = confirmCard?.summary || stage2?.summary || stage1?.summary || '暂无分析摘要';
-        // 评分取 stage1 的 scores
-        const scores = stage1?.scores || {};
-        return {
-          n: i + 1,
-          date: r.callTime ? formatDate(r.callTime) : formatDate(r.createdAt),
-          dur: r.duration ? formatDuration(r.duration) : '--',
-          summary,
-          scores,
-          stage2Result: stage2
-        };
-      });
-      // 找最新的深度报告（stage2）
-      let latestReport = null;
-      for (const r of recordings) {
-        if (r.stage2Result) latestReport = r.stage2Result;
-      }
-      renderDetailTabs(c, recordings, latestReport);
-    }
-  } catch (e) {
-    console.error('Load detail error:', e);
-  }
-}
+  const aiTexts = {
+    1:'【基于画像】王明是个体老板，做事爽快但重结果，有智能家居偏好。本次核心：确认到店时间 + 预告方案亮点。他在对比多家，建议强调「我们的全屋智能方案」制造差异化。承诺事项：记得携带详细预算方案。',
+    4:'刘芳今日已到店，正在方案谈判阶段。请与设计师同步：新中式风格、全包含软装、预算30万，不超预算。家里有两个孩子和老人，设计要兼顾实用性。',
+    default:'基于历史通话分析：建议本次重点补充画像信息，了解客户职业和家庭情况，为后续跟进提供更精准的建议。',
+  };
 
-function formatDuration(seconds) {
-  if (!seconds) return '--';
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}分${s}秒`;
-}
+  // 深度报告内容（第3通 / 最新一通）
+  const reportData = {
+    scene:'跟进·价格异议·竞争对手比较',
+    lineScore:'7.5分（有明确需求，已完成多次接触，成交概率中高）',
+    staffScore:'8.2分',
+    dims:[
+      {name:'开场白',score:7.5,color:'#3b82f6'},
+      {name:'需求挖掘',score:8.0,color:'#06b6d4'},
+      {name:'价值塑造',score:8.5,color:'#8b5cf6'},
+      {name:'异议处理',score:7.0,color:'#f59e0b'},
+      {name:'邀约能力',score:9.0,color:'#10b981'},
+      {name:'私域留存',score:7.5,color:'#ef4444'},
+    ],
+    summary:'本通电话客服在价值塑造和邀约推进上表现突出，成功确认到店时间。异议处理上略显被动，当客户提到「还在对比另一家」时，可以更主动地强化差异化优势。',
+    goldQuote:'「我们的护墙板防潮工艺是行业独有的三层处理工艺，这一点是我们和其他公司最大的不同。」',
+    suggest:'下次跟进建议：准备好「工艺对比表」和同小区案例照片，到店前微信提前发一份预算框架，让客户有心理预期。',
+  };
 
-function renderDetailTabs(c, recordings, report) {
-  const portrait = c.portrait || {};
-
-  // 概览 Tab
-  const overviewHtml = `
-    <div class="detail-tab-content" id="dtab-0">
+  document.getElementById('detail-body').innerHTML = `
+    <!-- Tab 0: 概览 -->
+    <div class="detail-tab-content active" id="dtab-0">
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-        <span class="badge ${levelMap[c.level]||''}">${c.level}级</span>
-        <span class="badge ${(statusMap[c.status]||['',''])[1]}">${(statusMap[c.status]||['未知'])[0]}</span>
+        <span class="badge ${levelMap[c.level]}">${c.level}级</span>
+        <span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span>
         <span class="badge badge-calls">共${c.calls}通</span>
+      </div>
+      <div class="ai-suggestion">
+        <div class="title">🤖 AI 本次通话建议</div>
+        ${aiTexts[id]||aiTexts.default}
       </div>
       <div style="margin-top:14px">
         <div class="info-grid">
-          <div class="info-item"><div class="label">小区</div><div class="val">${c.area || '未知'}</div></div>
-          <div class="info-item"><div class="label">户型</div><div class="val">${c.size || '未知'}</div></div>
-          <div class="info-item"><div class="label">装修预算</div><div class="val">${c.budget || '未知'}</div></div>
-          <div class="info-item"><div class="label">意向风格</div><div class="val">${portrait.stylePreference || c.style || '未知'}</div></div>
-          <div class="info-item"><div class="label">下次跟进</div><div class="val" style="color:var(--red)">${c.next || '未设置'}</div></div>
-          <div class="info-item"><div class="label">归属客服</div><div class="val">${c.agent || '未分配'}</div></div>
+          <div class="info-item"><div class="label">小区</div><div class="val">${c.area}</div></div>
+          <div class="info-item"><div class="label">面积</div><div class="val">${c.size}</div></div>
+          <div class="info-item"><div class="label">装修预算</div><div class="val">${c.budget}</div></div>
+          <div class="info-item"><div class="label">意向风格</div><div class="val">${c.style}</div></div>
+          <div class="info-item"><div class="label">下次跟进</div><div class="val" style="color:var(--red)">${c.next}</div></div>
+          <div class="info-item"><div class="label">归属客服</div><div class="val">${c.agent}</div></div>
         </div>
+        ${c.promise?`<div style="margin-top:10px;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:10px 12px;font-size:12px;color:#9a3412"><strong>📌 承诺记录：</strong>${c.promise}</div>`:''}
       </div>
       <div style="display:flex;gap:8px;margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-100)">
         <button class="btn btn-primary btn-sm" onclick="alert('📞 拨打 ${c.phone}')">📞 拨打</button>
         <button class="btn btn-outline btn-sm" onclick="alert('生成设计师交接简报')">📄 简报</button>
         <button class="btn btn-outline btn-sm" onclick="alert('标记死单并进入公海')">❌ 死单</button>
       </div>
-    </div>`;
+    </div>
 
-  // 画像 Tab
-  const pctVal = c.portraitPct || 0;
-  const emptyFields = portraitFields.filter(f => !portrait[f.key] || portrait[f.key] === '暂无');
-  const portraitHtml = `
+    <!-- Tab 1: 客户画像 -->
     <div class="detail-tab-content" id="dtab-1">
       <div class="portrait-completeness">
         <div class="pc-header">
           <div class="pc-title">客户画像完整度</div>
-          <div class="pc-pct">${pctVal}%</div>
+          <div class="pc-pct">${c.portraitPct}%</div>
         </div>
-        <div class="pc-bar"><div class="pc-fill" style="width:${pctVal}%"></div></div>
-        <div class="pc-hint">${pctVal >= 70 ? '✅ 画像较完整，AI建议准确度高' : '⚠️ 画像待补充，建议下次通话重点挖掘：' + emptyFields.map(f=>f.label).slice(0,3).join('、')}</div>
+        <div class="pc-bar"><div class="pc-fill" style="width:${c.portraitPct}%"></div></div>
+        <div class="pc-hint">${c.portraitPct>=70?'✅ 画像较完整，AI建议准确度高':'⚠️ 画像待补充，建议下次通话重点挖掘：'+
+          portraitFields.filter(f=>!c.portrait[f.key]||c.portrait[f.key]==='暂无').map(f=>f.label).slice(0,3).join('、')}</div>
       </div>
       <div class="portrait-grid">
-        ${portraitFields.map(f => {
-          const val = portrait[f.key];
-          const isEmpty = !val || val === '暂无';
-          return `<div class="portrait-item ${isEmpty ? 'empty' : 'filled'}">
-            <div class="p-label">${f.label}</div>
-            ${isEmpty ? '<div class="p-empty">暂未识别</div>' : `<div class="p-val">${val}</div><div class="p-source">✓ AI识别</div>`}
+        ${portraitFields.map(f=>{
+          const val = c.portrait[f.key];
+          const isEmpty = !val || val==='暂无';
+          const isNew = c.portrait.newFields && c.portrait.newFields.includes(f.key);
+          return `<div class="portrait-item ${isEmpty?'empty':'filled'}">
+            <div class="p-label">${f.label}${isNew?'<span class="new-field-badge">新</span>':''}</div>
+            ${isEmpty?'<div class="p-empty">暂未识别</div>':'<div class="p-val">${val}</div><div class="p-source">✓ AI识别</div>'}
           </div>`;
         }).join('')}
       </div>
-    </div>`;
+    </div>
 
-  // 通话记录 Tab
-  let callsHtml;
-  if (recordings.length === 0) {
-    callsHtml = `
-      <div class="detail-tab-content" id="dtab-2">
-        <div style="text-align:center;padding:40px 20px;color:var(--gray-400)">
-          <div style="font-size:36px;margin-bottom:12px">📞</div>
-          <div>暂无通话记录</div>
-        </div>
-      </div>`;
-  } else {
-    callsHtml = `
-      <div class="detail-tab-content" id="dtab-2">
-        <div class="call-log">
-          ${recordings.map(l => {
-            const scoreVal = l.scores?.lead_quality?.score || l.scores?.overall || 0;
-            const scoreClass = scoreVal >= 8 ? 'score-high' : scoreVal >= 7 ? 'score-mid' : 'score-low';
-            return `
-            <div class="call-item">
-              <div class="call-item-header">
-                <div class="call-item-title">第${l.n}通 · ${l.date} · ${l.dur}</div>
-                <div style="display:flex;align-items:center;gap:8px">
-                  ${scoreVal ? `<span class="call-score ${scoreClass}">${scoreVal}分</span>` : ''}
-                  <button class="btn btn-outline btn-sm" onclick="switchDetailTab(3)">深度报告 →</button>
-                </div>
+    <!-- Tab 2: 通话记录 -->
+    <div class="detail-tab-content" id="dtab-2">
+      <div class="call-log">
+        ${logs.map(l=>`
+          <div class="call-item">
+            <div class="call-item-header">
+              <div class="call-item-title">第${l.n}通 · ${l.date} · ${l.dur}</div>
+              <div style="display:flex;align-items:center;gap:8px">
+                <span class="call-score ${parseFloat(l.score)>=8?'score-high':parseFloat(l.score)>=7?'score-mid':'score-low'}">${l.score}分</span>
+                <button class="btn btn-outline btn-sm" onclick="switchDetailTab(3)">深度报告 →</button>
               </div>
-              <div class="call-item-body">${l.summary}</div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>`;
-  }
-
-  // 深度报告 Tab
-  let reportHtml;
-  if (!report) {
-    reportHtml = `
-      <div class="detail-tab-content" id="dtab-3">
-        <div style="text-align:center;padding:40px 20px;color:var(--gray-400)">
-          <div style="font-size:36px;margin-bottom:12px">🤖</div>
-          <div>暂无深度报告</div>
-          <div style="font-size:12px;margin-top:6px">上传录音并完成AI分析后，将自动生成深度分析报告</div>
-        </div>
-      </div>`;
-  } else {
-    const scores = report.scores || {};
-    const sections = [];
-
-    if (scores.scene || report.metadata?.scene) {
-      sections.push({title: '场景判定', content: scores.scene || report.metadata.scene});
-    }
-    if (report.summary) {
-      sections.push({title: '通话总结', content: report.summary});
-    }
-    // 各维度的文字点评
-    const dims = [
-      {name:'开场白', key:'opening'}, {name:'需求挖掘', key:'needs_discovery'},
-      {name:'价值塑造', key:'value_building'}, {name:'异议处理', key:'objection_handling'},
-      {name:'邀约能力', key:'invitation'}, {name:'私域留存', key:'retention'},
-    ];
-    const dimComments = dims.map(d => {
-      const v = scores[d.key];
-      const comment = typeof v === 'object' ? v?.comment : null;
-      return comment ? `<strong>${d.name}：</strong>${comment}` : null;
-    }).filter(Boolean);
-    if (dimComments.length) {
-      sections.push({title: '维度分析', content: dimComments.join('<br>')});
-    }
-    if (scores.gold_quote) {
-      sections.push({title: '金句萃取', content: `<div class="report-quote">${scores.gold_quote}</div>`});
-    }
-    if (scores.suggest || scores.next_action) {
-      sections.push({title: '下次跟进建议', content: scores.suggest || scores.next_action});
-    }
-
-    reportHtml = `
-      <div class="detail-tab-content" id="dtab-3">
-        <div class="report-panel">
-          <div class="report-title">🤖 AI 深度分析报告</div>
-          ${sections.map(s => `<div class="report-section">
-            <div class="report-section-title">${s.title}</div>
-            <p>${s.content}</p>
+            </div>
+            <div class="call-item-body">${l.text}</div>
           </div>`).join('')}
-        </div>
-      </div>`;
-  }
+      </div>
+    </div>
 
-  document.getElementById('detail-body').innerHTML = overviewHtml + portraitHtml + callsHtml + reportHtml;
-  // 恢复当前选中的 tab
-  switchDetailTab(currentDetailTab);
+    <!-- Tab 3: 深度报告 -->
+    <div class="detail-tab-content" id="dtab-3">
+      <div style="font-size:12px;color:var(--gray-400);margin-bottom:12px">以下为最新一通（第${logs.length}通）的金牌教练深度报告</div>
+      <div class="report-panel">
+        <div class="report-title">🏅 金牌教练深度报告</div>
+        <div class="report-section">
+          <div class="report-section-title">场景判定</div>
+          <p>${reportData.scene}</p>
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">线索质量评分</div>
+          <p>${reportData.lineScore}</p>
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">客服综合评分 · ${reportData.staffScore}</div>
+          ${reportData.dims.map(d=>`
+            <div class="score-row">
+              <div class="score-dim">${d.name}</div>
+              <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${d.score*10}%;background:${d.color}"></div></div>
+              <div class="score-num">${d.score}</div>
+            </div>`).join('')}
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">通话总结</div>
+          <p>${reportData.summary}</p>
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">金句萃取</div>
+          <div class="report-quote">${reportData.goldQuote}</div>
+        </div>
+        <div class="report-section">
+          <div class="report-section-title">下次跟进建议</div>
+          <p>${reportData.suggest}</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.querySelectorAll('.detail-tab').forEach((t,i)=>t.classList.toggle('active',i===0));
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
 }
 
 function switchDetailTab(idx) {
@@ -1981,13 +1415,13 @@ function renderPinnedCustomers() {
   document.getElementById('pinned-table-body').innerHTML = sorted.length===0
     ? `<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--gray-400)">暂无重点客户，在"我的客户"中点击📌标记</td></tr>`
     : sorted.map(c=>`
-    <tr onclick="openDetail('${c.id}')">
+    <tr onclick="openDetail(${c.id})">
       <td><strong>${c.name}</strong></td>
       <td>${c.area}</td>
       <td><span class="badge badge-calls">第${c.calls}通</span></td>
       <td>${portraitBar(c.portraitPct)}</td>
-      <td><span class="badge ${levelMap[c.level]||''}">${levelLabel(c.level)}</span></td>
-      <td><span class="badge ${(statusMap[c.status]||['未知',''])[1]}">${(statusMap[c.status]||['未知'])[0]}</span></td>
+      <td><span class="badge ${levelMap[c.level]}">${c.level}级</span></td>
+      <td><span class="badge ${statusMap[c.status][1]}">${statusMap[c.status][0]}</span></td>
       <td style="color:${c.next.includes('今天')?'var(--red)':'var(--gray-500)'}">${c.next}</td>
       <td style="color:var(--gray-400)">${c.lastCall}</td>
       <td><button class="btn btn-outline btn-sm" onclick="event.stopPropagation();togglePin(${c.id})" style="padding:3px 8px;font-size:11px">取消</button></td>
@@ -2107,6 +1541,21 @@ function showStaffView(id, el) {
   if(id === 'pinned') {
     renderPinnedCustomers();
   }
+}
+function showBossView(id, el) {
+  document.querySelectorAll('#app-boss .view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('#app-boss .nav-link').forEach(n=>n.classList.remove('active'));
+  const target = document.getElementById('boss-'+id);
+  if(target) target.classList.add('active');
+  if(el) el.classList.add('active');
+  closeDetail();
+}
+function switchRole(role, btn) {
+  document.querySelectorAll('.role-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('app-staff').style.display = role==='staff'?'flex':'none';
+  document.getElementById('app-boss').style.display = role==='boss'?'flex':'none';
+  closeDetail();
 }
 
 // ══ 经营报告 ══
@@ -2318,331 +1767,16 @@ function buildJanReport() {
   </div>`;
 }
 
-// ══ 新建客户弹窗 ══
-function openNewCustomerModal() {
-  const modal = document.getElementById('new-customer-modal');
-  // 渲染画像字段
-  document.getElementById('nc-portrait-grid').innerHTML = portraitFields.map(f =>
-    `<div class="portrait-confirm-item"><div class="pc-label">${f.label}</div><input id="nc-${f.key}" placeholder="可选填写"></div>`
-  ).join('');
-  // 清空基础字段
-  ['nc-name','nc-phone','nc-community','nc-area','nc-budget'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  document.getElementById('nc-level').value = 'C';
-  document.getElementById('nc-next').value = '明天';
-  modal.style.display = 'flex';
-}
-function closeNewCustomerModal() { document.getElementById('new-customer-modal').style.display = 'none'; }
-
-// ══ 跟进日期选择器 ══
-function pickFollowQuick(cardId, val, btn) {
-  const picker = document.getElementById(`follow-picker-${cardId}`);
-  picker.querySelectorAll('.follow-quick-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById(cardId === 'nc' ? 'nc-next' : `confirm-next-${cardId}`).value = val;
-  const cal = document.getElementById(`follow-cal-${cardId}`);
-  if (cal) cal.classList.remove('show');
-}
-
-function toggleFollowCal(cardId) {
-  const cal = document.getElementById(`follow-cal-${cardId}`);
-  if (cal.classList.contains('show')) { cal.classList.remove('show'); return; }
-  renderFollowCal(cardId, new Date().getFullYear(), new Date().getMonth());
-  cal.classList.add('show');
-}
-
-function renderFollowCal(cardId, year, month) {
-  const cal = document.getElementById(`follow-cal-${cardId}`);
-  const today = new Date(); today.setHours(0,0,0,0);
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const startDow = firstDay.getDay(); // 0=Sun
-  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-
-  let html = `<div class="follow-cal-header">
-    <span onclick="renderFollowCal('${cardId}',${month===0?year-1:year},${month===0?11:month-1})">‹</span>
-    <div>${year}年${monthNames[month]}</div>
-    <span onclick="renderFollowCal('${cardId}',${month===11?year+1:year},${month===11?0:month+1})">›</span>
-  </div><div class="follow-cal-grid">`;
-  ['日','一','二','三','四','五','六'].forEach(w => html += `<div class="cal-wk">${w}</div>`);
-
-  // 上月补位
-  for (let i = 0; i < startDow; i++) {
-    const d = new Date(year, month, -startDow + i + 1);
-    html += `<div class="cal-day other">${d.getDate()}</div>`;
-  }
-  // 本月
-  for (let d = 1; d <= lastDay.getDate(); d++) {
-    const date = new Date(year, month, d);
-    const isPast = date < today;
-    const isToday = date.getTime() === today.getTime();
-    const cls = isPast ? 'past' : (isToday ? 'today' : '');
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    html += `<div class="cal-day ${cls}" ${isPast ? '' : `onclick="selectFollowDate('${cardId}','${dateStr}',this)"`}>${d}</div>`;
-  }
-  html += '</div>';
-  cal.innerHTML = html;
-}
-
-function selectFollowDate(cardId, dateStr, el) {
-  const cal = document.getElementById(`follow-cal-${cardId}`);
-  cal.querySelectorAll('.cal-day.selected').forEach(d => d.classList.remove('selected'));
-  el.classList.add('selected');
-  // 清除快捷按钮选中，把"选日期"按钮标为选中并显示日期
-  const picker = document.getElementById(`follow-picker-${cardId}`);
-  picker.querySelectorAll('.follow-quick-btn').forEach(b => b.classList.remove('active'));
-  const calBtn = picker.querySelector('.follow-quick-btn:last-child');
-  calBtn.classList.add('active');
-  calBtn.textContent = '📅 ' + dateStr;
-  // 设值
-  document.getElementById(cardId === 'nc' ? 'nc-next' : `confirm-next-${cardId}`).value = dateStr;
-  // 收起日历
-  setTimeout(() => cal.classList.remove('show'), 150);
-}
-
-async function submitNewCustomer() {
-  const name = document.getElementById('nc-name').value.trim();
-  const phone = document.getElementById('nc-phone').value.trim();
-  if (!name || !phone) return alert('姓名和电话为必填项');
-
-  const portrait = {};
-  portraitFields.forEach(f => { const v = document.getElementById(`nc-${f.key}`)?.value?.trim(); if(v) portrait[f.key] = v; });
-  const filledCount = portraitFields.filter(f => portrait[f.key]).length;
-  const portraitPct = Math.round((filledCount / portraitFields.length) * 100);
-
-  const nextMap = { '明天': 1, '后天': 2, '3天后': 3, '1周后': 7 };
-  const nextVal = document.getElementById('nc-next').value;
-  let nextFollowAt;
-  if (nextMap[nextVal]) {
-    nextFollowAt = new Date(Date.now() + nextMap[nextVal] * 86400000).toISOString();
-  } else if (nextVal) {
-    nextFollowAt = new Date(nextVal).toISOString();
-  } else {
-    nextFollowAt = new Date(Date.now() + 86400000).toISOString();
-  }
-
-  const body = {
-    name, phone,
-    community: document.getElementById('nc-community').value.trim() || undefined,
-    area: document.getElementById('nc-area').value.trim() || undefined,
-    budget: document.getElementById('nc-budget').value.trim() || undefined,
-    level: document.getElementById('nc-level').value,
-    portrait, portraitPct, nextFollowAt
-  };
-
-  try {
-    const result = await api('/api/customers', { method: 'POST', body: JSON.stringify(body) });
-    if (result.success) {
-      closeNewCustomerModal();
-      await loadCustomers();
-      renderCustomerTable();
-      alert('客户创建成功');
-    } else {
-      alert(result.message || '创建失败');
-    }
-  } catch (e) { alert('创建失败：' + e.message); }
-}
-
-// ══ 导入客户弹窗 ══
-let importFileData = null;
-
-function openImportModal() {
-  importFileData = null;
-  document.getElementById('import-file-input').value = '';
-  document.getElementById('import-file-name').textContent = '支持 .xlsx / .csv';
-  document.getElementById('import-preview').style.display = 'none';
-  document.getElementById('import-submit-btn').disabled = true;
-  document.getElementById('import-modal').style.display = 'flex';
-}
-function closeImportModal() { document.getElementById('import-modal').style.display = 'none'; importFileData = null; }
-
-function downloadImportTemplate() {
-  const headers = ['姓名','电话','小区','面积','预算','客户等级','房屋类型','房屋用途','房屋现状','家庭成员','职业','生活习惯','了解程度','装修定位','装修预算','装修时间','关注点','风格偏好'];
-  const csv = headers.join(',') + '\n';
-  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = '客户导入模板.csv';
-  a.click();
-}
-
-function handleImportFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  importFileData = file;
-  document.getElementById('import-file-name').textContent = file.name;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = new Uint8Array(e.target.result);
-      const wb = XLSX.read(data, { type: 'array' });
-      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '' });
-      if (!rows.length) { alert('文件为空'); return; }
-
-      // 预览前5行
-      const preview = rows.slice(0, 5);
-      const cols = Object.keys(preview[0]);
-      let html = '<tr>' + cols.map(c => `<th style="padding:4px 8px;border:1px solid var(--gray-200);background:var(--gray-50);font-weight:600;white-space:nowrap">${c}</th>`).join('') + '</tr>';
-      preview.forEach(r => {
-        html += '<tr>' + cols.map(c => `<td style="padding:4px 8px;border:1px solid var(--gray-200);white-space:nowrap">${r[c]}</td>`).join('') + '</tr>';
-      });
-      document.getElementById('import-preview-table').innerHTML = html;
-      document.getElementById('import-preview').style.display = 'block';
-      document.getElementById('import-submit-btn').disabled = false;
-      document.getElementById('import-submit-btn').textContent = `确认导入（共 ${rows.length} 行）`;
-    } catch (err) { alert('文件解析失败：' + err.message); }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-async function submitImport() {
-  if (!importFileData) return;
-  const btn = document.getElementById('import-submit-btn');
-  btn.disabled = true;
-  btn.textContent = '导入中…';
-
-  const formData = new FormData();
-  formData.append('file', importFileData);
-
-  try {
-    const res = await fetch(API_BASE + '/api/customers/import', {
-      method: 'POST',
-      headers: { 'Authorization': token ? `Bearer ${token}` : '' },
-      body: formData
-    });
-    const result = await res.json();
-    if (result.success) {
-      const d = result.data;
-      closeImportModal();
-      await loadCustomers();
-      renderCustomerTable();
-      let msg = `导入完成：成功 ${d.successCount} 条`;
-      if (d.failCount > 0) msg += `，失败 ${d.failCount} 条`;
-      if (d.failures?.length) msg += '\n\n失败详情：\n' + d.failures.map(f => `第${f.row}行：${f.reason}`).join('\n');
-      alert(msg);
-    } else {
-      alert(result.message || '导入失败');
-      btn.disabled = false;
-      btn.textContent = '确认导入';
-    }
-  } catch (e) {
-    alert('导入失败：' + e.message);
-    btn.disabled = false;
-    btn.textContent = '确认导入';
-  }
-}
-
 // 初始化
-async function init() {
-  // 检查登录
-  const loggedIn = await checkAuth();
-  if (loggedIn) {
-    // 已登录，显示用户信息
-    document.getElementById('login-btn').style.display = 'none';
-    document.getElementById('user-info').style.display = 'block';
-    // 加载真实数据
-    const [c, s, cc] = await Promise.all([loadCustomers(), loadSeaCustomers(), loadConfirmCards()]);
-    if (!c) window.customers = mockCustomers;
-    if (!s) window.seaCustomers = mockSeaCustomers;
-    // cc 是待确认卡片，已经存入 pendingConfirmCards
-  } else {
-    // 未登录 — 如果 URL 带邀请码，自动弹注册
-    const params = new URLSearchParams(location.search);
-    if (params.get('invite')) {
-      showRegisterModal();
-    }
-    // 未登录，使用 mock 数据演示
-    useMockData = true;
-    window.customers = mockCustomers;
-    window.seaCustomers = mockSeaCustomers;
-    pendingConfirmCards = [
-      // 新客户测试卡片
-      {
-        id: 'mock-new-001',
-        callTime: new Date().toISOString(),
-        customerPhone: '15800001111',
-        customerPhoneMasked: '158****1111',
-        agentName: '严妍',
-        isNewCustomer: true,
-        basicInfo: { name: '陈先生', phone: '15800001111', community: '龙湖·春江天玺', area: '145', budget: '35-45万' },
-        portrait: { houseType: '商品房', houseUsage: '自住', houseState: '毛坯', familyMembers: '夫妻+1孩', profession: '工程师', habits: '喜欢智能家居', awareness: '对比多家', position: '一线品牌', budgetDetail: '35-45万全包', timeline: '2个月后交房', focusPoints: '工程质量、工期', stylePreference: '现代简约' },
-        customerLevel: 'A',
-        levelReason: '145㎡+预算35-45万+2个月后交房，意向较强',
-        nextFollow: '后天',
-        promise: '发同小区案例给客户参考',
-        callSummary: '陈先生，龙湖春江天玺145㎡，夫妻带一个孩子，预算35-45万全包，现代简约风格，2个月后交房，正在对比3家公司。'
-      },
-      // 新客户测试卡片2
-      {
-        id: 'mock-new-002',
-        callTime: new Date(Date.now() - 3600000).toISOString(),
-        customerPhone: '18600003333',
-        customerPhoneMasked: '186****3333',
-        agentName: '严妍',
-        isNewCustomer: true,
-        basicInfo: { name: '周女士', phone: '18600003333', community: '绿城·桂花园', area: '200', budget: '60-80万' },
-        portrait: { houseType: '商品房', houseUsage: '自住', houseState: '毛坯', familyMembers: '夫妻+2孩', profession: '医生', habits: '注重健康环保', awareness: '有装修经验', position: '一线品牌', budgetDetail: '60-80万含软装', timeline: '已交房尽快开工', focusPoints: '环保材料、设计感、收纳', stylePreference: '法式轻奢' },
-        customerLevel: 'S',
-        levelReason: '200㎡大户型+高预算60-80万+已交房急开工+老客户转介绍，超高意向',
-        nextFollow: '明天',
-        promise: '明天上午10点到店看方案，带户型图',
-        callSummary: '周女士，绿城桂花园200㎡四室两厅，医生，夫妻带两个孩子。预算60-80万含软装，法式轻奢风格。房子已交房想尽快开工，是老客户张总介绍的。约了明天上午10点到店。'
-      },
-      // 老客户测试卡片
-      {
-        id: 'mock-old-001',
-        callTime: new Date().toISOString(),
-        customerPhone: '13700002079',
-        customerPhoneMasked: '137****2079',
-        agentName: '严妍',
-        isNewCustomer: false,
-        existingCustomer: {
-          name: '李雪梅', phone: '13700002079', community: '碧桂园', area: 128, budget: '18万',
-          level: 'B', portraitPct: 55, callCount: 2,
-          portrait: { houseType: '商品房', houseUsage: '自住', houseState: '毛坯', familyMembers: '夫妻', profession: '', habits: '', awareness: '百家咨询', position: '', budgetDetail: '18万', timeline: '', focusPoints: '收纳、材料', stylePreference: '轻奢风' }
-        },
-        basicInfo: { name: '李雪梅', phone: '13700002079', community: '碧桂园', area: '128', budget: '20万' },
-        portrait: { houseType: '商品房', houseUsage: '自住', houseState: '毛坯', familyMembers: '夫妻+婆婆同住', profession: '小学老师', habits: '周末喜欢烘焙，家里养了两只猫', awareness: '已对比3家倾向我们', position: '一线品牌', budgetDetail: '20万全包', timeline: '下个月开工', focusPoints: '收纳、材料、环保', stylePreference: '轻奢风' },
-        customerLevel: 'A',
-        levelReason: '第3次跟进，客户已对比3家倾向我们，预算从18万提升到20万，建议升级为A级',
-        nextFollow: '明天',
-        promise: '明天发详细报价单和同户型案例',
-        callSummary: '李雪梅第3次跟进电话。客户表示已对比3家公司倾向我们。本次新了解到：婆婆同住需考虑适老设计，客户是小学老师，周末喜欢烘焙、家里养了两只猫。预算从18万提升到20万全包，计划下个月开工。'
-      },
-      // 老客户测试卡片2
-      {
-        id: 'mock-old-002',
-        callTime: new Date(Date.now() - 7200000).toISOString(),
-        customerPhone: '13800004983',
-        customerPhoneMasked: '138****4983',
-        agentName: '严妍',
-        isNewCustomer: false,
-        existingCustomer: {
-          name: '张伟', phone: '13800004983', community: '光山新城', area: 96, budget: '12万',
-          level: 'C', portraitPct: 30, callCount: 1,
-          portrait: { houseType: '商品房', houseUsage: '自住', houseState: '毛坯', familyMembers: '', profession: '', habits: '', awareness: '', position: '', budgetDetail: '12万', timeline: '3个月后', focusPoints: '', stylePreference: '北欧风' }
-        },
-        basicInfo: { name: '张伟', phone: '13800004983', community: '光山新城', area: '96', budget: '15万' },
-        portrait: { houseType: '商品房', houseUsage: '自住+偶尔办公', houseState: '毛坯', familyMembers: '单身，父母偶尔来住', profession: '程序员', habits: '宅家打游戏、喜欢简洁', awareness: '刚开始了解', position: '性价比优先', budgetDetail: '15万全包', timeline: '2个月后交房', focusPoints: '性价比、工期短、网络布线', stylePreference: '北欧风' },
-        customerLevel: 'B',
-        levelReason: '第2次跟进，预算从12万提升到15万，时间从3个月缩短到2个月，意向提升，建议升级为B级',
-        nextFollow: '3天后',
-        promise: '发一份15万全包的详细报价方案',
-        callSummary: '张伟第2次跟进。客户预算从12万提到15万全包，交房时间确认为2个月后。本次新了解到：程序员，单身但父母偶尔来住需要客房，喜欢宅家打游戏要求网络布线好，房子偶尔也用来办公。性价比优先，希望工期短。'
-      }
-    ]; // mock 待确认卡片（含新客户+老客户）
-  }
-
-  // 渲染页面
-  renderTodo();
-  renderConfirmCards();
-  renderCustomerTable();
-  updatePinnedCount();
-  renderPinnedCustomers();
-  renderSea();
-  renderCases();
-}
-init();
+renderTodo();
+renderConfirmCards();
+renderCustomerTable();
+updatePinnedCount();
+renderPinnedCustomers();
+renderSea();
+renderCases();
+renderBoss();
+renderHistoryList();
 </script>
 </body>
 </html>

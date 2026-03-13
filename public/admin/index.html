@@ -211,7 +211,7 @@ tr:hover td{background:var(--gray-50)}
       </div>
       <div class="table-card">
         <table>
-          <thead><tr><th>租户名称</th><th>登录账号</th><th>到期时间</th><th>绑定IP</th><th>用户数</th><th>状态</th><th>操作</th></tr></thead>
+          <thead><tr><th>租户名称</th><th>登录账号</th><th>邀请链接</th><th>到期时间</th><th>用户数</th><th>状态</th><th>操作</th></tr></thead>
           <tbody id="tenantTableBody"><tr><td colspan="7" class="loading">加载中...</td></tr></tbody>
         </table>
       </div>
@@ -266,6 +266,9 @@ tr:hover td{background:var(--gray-50)}
     <div class="form-group"><label>登录密码</label><input id="ctPassword" type="password" placeholder="至少6位"></div>
     <div class="form-group"><label>到期时间</label><input id="ctExpires" type="date"></div>
     <div class="form-group"><label>绑定IP（逗号分隔，留空不限制）</label><input id="ctIps" placeholder="如 1.2.3.4,5.6.7.8"></div>
+    <div class="form-group"><label>邀请链接有效期（留空永不过期）</label><input id="ctInviteExpires" type="date"></div>
+    <div class="form-group"><label>老板账号数量</label><input id="ctBossCount" type="number" value="0" min="0" placeholder="自动生成 boss1, boss2..."></div>
+    <div class="form-group"><label>客服账号数量</label><input id="ctAgentCount" type="number" value="0" min="0" placeholder="自动生成 agent1, agent2..."></div>
     <div class="form-group"><label>最大用户数</label><input id="ctMaxUsers" type="number" value="10"></div>
     <div class="modal-footer"><button class="btn btn-outline" onclick="closeModal('createTenantModal')">取消</button><button class="btn btn-primary" onclick="createTenant()">创建</button></div>
   </div>
@@ -433,11 +436,18 @@ function renderTenants(list) {
   tbody.innerHTML = list.map(t => {
     const statusBadge = t.status === 'active' ? '<span class="badge badge-active">启用</span>' : '<span class="badge badge-disabled">禁用</span>';
     const isDefault = t.slug === 'default';
+    const inviteAgent = t.inviteCodeAgent ? `${location.origin}/agent?invite=${t.inviteCodeAgent}` : '';
+    const inviteBoss = t.inviteCodeBoss ? `${location.origin}/agent?invite=${t.inviteCodeBoss}` : '';
+    const inviteExpired = t.inviteExpiresAt && new Date(t.inviteExpiresAt) < new Date();
     return `<tr>
       <td><strong>${t.name}</strong><br><span style="font-size:11px;color:var(--gray-400)">${t.slug}</span></td>
       <td>${t.adminUser || '-'}</td>
+      <td style="font-size:11px">${inviteExpired ? '<span style="color:var(--red)">已过期</span>' : t.inviteCodeAgent ? `
+        <span style="cursor:pointer;color:var(--blue)" onclick="copyInvite('${inviteAgent}')">客服: ${t.inviteCodeAgent} 📋</span><br>
+        <span style="cursor:pointer;color:var(--purple)" onclick="copyInvite('${inviteBoss}')">老板: ${t.inviteCodeBoss} 📋</span>
+        ${t.inviteExpiresAt ? '<br><span style="color:var(--gray-400)">'+fmtDate(t.inviteExpiresAt)+'到期</span>' : ''}
+      ` : '-'}</td>
       <td>${fmtDate(t.expiresAt)}</td>
-      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis">${t.allowedIps || '-'}</td>
       <td>${t.userCount}/${t.maxUsers}</td>
       <td>${statusBadge}</td>
       <td>
@@ -453,6 +463,12 @@ function renderTenants(list) {
 
 function openCreateTenant() { openModal('createTenantModal'); }
 
+function copyInvite(url) {
+  navigator.clipboard.writeText(url).then(() => toast('邀请链接已复制')).catch(() => {
+    prompt('复制链接：', url);
+  });
+}
+
 async function createTenant() {
   const data = {
     name: $('ctName').value.trim(),
@@ -461,17 +477,22 @@ async function createTenant() {
     password: $('ctPassword').value,
     expiresAt: $('ctExpires').value || null,
     allowedIps: $('ctIps').value.trim() || null,
-    maxUsers: parseInt($('ctMaxUsers').value) || 10
+    inviteExpiresAt: $('ctInviteExpires').value || null,
+    maxUsers: parseInt($('ctMaxUsers').value) || 10,
+    bossCount: parseInt($('ctBossCount').value) || 0,
+    agentCount: parseInt($('ctAgentCount').value) || 0
   };
   if (!data.name || !data.slug || !data.username || !data.password) return toast('请填写必填项', 'error');
+  const btn = event.target; btn.disabled = true; btn.textContent = '创建中...';
   try {
     await api('/tenants', { method: 'POST', body: JSON.stringify(data) });
     toast('租户创建成功');
     closeModal('createTenantModal');
-    ['ctName','ctSlug','ctUsername','ctPassword','ctExpires','ctIps'].forEach(id => $(id).value = '');
-    $('ctMaxUsers').value = '10';
+    ['ctName','ctSlug','ctUsername','ctPassword','ctExpires','ctIps','ctInviteExpires'].forEach(id => $(id).value = '');
+    $('ctMaxUsers').value = '10'; $('ctBossCount').value = '0'; $('ctAgentCount').value = '0';
     loadTenants();
   } catch (e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '创建'; }
 }
 
 function openEditTenant(id) {
@@ -493,12 +514,14 @@ async function saveTenant() {
     allowedIps: $('etIps').value.trim() || null,
     maxUsers: parseInt($('etMaxUsers').value) || 10
   };
+  const btn = event.target; btn.disabled = true; btn.textContent = '保存中...';
   try {
     await api('/tenants/' + id, { method: 'PUT', body: JSON.stringify(data) });
     toast('更新成功');
     closeModal('editTenantModal');
     loadTenants();
   } catch (e) { toast(e.message, 'error'); }
+  finally { btn.disabled = false; btn.textContent = '保存'; }
 }
 
 async function toggleTenant(id) {

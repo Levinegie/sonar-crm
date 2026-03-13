@@ -123,6 +123,75 @@ router.post('/login', async (req, res) => {
 });
 
 // =====================================================
+// 邀请码注册（角色由邀请码决定，注册后待审核）
+// =====================================================
+router.post('/register', async (req, res) => {
+  try {
+    const { inviteCode, username, password, name } = req.body;
+
+    if (!inviteCode || !username || !password || !name) {
+      return res.status(400).json(error('邀请码、用户名、密码和姓名为必填项', 400));
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json(error('密码至少6位', 400));
+    }
+
+    // 通过邀请码判断角色和租户
+    let tenant = await prisma.tenant.findFirst({ where: { inviteCodeAgent: inviteCode } });
+    let role = 'agent';
+    if (!tenant) {
+      tenant = await prisma.tenant.findFirst({ where: { inviteCodeBoss: inviteCode } });
+      role = 'boss';
+    }
+    if (!tenant) {
+      return res.status(400).json(error('邀请码无效', 400));
+    }
+    if (tenant.status !== 'active') {
+      return res.status(403).json(error('该租户已被禁用', 403));
+    }
+    if (tenant.expiresAt && new Date(tenant.expiresAt) < new Date()) {
+      return res.status(403).json(error('该租户已到期', 403));
+    }
+    if (tenant.inviteExpiresAt && new Date(tenant.inviteExpiresAt) < new Date()) {
+      return res.status(403).json(error('邀请链接已过期，请联系管理员', 403));
+    }
+
+    // 检查用户数是否超限
+    const userCount = await prisma.user.count({ where: { tenantId: tenant.id } });
+    if (userCount >= tenant.maxUsers) {
+      return res.status(400).json(error('该租户用户数已达上限', 400));
+    }
+
+    // 检查用户名是否已存在
+    const exists = await prisma.user.findFirst({
+      where: { tenantId: tenant.id, username }
+    });
+    if (exists) {
+      return res.status(400).json(error('用户名已存在', 400));
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await prisma.user.create({
+      data: {
+        tenantId: tenant.id,
+        username,
+        password: hashedPassword,
+        name,
+        role,
+        isActive: false,
+        maxCustomers: role === 'boss' ? 1000 : 50
+      }
+    });
+
+    res.json(success(null, '注册成功，请等待管理员审核后即可登录'));
+  } catch (err) {
+    console.error('Register error:', err);
+    res.status(500).json(error('注册失败', 500));
+  }
+});
+
+// =====================================================
 // 获取当前用户信息
 // =====================================================
 router.get('/me', authenticate, async (req, res) => {

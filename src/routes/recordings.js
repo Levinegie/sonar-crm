@@ -227,11 +227,21 @@ router.get('/pending/confirm', authenticate, tenantScope, async (req, res) => {
     });
 
     // 组装返回数据
-    const pendingCards = recordings.map(r => {
+    const pendingCards = [];
+    for (const r of recordings) {
       const confirmResult = r.analysisResults[0];
       const card = confirmResult?.customerCard || {};
+      const isNew = card.isNewCustomer !== false;
 
-      return {
+      // 老客户：查询已有客户完整信息
+      let existingCustomer = null;
+      if (!isNew && r.customerPhone) {
+        existingCustomer = await prisma.customer.findFirst({
+          where: { tenantId: req.tenantId, phone: r.customerPhone }
+        });
+      }
+
+      pendingCards.push({
         id: r.id,
         callTime: r.callTime,
         customerPhone: r.customerPhone,
@@ -239,8 +249,21 @@ router.get('/pending/confirm', authenticate, tenantScope, async (req, res) => {
         agentName: r.agent?.name,
 
         // 是否为新客户
-        isNewCustomer: card.isNewCustomer !== false,
+        isNewCustomer: isNew,
         existingCustomerId: card.existingCustomerId,
+
+        // 老客户已有信息
+        existingCustomer: existingCustomer ? {
+          name: existingCustomer.name,
+          phone: existingCustomer.phone,
+          community: existingCustomer.community,
+          area: existingCustomer.area,
+          budget: existingCustomer.budget,
+          level: existingCustomer.level,
+          portrait: existingCustomer.portrait || {},
+          portraitPct: existingCustomer.portraitPct || 0,
+          callCount: existingCustomer.callCount || 0
+        } : null,
 
         // AI 识别的基础信息
         basicInfo: card.basicInfo || {},
@@ -258,8 +281,8 @@ router.get('/pending/confirm', authenticate, tenantScope, async (req, res) => {
 
         // 原始分析结果 ID（用于确认时更新）
         analysisResultId: confirmResult?.id
-      };
-    });
+      });
+    }
 
     res.json(success(pendingCards));
   } catch (err) {
@@ -399,10 +422,11 @@ router.post('/:id/confirm', authenticate, tenantScope, async (req, res) => {
           ...(customer.portrait || {}),
           ...portrait
         };
-        // 计算画像完整度
-        const filledFields = Object.values(updateData.portrait).filter(v => v && v !== '暂无').length;
+        // 计算画像完整度（只统计标准12字段）
+        const standardKeys = ['houseType','houseUsage','houseState','familyMembers','profession','habits','awareness','position','budgetDetail','timeline','focusPoints','stylePreference'];
+        const filledFields = standardKeys.filter(k => updateData.portrait[k] && updateData.portrait[k] !== '暂无').length;
         const totalFields = 12;
-        updateData.portraitPct = Math.round((filledFields / totalFields) * 100);
+        updateData.portraitPct = Math.min(Math.round((filledFields / totalFields) * 100), 100);
       }
 
       // 如果有承诺，存入 portrait
@@ -423,10 +447,11 @@ router.post('/:id/confirm', authenticate, tenantScope, async (req, res) => {
       const portraitData = portrait || {};
       if (promise) portraitData.promise = promise;
 
-      // 计算画像完整度
-      const filledFields = Object.values(portraitData).filter(v => v && v !== '暂无').length;
+      // 计算画像完整度（只统计标准12字段）
+      const standardKeys = ['houseType','houseUsage','houseState','familyMembers','profession','habits','awareness','position','budgetDetail','timeline','focusPoints','stylePreference'];
+      const filledFields = standardKeys.filter(k => portraitData[k] && portraitData[k] !== '暂无').length;
       const totalFields = 12;
-      const portraitPct = Math.round((filledFields / totalFields) * 100);
+      const portraitPct = Math.min(Math.round((filledFields / totalFields) * 100), 100);
 
       customer = await prisma.customer.create({
         data: {
@@ -550,7 +575,37 @@ router.post('/seed/confirm-cards', authenticate, async (req, res) => {
       }
     ];
 
-    const results = [];
+    // 查找一个已有客户，生成老客户跟进卡片
+    const existingCustomer = await prisma.customer.findFirst({
+      where: { tenantId, agentId },
+      orderBy: { createdAt: 'desc' }
+    });
+    if (existingCustomer) {
+      mockCards.push({
+        phone: existingCustomer.phone,
+        name: existingCustomer.name,
+        isNewCustomer: false,
+        existingCustomerId: existingCustomer.id,
+        basicInfo: { name: existingCustomer.name, phone: existingCustomer.phone, community: existingCustomer.community || '', area: existingCustomer.area || '', budget: existingCustomer.budget || '' },
+        portrait: {
+          ...(existingCustomer.portrait || {}),
+          // AI 本次新识别的字段
+          habits: '周末喜欢户外运动，家里养了一只猫',
+          awareness: '已对比3家，倾向我们',
+          focusPoints: '工期保障、售后服务、环保材料',
+          timeline: '下个月开工'
+        },
+        customerLevel: 'A',
+        levelReason: `跟进电话中客户表达了明确意向，已对比3家倾向我们，建议升级为A级`,
+        nextFollow: '明天',
+        promise: '明天发详细报价单',
+        callSummary: `${existingCustomer.name}第二次跟进电话，客户表示已对比3家公司，对我们印象最好。本次通话新了解到客户周末喜欢户外运动、家里养猫，关注工期保障和售后服务，计划下个月开工。承诺明天发详细报价单。`,
+        transcript: `客服：${existingCustomer.name}您好，我是小严，上次跟您聊过装修的事，今天跟您回访一下。\n客户：哦对，我记得你。\n客服：您这边对比得怎么样了？\n客户：看了3家了，你们给我的感觉最好，比较专业。\n客服：谢谢认可！您大概什么时候想开工呢？\n客户：下个月吧，想尽快搞定。\n客服：好的。对了上次忘了问，您平时有什么生活习惯需要我们设计时考虑的吗？\n客户：我和我老婆周末喜欢户外运动，家里还养了一只猫，所以要考虑猫的活动空间。\n客服：明白了，我们可以做一些猫爬架和猫通道的设计。您最关心哪些方面？\n客户：工期一定要保障，还有售后服务要好，材料要环保。\n客服：这些都是我们的强项。我明天给您发一份详细的报价单，您看看。\n客户：好的，等你消息。`,
+        stage1Scores: { is_valid: true, lead_quality: { score: 8.0, grade: 'A' }, agent_attitude: { score: 8.5, grade: 'A' } }
+      });
+    }
+
+    const results2 = [];
     for (const card of mockCards) {
       const recording = await prisma.recording.create({
         data: {
@@ -567,7 +622,8 @@ router.post('/seed/confirm-cards', authenticate, async (req, res) => {
           isValid: true,
           analysisStatus: 'pending_confirm',
           callTime: new Date(Date.now() - Math.floor(Math.random() * 86400000)),
-          analyzedAt: new Date()
+          analyzedAt: new Date(),
+          ...(card.existingCustomerId && { customerId: card.existingCustomerId })
         }
       });
 
@@ -602,7 +658,8 @@ router.post('/seed/confirm-cards', authenticate, async (req, res) => {
           provider: 'google',
           summary: card.callSummary,
           customerCard: {
-            isNewCustomer: true,
+            isNewCustomer: card.isNewCustomer !== false,
+            existingCustomerId: card.existingCustomerId || null,
             basicInfo: card.basicInfo,
             portrait: card.portrait,
             customerLevel: card.customerLevel,
@@ -632,10 +689,10 @@ router.post('/seed/confirm-cards', authenticate, async (req, res) => {
         });
       }
 
-      results.push({ phone: card.phone, recordingId: recording.id });
+      results2.push({ phone: card.phone, recordingId: recording.id, isNewCustomer: card.isNewCustomer !== false });
     }
 
-    res.json(success({ message: `已创建 ${results.length} 条待确认卡片`, results }));
+    res.json(success({ message: `已创建 ${results2.length} 条待确认卡片（含老客户跟进）`, results: results2 }));
   } catch (err) {
     console.error('Seed error:', err);
     res.status(500).json(error('创建测试数据失败: ' + err.message, 500));

@@ -19,12 +19,15 @@ model Tenant {
   name        String
   slug        String   @unique
 
-  maxUsers    Int      @default(10)
-  status      String   @default("active")
-  expiresAt   DateTime?
-  allowedIps  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  maxUsers        Int      @default(10)
+  status          String   @default("active")
+  expiresAt       DateTime?
+  allowedIps      String?
+  inviteCodeAgent String?  @unique
+  inviteCodeBoss  String?  @unique
+  inviteExpiresAt DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   users              User[]
   customers          Customer[]

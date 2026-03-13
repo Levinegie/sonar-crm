@@ -5,6 +5,7 @@
 
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const { success, error } = require('../utils/helpers');
 const { authenticate, platformOnly } = require('../middleware/auth');
@@ -66,6 +67,9 @@ router.get('/', async (req, res) => {
       status: t.status,
       expiresAt: t.expiresAt,
       allowedIps: t.allowedIps,
+      inviteCodeAgent: t.inviteCodeAgent,
+      inviteCodeBoss: t.inviteCodeBoss,
+      inviteExpiresAt: t.inviteExpiresAt,
       adminUser: t.users[0]?.username || null,
       userCount: t._count.users,
       createdAt: t.createdAt
@@ -83,7 +87,7 @@ router.get('/', async (req, res) => {
 // =====================================================
 router.post('/', async (req, res) => {
   try {
-    const { name, slug, username, password, maxUsers, expiresAt, allowedIps } = req.body;
+    const { name, slug, username, password, maxUsers, expiresAt, allowedIps, bossCount = 0, agentCount = 0, inviteExpiresAt } = req.body;
 
     if (!name || !slug || !username || !password) {
       return res.status(400).json(error('租户名称、标识、登录账号和密码为必填项', 400));
@@ -106,7 +110,10 @@ router.post('/', async (req, res) => {
           maxUsers: maxUsers || 10,
           status: 'active',
           expiresAt: expiresAt ? new Date(expiresAt) : null,
-          allowedIps: allowedIps || null
+          allowedIps: allowedIps || null,
+          inviteCodeAgent: crypto.randomBytes(4).toString('hex').toUpperCase(),
+          inviteCodeBoss: crypto.randomBytes(4).toString('hex').toUpperCase(),
+          inviteExpiresAt: inviteExpiresAt ? new Date(inviteExpiresAt) : null
         }
       });
 
@@ -123,7 +130,37 @@ router.post('/', async (req, res) => {
         }
       });
 
-      // 3. 初始化 5 条 AI 配置（复制默认模板）
+      // 3. 批量创建老板账号
+      for (let i = 1; i <= bossCount; i++) {
+        await tx.user.create({
+          data: {
+            tenantId: tenant.id,
+            username: `boss${i}`,
+            password: hashedPassword,
+            name: `老板${i}`,
+            role: 'boss',
+            isActive: true,
+            maxCustomers: 1000
+          }
+        });
+      }
+
+      // 4. 批量创建客服账号
+      for (let i = 1; i <= agentCount; i++) {
+        await tx.user.create({
+          data: {
+            tenantId: tenant.id,
+            username: `agent${i}`,
+            password: hashedPassword,
+            name: `客服${i}`,
+            role: 'agent',
+            isActive: true,
+            maxCustomers: 50
+          }
+        });
+      }
+
+      // 5. 初始化 5 条 AI 配置（复制默认模板）
       const defaultConfigs = [
         { name: 'line_a1', description: '首通客户 - 第一阶段：录音解析', provider: 'gemini', model: 'gemini-3.1-flash-preview', apiUrl: 'https://yunwu.ai' },
         { name: 'line_a2', description: '首通客户 - 第二阶段：深度诊断', provider: 'gemini', model: 'gemini-3.1-flash-preview', apiUrl: 'https://yunwu.ai' },

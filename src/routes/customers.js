@@ -5,8 +5,12 @@
 
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
+const multer = require('multer');
+const XLSX = require('xlsx');
 const { success, error, paginate, maskPhone } = require('../utils/helpers');
 const { authenticate, authorize, tenantScope } = require('../middleware/auth');
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024 } });
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -248,7 +252,7 @@ router.post('/:id/assign', authenticate, authorize('admin', 'boss'), tenantScope
 // 创建客户
 router.post('/', authenticate, tenantScope, async (req, res) => {
   try {
-    const { name, phone, community, area, houseType, budget, channel, level = 'C' } = req.body;
+    const { name, phone, community, area, houseType, budget, channel, level = 'C', portrait, portraitPct, nextFollowAt } = req.body;
 
     // 检查是否已存在
     const exists = await prisma.customer.findUnique({
@@ -266,11 +270,14 @@ router.post('/', authenticate, tenantScope, async (req, res) => {
         phone, // 应该加密存储
         phoneMasked: maskPhone(phone),
         community,
-        area,
+        area: area ? (typeof area === 'number' ? area : parseFloat(area) || null) : null,
         houseType,
         budget,
-        source: channel,
+        source: channel || '手动新建',
         level,
+        portrait: portrait || undefined,
+        portraitPct: portraitPct || 0,
+        nextFollowAt: nextFollowAt ? new Date(nextFollowAt) : null,
         agentId: req.user.role === 'agent' ? req.user.id : null
       }
     });
@@ -279,6 +286,99 @@ router.post('/', authenticate, tenantScope, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json(error('创建客户失败', 500));
+  }
+});
+
+// 批量导入客户
+const portraitKeys = ['houseType','houseUsage','houseState','familyMembers','profession','habits','awareness','position','budgetDetail','timeline','focusPoints','stylePreference'];
+const colMap = {
+  '姓名':'name','电话':'phone','小区':'community','面积':'area','预算':'budget','客户等级':'level',
+  '房屋类型':'houseType','房屋用途':'houseUsage','房屋现状':'houseState','家庭成员':'familyMembers',
+  '职业':'profession','生活习惯':'habits','了解程度':'awareness','装修定位':'position',
+  '装修预算':'budgetDetail','装修时间':'timeline','关注点':'focusPoints','风格偏好':'stylePreference'
+};
+
+router.post('/import', authenticate, tenantScope, upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json(error('请上传文件', 400));
+
+    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+    if (!rows.length) return res.status(400).json(error('文件为空', 400));
+
+    // 获取已有电话号码用于去重
+    const existingPhones = new Set(
+      (await prisma.customer.findMany({
+        where: { tenantId: req.tenantId },
+        select: { phone: true }
+      })).map(c => c.phone)
+    );
+
+    let successCount = 0;
+    const failures = [];
+
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
+      // 映射列名
+      const mapped = {};
+      for (const [cn, val] of Object.entries(row)) {
+        const key = colMap[cn.trim()];
+        if (key) mapped[key] = String(val).trim();
+      }
+
+      const name = mapped.name;
+      const phone = mapped.phone;
+
+      if (!name || !phone) {
+        failures.push({ row: i + 2, reason: '姓名或电话为空' });
+        continue;
+      }
+
+      if (existingPhones.has(phone)) {
+        failures.push({ row: i + 2, reason: `电话 ${phone} 已存在，跳过` });
+        continue;
+      }
+
+      // 构建画像
+      const portrait = {};
+      portraitKeys.forEach(k => { if (mapped[k]) portrait[k] = mapped[k]; });
+      const filledCount = portraitKeys.filter(k => portrait[k]).length;
+      const portraitPct = Math.round((filledCount / portraitKeys.length) * 100);
+
+      const validLevels = ['S', 'A', 'B', 'C'];
+      const level = validLevels.includes(mapped.level) ? mapped.level : 'C';
+
+      try {
+        await prisma.customer.create({
+          data: {
+            tenantId: req.tenantId,
+            name,
+            phone,
+            phoneMasked: maskPhone(phone),
+            community: mapped.community || null,
+            area: mapped.area ? parseFloat(mapped.area) || null : null,
+            budget: mapped.budget || null,
+            level,
+            portrait,
+            portraitPct,
+            agentId: req.user.role === 'agent' ? req.user.id : null,
+            source: '导入'
+          }
+        });
+        existingPhones.add(phone);
+        successCount++;
+      } catch (e) {
+        failures.push({ row: i + 2, reason: e.message.slice(0, 80) });
+      }
+    }
+
+    res.json(success({ successCount, failCount: failures.length, failures: failures.slice(0, 20) },
+      `导入完成：成功 ${successCount} 条，失败 ${failures.length} 条`));
+  } catch (err) {
+    console.error(err);
+    res.status(500).json(error('导入失败：' + err.message, 500));
   }
 });
 
