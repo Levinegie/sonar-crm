@@ -386,7 +386,7 @@ router.post('/import', authenticate, tenantScope, upload.single('file'), async (
 router.put('/:id', authenticate, tenantScope, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, community, area, houseType, budget, level, status, portrait, portraitPct, tags, nextFollowAt, pinned } = req.body;
+    const { name, community, area, houseType, budget, level, status, portrait, portraitPct, tags, nextFollowAt, pinned, seaStatus } = req.body;
 
     const customer = await prisma.customer.update({
       where: { id, tenantId: req.tenantId },
@@ -402,7 +402,8 @@ router.put('/:id', authenticate, tenantScope, async (req, res) => {
         ...(portraitPct !== undefined && { portraitPct: parseInt(portraitPct) || 0 }),
         ...(tags && { tags }),
         ...(nextFollowAt !== undefined && { nextFollowAt: nextFollowAt ? new Date(nextFollowAt) : null }),
-        ...(pinned !== undefined && { pinned })
+        ...(pinned !== undefined && { pinned }),
+        ...(seaStatus !== undefined && { seaStatus, seaAt: seaStatus === 'in_sea' ? new Date() : null })
       }
     });
 
