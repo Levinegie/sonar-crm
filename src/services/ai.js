@@ -12,7 +12,7 @@ const prisma = new PrismaClient();
 // 从环境变量获取 AI 配置
 const AI_API_URL = process.env.AI_API_URL || 'https://yunwu.ai';
 const AI_API_KEY = process.env.AI_API_KEY;
-const AI_MODEL = process.env.AI_MODEL || 'gemini-3.1-flash-preview';
+const AI_MODEL = process.env.AI_DEFAULT_MODEL || process.env.AI_MODEL || 'gemini-3.1-flash-lite-preview';
 
 /**
  * 调用 Gemini API（通过云雾接口，OpenAI 兼容格式）
@@ -95,7 +95,7 @@ async function analyzeAudioWithGemini(ossUrl, systemPrompt) {
             ]
           }
         ],
-        temperature: 0.7,
+        temperature: 0.3,
         max_tokens: 8192
       },
       {
