@@ -311,6 +311,52 @@ async function runStage1Analysis(recording, customer) {
 async function runStage2Analysis(recording, stage1Result, lineType) {
   const prompt = await getStage2Prompt(lineType, recording.tenantId);
 
+  // 如果是跟进客户，查询历史通话记录
+  let historyContext = '';
+  if (lineType === 'line_b' && recording.customerId) {
+    const historyRecordings = await prisma.recording.findMany({
+      where: {
+        customerId: recording.customerId,
+        id: { not: recording.id }, // 排除当前录音
+        isValid: true,
+        analysisStatus: { in: ['completed', 'pending_confirm'] }
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 5, // 最多取最近5次
+      include: {
+        analysisResults: {
+          where: { stage: 'confirm_card' },
+          select: {
+            customerCard: true,
+            summary: true,
+            createdAt: true
+          }
+        }
+      }
+    });
+
+    if (historyRecordings.length > 0) {
+      historyContext = '\n\n【客户历史跟进记录】\n';
+      historyRecordings.forEach((rec, index) => {
+        const card = rec.analysisResults[0];
+        if (card) {
+          historyContext += `\n第${index + 1}次通话（${new Date(rec.createdAt).toLocaleDateString()}）：\n`;
+          historyContext += `- 通话摘要：${card.summary || '无'}\n`;
+          if (card.customerCard?.nextFollow) {
+            historyContext += `- 下次跟进计划：${card.customerCard.nextFollow}\n`;
+          }
+          if (card.customerCard?.promise) {
+            historyContext += `- 客户承诺：${card.customerCard.promise}\n`;
+          }
+          if (card.customerCard?.customerLevel) {
+            historyContext += `- 客户等级：${card.customerCard.customerLevel}（${card.customerCard.levelReason || ''}）\n`;
+          }
+        }
+      });
+      historyContext += '\n请结合以上历史记录，分析本次跟进的效果和改进建议。\n';
+    }
+  }
+
   const messages = [
     {
       role: 'system',
@@ -324,7 +370,7 @@ async function runStage2Analysis(recording, stage1Result, lineType) {
 ${stage1Result.transcript}
 
 一阶段分析结果：
-${JSON.stringify(stage1Result.scores, null, 2)}
+${JSON.stringify(stage1Result.scores, null, 2)}${historyContext}
 
 请按照要求输出 JSON 格式的分析结果。`
     }
