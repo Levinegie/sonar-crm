@@ -58,6 +58,54 @@ app.use('/api/stats', require('./routes/stats'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/agent', require('./routes/agent'));
 
+// 临时重置密码接口（紧急使用，用完记得删除）
+app.post('/api/emergency-reset-password', async (req, res) => {
+  const { PrismaClient } = require('@prisma/client');
+  const bcrypt = require('bcryptjs');
+  const prisma = new PrismaClient();
+
+  try {
+    const { secret } = req.body;
+
+    // 简单的安全验证
+    if (secret !== 'reset-admin-2026') {
+      return res.status(403).json({ success: false, error: '无权限' });
+    }
+
+    const admin = await prisma.user.findFirst({
+      where: { username: 'admin', role: 'admin' }
+    });
+
+    if (!admin) {
+      return res.status(404).json({ success: false, error: '未找到 admin 账号' });
+    }
+
+    const newPassword = 'admin123';
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    await prisma.user.update({
+      where: { id: admin.id },
+      data: {
+        password: hashedPassword,
+        loginFailCount: 0,
+        lockedUntil: null
+      }
+    });
+
+    res.json({
+      success: true,
+      message: '密码已重置为 admin123',
+      username: admin.username
+    });
+
+  } catch (err) {
+    console.error('[Emergency Reset] 失败:', err);
+    res.status(500).json({ success: false, error: err.message });
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
 // APK 上传完成回调（硬编码在 APK 里的接口）
 const { v4: uuidv4 } = require('uuid');
 const { analyzeRecording } = require('./services/ai');
