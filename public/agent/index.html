@@ -331,6 +331,11 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     <div class="portrait-confirm-grid" id="nc-portrait-grid"></div>
     <div class="confirm-section-label">⭐ 客户等级与跟进</div>
     <div class="confirm-fields">
+      <div class="confirm-field"><label>客户渠道</label>
+        <select id="nc-source">
+          <option value="">请选择渠道</option>
+        </select>
+      </div>
       <div class="confirm-field"><label>客户等级</label>
         <select id="nc-level"><option value="S">S级</option><option value="A">A级</option><option value="B">B级</option><option value="C" selected>C级</option></select>
       </div>
@@ -3394,8 +3399,24 @@ function openNewCustomerModal() {
   // 清空基础字段
   ['nc-name','nc-phone','nc-community','nc-area','nc-budget'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   document.getElementById('nc-level').value = 'C';
+  document.getElementById('nc-source').value = '';
   document.getElementById('nc-next').value = '明天';
+  // 加载渠道列表
+  loadChannelsForNewCustomer();
   modal.style.display = 'flex';
+}
+
+async function loadChannelsForNewCustomer() {
+  try {
+    const result = await api('/api/config/channels');
+    if (result.success && result.data) {
+      const select = document.getElementById('nc-source');
+      select.innerHTML = '<option value="">请选择渠道</option>' +
+        result.data.map(ch => `<option value="${ch.name}">${ch.name}</option>`).join('');
+    }
+  } catch (e) {
+    console.error('加载渠道失败:', e);
+  }
 }
 function closeNewCustomerModal() { document.getElementById('new-customer-modal').style.display = 'none'; }
 
@@ -3491,6 +3512,7 @@ async function submitNewCustomer() {
     community: document.getElementById('nc-community').value.trim() || undefined,
     area: document.getElementById('nc-area').value.trim() || undefined,
     budget: document.getElementById('nc-budget').value.trim() || undefined,
+    source: document.getElementById('nc-source').value || undefined,
     level: document.getElementById('nc-level').value,
     portrait, portraitPct, nextFollowAt
   };

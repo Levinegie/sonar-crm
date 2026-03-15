@@ -567,4 +567,60 @@ router.post('/:id/confirm', authenticate, tenantScope, async (req, res) => {
 });
 
 
+// OSS回调接口 - APP上传录音后通知服务器（短路径版本）
+router.post('/c', async (req, res) => {
+  try {
+    const { url, tenantId } = req.body;
+
+    if (!url) {
+      return res.status(400).json(error('缺少url参数', 400));
+    }
+
+    // 从URL提取文件信息
+    const fileName = url.split('/').pop().split('?')[0];
+    const match = fileName.match(/^(\d+)\((\d+)\)_(\d{8}_\d{6})\.mp3$/);
+
+    if (!match) {
+      return res.status(400).json(error('文件名格式不正确', 400));
+    }
+
+    const [, phone1, phone2, datetime] = match;
+    const customerPhone = phone1 || phone2;
+
+    // 解析通话时间
+    const year = datetime.substr(0, 4);
+    const month = datetime.substr(4, 2);
+    const day = datetime.substr(6, 2);
+    const hour = datetime.substr(9, 2);
+    const minute = datetime.substr(11, 2);
+    const second = datetime.substr(13, 2);
+    const callTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}+08:00`);
+
+    // 创建录音记录
+    const recording = await prisma.recording.create({
+      data: {
+        id: uuidv4(),
+        tenantId: tenantId || 'default-tenant',
+        ossUrl: url,
+        ossKey: fileName,
+        fileSize: 0,
+        customerPhone,
+        callTime,
+        analysisStatus: 'pending'
+      }
+    });
+
+    // 异步触发AI分析
+    analyzeRecording(recording.id).catch(err => {
+      console.error('AI分析失败:', err);
+    });
+
+    res.json(success({ recordingId: recording.id }, '录音已接收，正在分析'));
+
+  } catch (err) {
+    console.error('OSS callback error:', err);
+    res.status(500).json(error('处理失败: ' + err.message, 500));
+  }
+});
+
 module.exports = router;

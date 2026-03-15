@@ -440,6 +440,9 @@ function renderAgentPerformance() {
       const hasScores = a.avgScores && Object.keys(a.avgScores).length > 0;
       const callPct = target > 0 ? Math.min(100, Math.round(a.todayCalls / target * 100)) : 0;
       const callColor = callPct >= 100 ? 'var(--green)' : callPct >= 60 ? 'var(--blue)' : 'var(--amber)';
+      const totalCalls = (a.callsUnder6s || 0) + (a.callsOver6s || 0);
+      const connectRate = totalCalls > 0 ? Math.round((a.callsOver6s / totalCalls) * 100) : 0;
+      const deepRate = totalCalls > 0 ? Math.round((a.callsOver1min / totalCalls) * 100) : 0;
       return `
       <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -450,10 +453,22 @@ function renderAgentPerformance() {
           </div>
           <div style="font-size:13px;font-weight:700;color:${callColor}">${callPct}%</div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
           <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--navy)">${a.customerCount}</div><div style="font-size:10px;color:var(--gray-400)">客户总数</div></div>
           <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--green)">${a.signedCount}</div><div style="font-size:10px;color:var(--gray-400)">已签单</div></div>
           <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--purple)">${a.visitedCount}</div><div style="font-size:10px;color:var(--gray-400)">已到店</div></div>
+        </div>
+        <div style="background:var(--blue-pale);border-radius:8px;padding:10px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--gray-500);margin-bottom:6px">本月通话时长分布</div>
+          <div style="display:flex;gap:12px;font-size:12px">
+            <div style="flex:1"><span style="color:var(--red);font-weight:700">${a.callsUnder6s || 0}</span> <span style="color:var(--gray-500)">条 &lt;6秒</span></div>
+            <div style="flex:1"><span style="color:var(--blue);font-weight:700">${a.callsOver6s || 0}</span> <span style="color:var(--gray-500)">条 ≥6秒</span></div>
+            <div style="flex:1"><span style="color:var(--green);font-weight:700">${a.callsOver1min || 0}</span> <span style="color:var(--gray-500)">条 ≥1分钟</span></div>
+          </div>
+          <div style="display:flex;gap:12px;margin-top:6px;font-size:11px;color:var(--gray-500)">
+            <div>接通率 <span style="color:var(--navy);font-weight:700">${connectRate}%</span></div>
+            <div>深度沟通率 <span style="color:var(--navy);font-weight:700">${deepRate}%</span></div>
+          </div>
         </div>
         <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px">
           6维评分（AI分析）
@@ -1006,9 +1021,9 @@ async function init() {
       ]
     };
     agentPerf = [
-      { name: '严妍', todayCalls: 72, monthCalls: 1580, customerCount: 48, signedCount: 5 },
-      { name: '李晓东', todayCalls: 65, monthCalls: 1420, customerCount: 41, signedCount: 4 },
-      { name: '王美琪', todayCalls: 50, monthCalls: 1100, customerCount: 35, signedCount: 3 },
+      { name: '严妍', todayCalls: 72, monthCalls: 1580, customerCount: 48, signedCount: 5, visitedCount: 8, callsUnder6s: 12, callsOver6s: 1568, callsOver1min: 1420, analysisCount: 150 },
+      { name: '李晓东', todayCalls: 65, monthCalls: 1420, customerCount: 41, signedCount: 4, visitedCount: 6, callsUnder6s: 18, callsOver6s: 1402, callsOver1min: 1280, analysisCount: 140 },
+      { name: '王美琪', todayCalls: 50, monthCalls: 1100, customerCount: 35, signedCount: 3, visitedCount: 5, callsUnder6s: 15, callsOver6s: 1085, callsOver1min: 980, analysisCount: 120 },
     ];
     violationsList = [
       { agentName: '李晓东', words: ['绝对', '保证'], callTime: new Date(Date.now() - 2*3600000).toISOString(), wordDetails: [{ context: '我们绝对能帮您省下30%的装修费用' }, { context: '保证三个月内完工' }] },

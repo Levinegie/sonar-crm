@@ -274,7 +274,7 @@ router.get('/agent-performance', authenticate, tenantScope, async (req, res) => 
 
     const result = [];
     for (const agent of agents) {
-      const [todayCalls, monthCalls, customerCount, signedCount, visitedCount, analysisRows] = await Promise.all([
+      const [todayCalls, monthCalls, customerCount, signedCount, visitedCount, analysisRows, callsUnder6s, callsOver6s, callsOver1min] = await Promise.all([
         prisma.recording.count({
           where: { tenantId: req.tenantId, agentId: agent.id, callTime: { gte: todayStart, lte: todayEnd }, isValid: true }
         }),
@@ -292,6 +292,16 @@ router.get('/agent-performance', authenticate, tenantScope, async (req, res) => 
           },
           select: { scores: true },
           take: 100
+        }),
+        // 本月通话时长统计（排除 null 和 0）
+        prisma.recording.count({
+          where: { tenantId: req.tenantId, agentId: agent.id, callTime: { gte: monthStart, lte: todayEnd }, duration: { not: null, gt: 0, lt: 6 } }
+        }),
+        prisma.recording.count({
+          where: { tenantId: req.tenantId, agentId: agent.id, callTime: { gte: monthStart, lte: todayEnd }, duration: { gte: 6 } }
+        }),
+        prisma.recording.count({
+          where: { tenantId: req.tenantId, agentId: agent.id, callTime: { gte: monthStart, lte: todayEnd }, duration: { gte: 60 } }
         })
       ]);
 
@@ -325,7 +335,10 @@ router.get('/agent-performance', authenticate, tenantScope, async (req, res) => 
         signedCount,
         visitedCount,
         avgScores,
-        analysisCount: analysisRows.length
+        analysisCount: analysisRows.length,
+        callsUnder6s,
+        callsOver6s,
+        callsOver1min
       });
     }
 
