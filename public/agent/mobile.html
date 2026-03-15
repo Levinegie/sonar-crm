@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>声纳 CRM Demo</title>
+<style>
+:root {
+  --accent: #2563eb;
+  --accent-light: #eff6ff;
+  --nav-bg: #111827;
+  --bg: #f0f2f5;
+  --white: #ffffff;
+  --surface: #f7f8fa;
+  --border: #e4e8ef;
+  --green: #059669;
+  --green-light: #ecfdf5;
+  --amber: #d97706;
+  --amber-light: #fffbeb;
+  --red: #dc2626;
+  --red-light: #fef2f2;
+  --purple: #7c3aed;
+  --purple-light: #f5f3ff;
+  --text: #111827;
+  --text2: #374151;
+  --muted: #6b7280;
+  --dim: #9ca3af;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 12px rgba(0,0,0,.04);
+  --radius: 12px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html, body { height:100%; background:#1a1a2e; font-family:-apple-system,'Noto Sans SC',sans-serif; }
+
+.phone-wrap { display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px; }
+.phone {
+  width:390px; height:844px; background:var(--bg); border-radius:44px;
+  overflow:hidden; position:relative;
+  box-shadow:0 0 0 10px #2a2a3e, 0 0 0 12px #3a3a4e, 0 30px 80px rgba(0,0,0,.6);
+  display:flex; flex-direction:column;
+}
+
+.statusbar { height:44px; background:var(--nav-bg); display:flex; align-items:center; justify-content:space-between; padding:0 24px; flex-shrink:0; }
+.statusbar-time { color:#fff; font-size:15px; font-weight:600; }
+.statusbar-icons { color:#fff; font-size:12px; display:flex; gap:6px; align-items:center; }
+
+.topbar { height:52px; background:var(--nav-bg); display:flex; align-items:center; justify-content:space-between; padding:0 20px; flex-shrink:0; border-bottom:1px solid rgba(255,255,255,.06); }
+.topbar-logo { font-size:17px; font-weight:700; color:#fff; letter-spacing:.5px; }
+.topbar-right { display:flex; align-items:center; gap:10px; }
+.topbar-avatar { width:32px; height:32px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:#fff; }
+.topbar-notif { color:rgba(255,255,255,.7); font-size:18px; cursor:pointer; }
+
+.content { flex:1; overflow-y:auto; overflow-x:hidden; position:relative; }
+.content::-webkit-scrollbar { display:none; }
+
+.tabbar { height:72px; background:var(--nav-bg); border-top:1px solid #374151; display:flex; align-items:stretch; flex-shrink:0; padding-bottom:8px; }
+.tab-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; transition:all .15s; position:relative; }
+.tab-icon { font-size:22px; line-height:1; }
+.tab-label { font-size:10px; font-weight:500; color:var(--dim); }
+.tab-item.active .tab-label { color:var(--accent); font-weight:600; }
+.tab-badge { position:absolute; top:6px; right:22px; min-width:16px; height:16px; background:var(--red); border-radius:8px; color:#fff; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; }
+
+.page { display:none; padding:16px; }
+.page.active { display:block; }
+
+.section-title { font-size:11px; font-weight:700; color:var(--dim); letter-spacing:.06em; margin:16px 0 8px; display:flex; align-items:center; gap:6px; }
+.section-title:first-child { margin-top:0; }
+.section-dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+
+/* Stats */
+.stats-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+.stat-card { background:var(--white); border-radius:var(--radius); padding:12px; text-align:center; box-shadow:var(--shadow); }
+.stat-num { font-size:22px; font-weight:700; color:var(--text); }
+.stat-num.red { color:var(--red); }
+.stat-num.green { color:var(--green); }
+.stat-num.blue { color:var(--accent); }
+.stat-label { font-size:10px; color:var(--muted); margin-top:2px; }
+
+/* Task cards */
+.task-card { background:var(--white); border-radius:var(--radius); padding:12px; box-shadow:var(--shadow); margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+.task-card.done { opacity:.6; }
+.task-card.done .task-name { text-decoration:line-through; color:var(--muted); }
+.priority-badge { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; flex-shrink:0; }
+.priority-badge.p0 { background:var(--red-light); color:var(--red); }
+.priority-badge.p1 { background:var(--amber-light); color:var(--amber); }
+.priority-badge.p2 { background:var(--accent-light); color:var(--accent); }
+.task-info { flex:1; min-width:0; }
+.task-name { font-size:14px; font-weight:600; color:var(--text); }
+.task-tags { display:flex; gap:4px; margin-top:4px; flex-wrap:wrap; }
+.tag { font-size:10px; padding:2px 6px; border-radius:4px; background:var(--surface); color:var(--muted); }
+.call-btn { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:7px 13px; font-size:12px; font-weight:600; cursor:pointer; flex-shrink:0; transition:background .15s; }
+.call-btn:active { background:#1d4ed8; }
+.done-badge { background:var(--green-light); color:var(--green); font-size:11px; font-weight:600; padding:4px 8px; border-radius:6px; flex-shrink:0; }
+
+/* Info grid */
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+.info-item .info-label { font-size:11px; color:var(--muted); }
+.info-item .info-value { font-size:13px; font-weight:600; color:var(--text); margin-top:1px; }
+
+/* Progress */
+.progress-wrap { margin-top:4px; }
+.progress-label { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); margin-bottom:4px; }
+.progress-bar { height:5px; background:var(--border); border-radius:3px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--accent); border-radius:3px; }
+
+/* Level badges */
+.level-badge { font-size:11px; font-weight:700; padding:2px 7px; border-radius:5px; }
+.level-badge.s { background:var(--amber-light); color:var(--amber); }
+.level-badge.a { background:var(--purple-light); color:var(--purple); }
+.level-badge.b { background:var(--accent-light); color:var(--accent); }
+.level-badge.c { background:var(--surface); color:var(--muted); }
+
+/* 确认信息 tab */
+.confirm-banner { background:var(--amber-light); border:1px solid #fcd34d; border-radius:var(--radius); padding:10px 14px; margin-bottom:12px; display:flex; align-items:center; gap:8px; font-size:12px; color:#92400e; font-weight:600; }
+.confirm-card { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:14px; overflow:hidden; }
+.confirm-card.first { border-left:3px solid var(--purple); }
+.confirm-card.follow { border-left:3px solid var(--green); }
+.confirm-card-head { padding:12px 14px 10px; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--border); }
+.type-pill { font-size:10px; font-weight:700; padding:2px 8px; border-radius:4px; flex-shrink:0; }
+.pill-first { background:#ede9fe; color:var(--purple); }
+.pill-follow { background:var(--green-light); color:var(--green); }
+.confirm-phone { font-size:13px; font-weight:700; color:var(--text); flex:1; }
+.confirm-time { font-size:11px; color:var(--muted); }
+.confirm-ai-hint { margin:10px 14px; background:var(--accent-light); border-left:3px solid var(--accent); border-radius:8px; padding:9px 11px; }
+.confirm-ai-label { font-size:10px; font-weight:700; color:var(--accent); margin-bottom:3px; }
+.confirm-ai-text { font-size:12px; color:var(--text2); line-height:1.6; }
+.confirm-fields { padding:4px 14px 10px; display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.cf-label { font-size:10px; color:var(--muted); margin-bottom:3px; }
+.cf-input { width:100%; border:1.5px solid var(--border); border-radius:7px; padding:7px 9px; font-size:13px; color:var(--text); background:var(--white); outline:none; font-family:inherit; transition:border-color .15s; }
+.cf-input:focus { border-color:var(--accent); }
+.confirm-level-row { padding:0 14px 10px; }
+.cl-label { font-size:10px; color:var(--muted); margin-bottom:6px; }
+.level-btns { display:flex; gap:5px; }
+.lbtn { flex:1; padding:6px 0; border-radius:7px; border:1.5px solid var(--border); background:transparent; font-size:12px; font-weight:700; cursor:pointer; font-family:inherit; color:var(--muted); transition:all .15s; }
+.lbtn.sel-S { background:var(--amber-light); border-color:var(--amber); color:var(--amber); }
+.lbtn.sel-A { background:var(--purple-light); border-color:var(--purple); color:var(--purple); }
+.lbtn.sel-B { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+.lbtn.sel-C { background:var(--surface); border-color:var(--dim); color:var(--muted); }
+.lbtn.sel-X { background:var(--red-light); border-color:var(--red); color:var(--red); }
+.confirm-actions { display:flex; gap:8px; padding:10px 14px 14px; }
+.cbtn-defer { flex:1; background:transparent; border:1.5px solid var(--border); border-radius:8px; padding:9px; font-size:12px; font-weight:600; color:var(--muted); cursor:pointer; font-family:inherit; }
+.cbtn-view { flex:1; background:transparent; border:1.5px solid var(--border); border-radius:8px; padding:9px; font-size:12px; font-weight:600; color:var(--text2); cursor:pointer; font-family:inherit; }
+.cbtn-save { flex:2; background:var(--accent); border:none; border-radius:8px; padding:9px; font-size:12px; font-weight:600; color:#fff; cursor:pointer; font-family:inherit; }
+.empty-confirm { text-align:center; padding:48px 20px; color:var(--muted); }
+.empty-confirm-icon { font-size:36px; margin-bottom:10px; }
+.empty-confirm-text { font-size:14px; font-weight:600; color:var(--text2); margin-bottom:4px; }
+.empty-confirm-sub { font-size:12px; }
+
+/* Sonar tab */
+.upload-zone { border:2px dashed var(--border); border-radius:var(--radius); padding:28px; text-align:center; margin-bottom:12px; cursor:pointer; }
+.upload-zone:hover { border-color:var(--accent); background:var(--accent-light); }
+.upload-icon { font-size:32px; margin-bottom:8px; }
+.upload-text { font-size:13px; color:var(--muted); }
+.sync-btn { width:100%; background:transparent; border:1.5px solid var(--accent); color:var(--accent); border-radius:var(--radius); padding:10px; font-size:13px; font-weight:600; cursor:pointer; margin-bottom:16px; }
+.recording-item { background:var(--white); border-radius:var(--radius); padding:12px 14px; box-shadow:var(--shadow); margin-bottom:8px; display:flex; align-items:center; gap:10px; cursor:pointer; }
+.rec-icon { font-size:22px; flex-shrink:0; }
+.rec-info { flex:1; min-width:0; }
+.rec-name { font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.rec-dur { font-size:11px; color:var(--muted); margin-top:2px; }
+.rec-status { font-size:11px; font-weight:600; padding:3px 8px; border-radius:5px; flex-shrink:0; }
+.rec-status.done { background:var(--green-light); color:var(--green); }
+.rec-status.processing { background:var(--accent-light); color:var(--accent); animation:pulse 1.5s infinite; }
+.rec-status.pending { background:var(--surface); color:var(--muted); }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+/* Profile tab */
+.profile-header { background:var(--white); border-radius:var(--radius); padding:20px; box-shadow:var(--shadow); margin-bottom:12px; display:flex; align-items:center; gap:14px; }
+.profile-avatar { width:56px; height:56px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:22px; font-weight:700; color:#fff; flex-shrink:0; }
+.profile-name { font-size:18px; font-weight:700; color:var(--text); }
+.profile-role { font-size:12px; color:var(--muted); margin-top:3px; }
+.profile-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:12px; }
+.menu-group { background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:10px; overflow:hidden; }
+.menu-item { display:flex; align-items:center; gap:12px; padding:14px 16px; cursor:pointer; border-bottom:1px solid var(--border); position:relative; }
+.menu-item:last-child { border-bottom:none; }
+.menu-item:active { background:var(--surface); }
+.menu-item-icon { font-size:18px; width:24px; text-align:center; }
+.menu-item-label { font-size:14px; color:var(--text); flex:1; }
+.menu-item-arrow { color:var(--dim); font-size:14px; }
+.menu-badge { background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:8px; }
+
+/* Drawer */
+.backdrop { position:absolute; inset:0; background:rgba(0,0,0,.5); z-index:10; opacity:0; pointer-events:none; transition:opacity .3s; }
+.backdrop.show { opacity:1; pointer-events:all; }
+.drawer { position:absolute; bottom:0; left:0; right:0; height:85%; background:var(--white); border-radius:20px 20px 0 0; z-index:11; transform:translateY(100%); transition:transform .35s cubic-bezier(.32,.72,0,1); overflow:hidden; display:flex; flex-direction:column; }
+.drawer.open { transform:translateY(0); }
+.drawer-handle { width:36px; height:4px; background:var(--border); border-radius:2px; margin:10px auto 0; flex-shrink:0; }
+.drawer-scroll { flex:1; overflow-y:auto; padding:16px; }
+.drawer-scroll::-webkit-scrollbar { display:none; }
+.drawer-hero { display:flex; align-items:center; gap:14px; margin-bottom:16px; }
+.drawer-avatar { width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:20px; font-weight:700; color:#fff; flex-shrink:0; }
+.drawer-name { font-size:18px; font-weight:700; color:var(--text); }
+.drawer-meta { font-size:12px; color:var(--muted); margin-top:3px; }
+.drawer-phone { font-size:13px; color:var(--text2); margin-top:2px; }
+.ai-box { background:var(--accent-light); border-radius:var(--radius); padding:12px; margin-bottom:12px; border-left:3px solid var(--accent); }
+.ai-box-title { font-size:11px; font-weight:700; color:var(--accent); margin-bottom:6px; }
+.ai-box-text { font-size:12px; color:var(--text2); line-height:1.6; }
+.call-list-item { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); cursor:pointer; }
+.call-list-item:last-child { border-bottom:none; }
+.call-list-item:active { opacity:.7; }
+.call-date { font-size:12px; font-weight:600; color:var(--text); }
+.call-dur { font-size:11px; color:var(--muted); }
+.call-snippet { font-size:11px; color:var(--muted); margin-top:3px; line-height:1.5; }
+.call-arrow { color:var(--dim); font-size:14px; margin-left:auto; align-self:center; }
+.drawer-actions { display:flex; gap:8px; padding:12px 16px; border-top:1px solid var(--border); flex-shrink:0; }
+.action-btn { flex:1; padding:10px 6px; border-radius:10px; font-size:12px; font-weight:600; cursor:pointer; text-align:center; border:none; }
+.action-btn.primary { background:var(--accent); color:#fff; }
+.action-btn.outline { background:transparent; border:1.5px solid var(--border); color:var(--text); }
+.action-btn.success { background:var(--green); color:#fff; }
+
+/* Analysis overlay */
+.analysis { position:absolute; inset:0; background:var(--bg); z-index:20; transform:translateX(100%); transition:transform .35s cubic-bezier(.32,.72,0,1); overflow-y:auto; }
+.analysis::-webkit-scrollbar { display:none; }
+.analysis.open { transform:translateX(0); }
+.analysis-topbar { background:var(--white); padding:12px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:1; }
+.back-btn { background:none; border:none; font-size:20px; cursor:pointer; color:var(--text); padding:0 4px; }
+.analysis-title { font-size:15px; font-weight:700; color:var(--text); }
+.analysis-body { padding:14px; }
+.analysis-card { background:var(--white); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); margin-bottom:10px; }
+.analysis-card-title { font-size:12px; font-weight:700; color:var(--muted); margin-bottom:8px; letter-spacing:.04em; }
+.summary-text { font-size:13px; color:var(--text2); line-height:1.7; }
+.scene-badge { display:inline-block; background:var(--purple-light); color:var(--purple); font-size:12px; font-weight:700; padding:4px 10px; border-radius:6px; margin-bottom:6px; }
+.scene-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+.dim-card { background:var(--white); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow); margin-bottom:8px; }
+.dim-header { display:flex; align-items:center; gap:6px; margin-bottom:10px; }
+.dim-icon { font-size:18px; }
+.dim-name { font-size:14px; font-weight:700; color:var(--text); }
+.quote-box { background:var(--surface); border-radius:8px; padding:10px; margin-bottom:8px; font-size:12px; color:var(--muted); font-style:italic; line-height:1.6; }
+.diag-text { font-size:12px; color:var(--text2); line-height:1.6; margin-bottom:8px; }
+.script-box { background:var(--green-light); border-radius:8px; padding:10px; font-size:12px; color:#065f46; line-height:1.6; border-left:3px solid var(--green); }
+.script-label { font-size:10px; font-weight:700; color:var(--green); margin-bottom:4px; }
+.nuggets { display:flex; flex-wrap:wrap; gap:6px; }
+.nugget { background:var(--accent-light); color:var(--accent); font-size:12px; font-weight:600; padding:4px 10px; border-radius:20px; }
+.action-list { list-style:none; }
+.action-list li { display:flex; align-items:flex-start; gap:8px; padding:8px 0; border-bottom:1px solid var(--border); font-size:13px; color:var(--text2); line-height:1.5; }
+.action-list li:last-child { border-bottom:none; }
+.action-check { width:18px; height:18px; border:2px solid var(--border); border-radius:5px; flex-shrink:0; margin-top:1px; }
+.valid-badge { background:var(--green-light); color:var(--green); font-size:11px; font-weight:700; padding:3px 8px; border-radius:5px; margin-left:auto; }
+</style>
+</head>
+<body>
+<div class="phone-wrap">
+<div class="phone">
+
+  <!-- Status bar -->
+  <div class="statusbar">
+    <span class="statusbar-time">9:41</span>
+    <div class="statusbar-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+  </div>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div>
+      <div class="topbar-logo">📡 声纳</div>
+    </div>
+    <div class="topbar-right">
+      <span class="topbar-notif">🔔</span>
+      <div class="topbar-avatar">张</div>
+    </div>
+  </div>
+
+  <!-- Content area -->
+  <div class="content">
+
+    <!-- TAB 1: 待办 -->
+    <div class="page active" id="page-todo">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-num red" id="stat-overdue">3</div><div class="stat-label">逾期</div></div>
+        <div class="stat-card"><div class="stat-num blue" id="stat-today">12</div><div class="stat-label">今日待跟</div></div>
+        <div class="stat-card"><div class="stat-num green" id="stat-done">5</div><div class="stat-label">已完成</div></div>
+      </div>
+
+      <div class="section-title"><span class="section-dot" style="background:var(--red)"></span>逾期未跟</div>
+      <div class="task-card" id="task-t1">
+        <div class="priority-badge p0">P0</div>
+        <div class="task-info">
+          <div class="task-name">王建国</div>
+          <div class="task-tags"><span class="tag">碧桂园</span><span class="tag">120㎡</span><span class="tag" style="color:var(--red)">逾期3天</span></div>
+        </div>
+        <button class="call-btn" onclick="openDrawer('c1');event.stopPropagation()">拨打</button>
+      </div>
+      <div class="task-card" id="task-t2">
+        <div class="priority-badge p0">P0</div>
+        <div class="task-info">
+          <div class="task-name">李梅</div>
+          <div class="task-tags"><span class="tag">万科城</span><span class="tag">89㎡</span><span class="tag" style="color:var(--red)">逾期1天</span></div>
+        </div>
+        <button class="call-btn" onclick="openDrawer('c3');event.stopPropagation()">拨打</button>
+      </div>
+
+      <div class="section-title"><span class="section-dot" style="background:var(--amber)"></span>今日 S/A 级</div>
+      <div class="task-card" id="task-t3">
+        <div class="priority-badge p1">S</div>
+        <div class="task-info">
+          <div class="task-name">陈志远</div>
+          <div class="task-tags"><span class="tag">保利天汇</span><span class="tag">145㎡</span></div>
+        </div>
+        <button class="call-btn" onclick="openDrawer('c2');event.stopPropagation()">拨打</button>
+      </div>
+      <div class="task-card done" id="task-t4">
+        <div class="priority-badge p1">A</div>
+        <div class="task-info">
+          <div class="task-name">刘晓燕</div>
+          <div class="task-tags"><span class="tag">龙湖春江</span><span class="tag">102㎡</span></div>
+        </div>
+        <span class="done-badge">✓ 完成</span>
+      </div>
+
+      <div class="section-title"><span class="section-dot" style="background:var(--accent)"></span>今日 B/C 级</div>
+      <div class="task-card" id="task-t5">
+        <div class="priority-badge p2">B</div>
+        <div class="task-info">
+          <div class="task-name">赵磊</div>
+          <div class="task-tags"><span class="tag">中海锦城</span><span class="tag">78㎡</span></div>
+        </div>
+        <button class="call-btn" onclick="openDrawer('c4');event.stopPropagation()">拨打</button>
+      </div>
+      <div class="task-card" id="task-t6">
+        <div class="priority-badge p2">C</div>
+        <div class="task-info">
+          <div class="task-name">孙芳</div>
+          <div class="task-tags"><span class="tag">恒大名都</span><span class="tag">95㎡</span></div>
+        </div>
+        <button class="call-btn" onclick="openDrawer('c6');event.stopPropagation()">拨打</button>
+      </div>
+    </div>
+
+    <!-- TAB 2: 确认信息 -->
+    <div class="page" id="page-customers">
+      <div class="confirm-banner">⏳ 3 条录音分析完成，待确认</div>
+
+      <!-- 首通卡片：张伟 -->
+      <div class="confirm-card first" id="cc-1">
+        <div class="confirm-card-head">
+          <span class="type-pill pill-first">首通</span>
+          <span class="confirm-phone">张伟 · 第1通</span>
+          <span class="confirm-time">今天 14:23</span>
+        </div>
+        <div class="confirm-ai-hint">
+          <div class="confirm-ai-label">🤖 AI 识别</div>
+          <div class="confirm-ai-text">第1通电话。识别到：3个月后交房，毛坯改造，北欧风格。职业、家庭成员未识别，请手动补充。</div>
+        </div>
+        <div class="confirm-fields">
+          <div><div class="cf-label">客户姓名 *</div><input class="cf-input" value="张伟"></div>
+          <div><div class="cf-label">小区名称 *</div><input class="cf-input" value="光山新城"></div>
+          <div><div class="cf-label">面积</div><input class="cf-input" value="96㎡"></div>
+          <div><div class="cf-label">预算</div><input class="cf-input" value="12万"></div>
+          <div><div class="cf-label">风格偏好</div><input class="cf-input" value="北欧风"></div>
+          <div><div class="cf-label">下次跟进</div><input class="cf-input" value="后天"></div>
+        </div>
+        <div class="confirm-level-row">
+          <div class="cl-label">重要级别 *</div>
+          <div class="level-btns">
+            <button class="lbtn" onclick="selLevel(this,'cc-1','S')">S</button>
+            <button class="lbtn" onclick="selLevel(this,'cc-1','A')">A</button>
+            <button class="lbtn sel-B" onclick="selLevel(this,'cc-1','B')">B</button>
+            <button class="lbtn" onclick="selLevel(this,'cc-1','C')">C</button>
+            <button class="lbtn" onclick="selLevel(this,'cc-1','X')">无效</button>
+          </div>
+        </div>
+        <div class="confirm-actions">
+          <button class="cbtn-defer" onclick="deferCard('cc-1')">暂缓</button>
+          <button class="cbtn-view" onclick="openAnalysis('c1-call1')">看分析</button>
+          <button class="cbtn-save" onclick="saveCard('cc-1')">确认提交</button>
+        </div>
+      </div>
+
+      <!-- 跟进卡片：孙磊 -->
+      <div class="confirm-card follow" id="cc-2">
+        <div class="confirm-card-head">
+          <span class="type-pill pill-follow">跟进</span>
+          <span class="confirm-phone">孙磊 · 第2通</span>
+          <span class="confirm-time">今天 11:05</span>
+        </div>
+        <div class="confirm-ai-hint">
+          <div class="confirm-ai-label">🤖 AI 本通新识别</div>
+          <div class="confirm-ai-text">孙磊是工程师，正在对比多家公司，非常关注工程质量。画像完整度 50% → 65%，请确认。</div>
+        </div>
+        <div class="confirm-fields">
+          <div style="border:1.5px solid #fde68a;border-radius:8px;padding:8px;background:#fffbeb">
+            <div class="cf-label">职业 <span style="font-size:9px;background:#fde68a;color:#92400e;padding:1px 5px;border-radius:3px;font-weight:700">新</span></div>
+            <input class="cf-input" value="工程师" style="border-color:#fcd34d">
+          </div>
+          <div style="border:1.5px solid #fde68a;border-radius:8px;padding:8px;background:#fffbeb">
+            <div class="cf-label">关注点 <span style="font-size:9px;background:#fde68a;color:#92400e;padding:1px 5px;border-radius:3px;font-weight:700">新</span></div>
+            <input class="cf-input" value="工程质量" style="border-color:#fcd34d">
+          </div>
+          <div><div class="cf-label">重要级别</div>
+            <select class="cf-input"><option>S级</option><option selected>A级</option><option>B级</option><option>C级</option></select>
+          </div>
+          <div><div class="cf-label">下次跟进</div><input class="cf-input" value="明天"></div>
+        </div>
+        <div class="confirm-actions">
+          <button class="cbtn-defer" onclick="deferCard('cc-2')">暂缓</button>
+          <button class="cbtn-view" onclick="openAnalysis('c1-call1')">看分析</button>
+          <button class="cbtn-save" onclick="saveCard('cc-2')">确认提交</button>
+        </div>
+      </div>
+
+      <!-- 首通卡片：陈建国 -->
+      <div class="confirm-card first" id="cc-3">
+        <div class="confirm-card-head">
+          <span class="type-pill pill-first">首通</span>
+          <span class="confirm-phone">陈建国 · 第1通</span>
+          <span class="confirm-time">昨天 16:30</span>
+        </div>
+        <div class="confirm-ai-hint">
+          <div class="confirm-ai-label">🤖 AI 识别</div>
+          <div class="confirm-ai-text">第1通电话。识别到：72㎡商品房，日系风格，预算8万。家庭成员、交房时间未识别，请手动补充。</div>
+        </div>
+        <div class="confirm-fields">
+          <div><div class="cf-label">客户姓名 *</div><input class="cf-input" value="陈建国"></div>
+          <div><div class="cf-label">小区名称 *</div><input class="cf-input" value="信阳春天"></div>
+          <div><div class="cf-label">面积</div><input class="cf-input" value="72㎡"></div>
+          <div><div class="cf-label">预算</div><input class="cf-input" value="8万"></div>
+          <div><div class="cf-label">风格偏好</div><input class="cf-input" value="日系"></div>
+          <div><div class="cf-label">下次跟进</div><input class="cf-input" value="3天后"></div>
+        </div>
+        <div class="confirm-level-row">
+          <div class="cl-label">重要级别 *</div>
+          <div class="level-btns">
+            <button class="lbtn" onclick="selLevel(this,'cc-3','S')">S</button>
+            <button class="lbtn" onclick="selLevel(this,'cc-3','A')">A</button>
+            <button class="lbtn sel-B" onclick="selLevel(this,'cc-3','B')">B</button>
+            <button class="lbtn" onclick="selLevel(this,'cc-3','C')">C</button>
+            <button class="lbtn" onclick="selLevel(this,'cc-3','X')">无效</button>
+          </div>
+        </div>
+        <div class="confirm-actions">
+          <button class="cbtn-defer" onclick="deferCard('cc-3')">暂缓</button>
+          <button class="cbtn-view" onclick="openAnalysis('c3-call1')">看分析</button>
+          <button class="cbtn-save" onclick="saveCard('cc-3')">确认提交</button>
+        </div>
+      </div>
+
+      <!-- 空状态（默认隐藏） -->
+      <div class="empty-confirm" id="confirm-empty" style="display:none">
+        <div class="empty-confirm-icon">✅</div>
+        <div class="empty-confirm-text">全部确认完毕</div>
+        <div class="empty-confirm-sub">新录音分析完成后会自动推送</div>
+        <button onclick="checkNewAnalysis()" style="margin-top:16px;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">检查新分析</button>
+      </div>
+    </div>
+
+    <!-- TAB 3: 声纳 -->
+    <div class="page" id="page-sonar">
+      <div class="upload-zone">
+        <div class="upload-icon">🎙️</div>
+        <div class="upload-text">上传录音文件</div>
+        <div style="font-size:11px;color:var(--dim);margin-top:4px">支持 MP3、M4A、WAV 格式</div>
+      </div>
+      <button class="sync-btn">↻ 重新触发同步</button>
+      <div class="section-title">最近录音</div>
+      <div class="recording-item" onclick="openAnalysis('c1-call1')">
+        <span class="rec-icon">🎵</span>
+        <div class="rec-info">
+          <div class="rec-name">王建国_20260315_1423.mp3</div>
+          <div class="rec-dur">3分42秒</div>
+        </div>
+        <span class="rec-status done">已分析</span>
+      </div>
+      <div class="recording-item">
+        <span class="rec-icon">🎵</span>
+        <div class="rec-info">
+          <div class="rec-name">陈志远_20260315_1105.mp3</div>
+          <div class="rec-dur">2分18秒</div>
+        </div>
+        <span class="rec-status processing">分析中</span>
+      </div>
+      <div class="recording-item" onclick="openAnalysis('c3-call1')">
+        <span class="rec-icon">🎵</span>
+        <div class="rec-info">
+          <div class="rec-name">李梅_20260314_1630.mp3</div>
+          <div class="rec-dur">1分55秒</div>
+        </div>
+        <span class="rec-status done">已分析</span>
+      </div>
+      <div class="recording-item">
+        <span class="rec-icon">🎵</span>
+        <div class="rec-info">
+          <div class="rec-name">赵磊_20260314_1012.mp3</div>
+          <div class="rec-dur">4分07秒</div>
+        </div>
+        <span class="rec-status pending">待上传</span>
+      </div>
+    </div>
+
+  </div><!-- end content -->
+
+  <!-- Bottom tab bar -->
+  <div class="tabbar">
+    <div class="tab-item active" onclick="switchTab('todo')"><span class="tab-icon">✅</span><span class="tab-label">待办</span></div>
+    <div class="tab-item" id="tab-customers" onclick="switchTab('customers')"><span class="tab-icon">👥</span><span class="tab-label">确认信息</span><span class="tab-badge">3</span></div>
+    <div class="tab-item" onclick="switchTab('sonar')"><span class="tab-icon">📡</span><span class="tab-label">声纳</span></div>
+  </div>
+
+  <!-- Backdrop -->
+  <div class="backdrop" id="backdrop" onclick="closeDrawer()"></div>
+
+  <!-- Customer Drawer -->
+  <div class="drawer" id="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-scroll" id="drawer-content"></div>
+    <div class="drawer-actions" id="drawer-actions"></div>
+  </div>
+
+  <!-- Analysis Overlay -->
+  <div class="analysis" id="analysis">
+    <div class="analysis-topbar">
+      <button class="back-btn" onclick="closeAnalysis()">‹</button>
+      <span class="analysis-title" id="analysis-title">通话分析</span>
+      <span class="valid-badge">有效通话</span>
+    </div>
+    <div class="analysis-body" id="analysis-body"></div>
+  </div>
+
+</div><!-- end phone -->
+</div><!-- end phone-wrap -->
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const customers = {
+  c1: {
+    id:'c1', name:'王建国', initial:'王', color:'blue',
+    level:'s', levelText:'S级', phone:'138****8821',
+    community:'碧桂园', area:'120㎡', budget:'28万', calls:4,
+    nextFollow:'2026-03-18', portrait:82,
+    aiTip:'根据上次通话，客户对现代简约风格感兴趣，建议重点介绍我司轻奢简约套餐，并提及3月底优惠截止，制造紧迫感。',
+    callList:[
+      { id:'c1-call1', date:'2026-03-15', dur:'3分42秒', snippet:'客户询问了客厅吊顶方案，对预算有顾虑...' },
+      { id:'c1-call2', date:'2026-03-10', dur:'2分05秒', snippet:'初次沟通，确认了面积和入住时间...' }
+    ]
+  },
+  c2: {
+    id:'c2', name:'陈志远', initial:'陈', color:'amber',
+    level:'a', levelText:'A级', phone:'139****4432',
+    community:'保利天汇', area:'145㎡', budget:'45万', calls:2,
+    nextFollow:'2026-03-16', portrait:65,
+    aiTip:'客户预算充足，对全包方案感兴趣。建议推荐高端定制套餐，重点展示实景案例，可邀请到店参观样板间。',
+    callList:[
+      { id:'c2-call1', date:'2026-03-15', dur:'2分18秒', snippet:'讨论了全包和半包的区别，客户倾向全包...' },
+      { id:'c2-call2', date:'2026-03-08', dur:'1分50秒', snippet:'了解到客户3月底需要确定方案...' }
+    ]
+  },
+  c3: {
+    id:'c3', name:'李梅', initial:'李', color:'green',
+    level:'b', levelText:'B级', phone:'137****6610',
+    community:'万科城', area:'89㎡', budget:'18万', calls:3,
+    nextFollow:'2026-03-20', portrait:54,
+    aiTip:'客户预算偏紧，对性价比要求高。建议推荐基础装修套餐，强调材料品质和工期保障，消除价格顾虑。',
+    callList:[
+      { id:'c3-call1', date:'2026-03-14', dur:'1分55秒', snippet:'客户对报价有异议，希望进一步了解材料...' },
+      { id:'c3-call2', date:'2026-03-05', dur:'2分30秒', snippet:'首次咨询，了解基本需求和预算范围...' }
+    ]
+  },
+  c4: {
+    id:'c4', name:'赵磊', initial:'赵', color:'purple',
+    level:'b', levelText:'B级', phone:'136****2290',
+    community:'中海锦城', area:'78㎡', budget:'15万', calls:1,
+    nextFollow:'2026-03-22', portrait:38,
+    aiTip:'客户信息收集不足，建议本次通话重点了解风格偏好和入住时间，完善客户画像。',
+    callList:[
+      { id:'c4-call1', date:'2026-03-14', dur:'4分07秒', snippet:'初次详细沟通，客户对北欧风格有兴趣...' }
+    ]
+  },
+  c5: {
+    id:'c5', name:'刘晓燕', initial:'刘', color:'red',
+    level:'a', levelText:'A级', phone:'135****7743',
+    community:'龙湖春江', area:'102㎡', budget:'32万', calls:5,
+    nextFollow:'2026-03-17', portrait:76,
+    aiTip:'客户已完成今日跟进，下次重点跟进签约事宜。',
+    callList:[
+      { id:'c5-call1', date:'2026-03-15', dur:'3分10秒', snippet:'确认了合同细节，客户基本同意方案...' }
+    ]
+  },
+  c6: {
+    id:'c6', name:'孙芳', initial:'孙', color:'amber',
+    level:'c', levelText:'C级', phone:'133****5521',
+    community:'恒大名都', area:'95㎡', budget:'12万', calls:1,
+    nextFollow:'2026-03-25', portrait:28,
+    aiTip:'新客户，画像信息极少。本次通话以建立信任为主，了解基本需求，不要急于推销。',
+    callList:[
+      { id:'c6-call1', date:'2026-03-13', dur:'1分20秒', snippet:'简短咨询，客户表示需要考虑...' }
+    ]
+  }
+};
+
+const analyses = {
+  'c1-call1': {
+    custName:'王建国', date:'2026-03-15', dur:'3分42秒',
+    summary:'客户王建国就120㎡客厅及主卧装修方案进行了详细咨询。通话中客户明确表达了对现代简约风格的偏好，并对吊顶造型和主材选择提出了具体要求。客户预算28万，计划3月底前确定方案。',
+    scene:'首次深度咨询',
+    sceneDesc:'客户已完成初步了解，进入方案比较阶段，决策意愿较强。',
+    dims:[
+      {
+        name:'预算意向', icon:'💰',
+        quote:'"我大概就28万左右吧，不想超太多，但材料要好一点的。"',
+        diag:'客户预算明确，对性价比有较高要求，愿意在材料品质上适当提升，但对总价敏感。',
+        script:'张总，28万对于120㎡来说完全可以做出高品质效果。我们有一款轻奢简约套餐，主材全部用一线品牌，总价控制在27.8万以内，上周刚交付了一个同户型，效果非常好，我发您看看？'
+      },
+      {
+        name:'风格偏好', icon:'🎨',
+        quote:'"我比较喜欢那种简单大气的，不要太花哨，客厅要有质感。"',
+        diag:'客户偏好现代简约风格，注重空间质感而非繁复装饰，可重点推荐无主灯设计和大理石纹主材。',
+        script:'您说的简单大气正是现在最流行的现代轻奢风。我们可以用无主灯设计搭配岩板电视背景墙，整体感非常强，造价也在预算内，要不要我给您出个效果图？'
+      },
+      {
+        name:'决策进度', icon:'📊',
+        quote:'"我还在看，但想3月底之前定下来，因为4月要开始施工了。"',
+        diag:'客户有明确时间节点，决策窗口在2周内，需要在本周内推进到方案确认阶段。',
+        script:'那时间刚好，我们3月底前签约的话，4月初就可以安排设计师上门量房，完全来得及。而且现在签约还有早鸟优惠，可以额外赠送全屋窗帘，您看这周有时间来店里看看样板间吗？'
+      }
+    ],
+    nuggets:['预算28万','现代简约','3月决策','业主自住'],
+    actions:['本周内发送3套轻奢简约风格效果图','邀约周末到店参观同户型样板间','确认设计师上门量房时间（4月初前）'],
+    aiFollowup:'综合本次通话分析，王建国是高意向客户，决策周期短，预算明确。建议在48小时内发送定制效果图，并以"3月底优惠截止"为由推动本周到店。重点强调我司在现代简约风格上的案例积累和材料品质，消除其对性价比的顾虑。下次通话目标：确认到店时间。'
+  },
+  'c3-call1': {
+    custName:'李梅', date:'2026-03-14', dur:'1分55秒',
+    summary:'客户李梅就89㎡装修报价进行了询问，对报价偏高表示疑虑。通话较短，客户情绪较为谨慎，主要关注材料品质和最终总价。',
+    scene:'价格异议处理',
+    sceneDesc:'客户处于价格比较阶段，需要通过价值传递消除顾虑。',
+    dims:[
+      {
+        name:'预算意向', icon:'💰',
+        quote:'"你们报的18万感觉有点贵，我朋友家才装了15万。"',
+        diag:'客户有价格对比，需要引导客户理解报价差异背后的材料和服务差距。',
+        script:'李女士，您朋友家的情况我不太了解，但我们18万的报价包含了全屋主材和5年质保，如果您方便的话，我可以给您做一个详细的报价拆解，您就能看出差在哪里了。'
+      },
+      {
+        name:'决策进度', icon:'📊',
+        quote:'"我还要再比较一下，不着急。"',
+        diag:'客户决策意愿偏低，处于观望状态，需要创造紧迫感或提供差异化价值。',
+        script:'完全理解，装修是大事要多比较。不过我们3月底有一个老客户推荐活动，可以额外优惠2000元，过了这个月就没有了，您要不要先来店里看看，不满意完全没关系。'
+      },
+      {
+        name:'风格偏好', icon:'🎨',
+        quote:'"我想要简单一点的，不要太复杂。"',
+        diag:'客户风格需求简单，可推荐基础套餐，降低心理价位门槛。',
+        script:'简单风格反而更考验设计功底，我们有一款极简套餐特别适合您，主材精选、工艺扎实，总价可以控制在17.5万以内，效果一点不差。'
+      }
+    ],
+    nuggets:['预算18万','价格敏感','观望状态','简约风格'],
+    actions:['发送详细报价拆解对比表','推送同面积已完工案例图片','告知3月底优惠活动截止时间'],
+    aiFollowup:'李梅客户当前处于价格比较阶段，核心障碍是价格顾虑。建议通过报价透明化和案例展示来建立信任，同时利用活动截止时间制造适度紧迫感。避免过度施压，保持耐心跟进节奏。'
+  }
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentDrawerCust = null;
+let doneTasks = new Set(['task-t4']);
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function selLevel(btn, cardId, level) {
+  const card = document.getElementById(cardId);
+  card.querySelectorAll('.lbtn').forEach(b => b.className = 'lbtn');
+  btn.classList.add('sel-' + level);
+}
+
+function saveCard(cardId) {
+  const card = document.getElementById(cardId);
+  card.style.transition = 'opacity .3s, transform .3s';
+  card.style.opacity = '0';
+  card.style.transform = 'translateX(60px)';
+  setTimeout(() => {
+    card.remove();
+    updateConfirmBanner();
+  }, 300);
+}
+
+function deferCard(cardId) {
+  const card = document.getElementById(cardId);
+  card.style.transition = 'opacity .3s';
+  card.style.opacity = '0.35';
+  setTimeout(() => { card.remove(); updateConfirmBanner(); }, 300);
+}
+
+function updateConfirmBanner() {
+  const remaining = document.querySelectorAll('#page-customers .confirm-card').length;
+  const banner = document.querySelector('#page-customers .confirm-banner');
+  const empty = document.getElementById('confirm-empty');
+  if (remaining === 0) {
+    if (banner) banner.remove();
+    empty.style.display = 'block';
+    document.getElementById('tab-customers').querySelector('.tab-badge') &&
+      (document.getElementById('tab-customers').querySelector('.tab-badge').style.display = 'none');
+  } else {
+    if (banner) banner.textContent = '⏳ ' + remaining + ' 条录音分析完成，待确认';
+  }
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const tabs = document.querySelectorAll('.tab-item');
+  const map = { todo:0, customers:1, sonar:2 };
+  tabs[map[name]].classList.add('active');
+}
+
+// ── Drawer ────────────────────────────────────────────────────────────────────
+function openDrawer(custId) {
+  const c = customers[custId];
+  if (!c) return;
+  currentDrawerCust = custId;
+
+  const callsHtml = c.callList.map(call => `
+    <div class="call-list-item" onclick="openAnalysis('${call.id}')">
+      <div style="flex:1">
+        <div class="call-date">${call.date} · ${call.dur}</div>
+        <div class="call-snippet">${call.snippet}</div>
+      </div>
+      <span class="call-arrow">›</span>
+    </div>
+  `).join('');
+
+  document.getElementById('drawer-content').innerHTML = `
+    <div class="drawer-hero">
+      <div class="drawer-avatar" style="background:var(--${c.color === 'amber' ? 'amber' : c.color === 'green' ? 'green' : c.color === 'purple' ? 'purple' : c.color === 'red' ? 'red' : 'accent'})">${c.initial}</div>
+      <div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="drawer-name">${c.name}</span>
+          <span class="level-badge ${c.level}">${c.levelText}</span>
+        </div>
+        <div class="drawer-phone">${c.phone}</div>
+        <div class="drawer-meta">下次跟进：${c.nextFollow}</div>
+      </div>
+    </div>
+    <div class="info-grid" style="margin-bottom:12px">
+      <div class="info-item"><div class="info-label">小区</div><div class="info-value">${c.community}</div></div>
+      <div class="info-item"><div class="info-label">面积</div><div class="info-value">${c.area}</div></div>
+      <div class="info-item"><div class="info-label">预算</div><div class="info-value">${c.budget}</div></div>
+      <div class="info-item"><div class="info-label">通话次数</div><div class="info-value">${c.calls}次</div></div>
+    </div>
+    <div class="progress-wrap" style="margin-bottom:14px">
+      <div class="progress-label"><span>用户画像完整度</span><span>${c.portrait}%</span></div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${c.portrait}%"></div></div>
+    </div>
+    <div class="ai-box">
+      <div class="ai-box-title">🤖 AI跟进建议</div>
+      <div class="ai-box-text">${c.aiTip}</div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:12px 0 6px">最近通话</div>
+    ${callsHtml}
+  `;
+
+  document.getElementById('drawer-actions').innerHTML = `
+    <a class="action-btn primary" href="tel:${c.phone}" style="text-decoration:none;display:flex;align-items:center;justify-content:center;gap:4px">📞 拨打</a>
+    <button class="action-btn outline">📝 跟进记录</button>
+    <button class="action-btn success" onclick="markDoneFromDrawer()">✓ 完成任务</button>
+  `;
+
+  document.getElementById('backdrop').classList.add('show');
+  document.getElementById('drawer').classList.add('open');
+}
+
+function closeDrawer() {
+  document.getElementById('backdrop').classList.remove('show');
+  document.getElementById('drawer').classList.remove('open');
+  currentDrawerCust = null;
+}
+
+function markDoneFromDrawer() {
+  if (!currentDrawerCust) return;
+  const taskMap = { c1:'task-t1', c2:'task-t3', c3:'task-t2', c4:'task-t5', c6:'task-t6' };
+  const taskId = taskMap[currentDrawerCust];
+  if (taskId) markDone(taskId);
+  closeDrawer();
+}
+
+// ── Mark done ─────────────────────────────────────────────────────────────────
+function markDone(taskId) {
+  if (doneTasks.has(taskId)) return;
+  doneTasks.add(taskId);
+  const card = document.getElementById(taskId);
+  if (!card) return;
+  card.classList.add('done');
+  const btn = card.querySelector('.call-btn');
+  if (btn) {
+    btn.replaceWith(Object.assign(document.createElement('span'), { className:'done-badge', textContent:'✓ 完成' }));
+  }
+  const doneCount = parseInt(document.getElementById('stat-done').textContent);
+  document.getElementById('stat-done').textContent = doneCount + 1;
+  const todayCount = parseInt(document.getElementById('stat-today').textContent);
+  if (todayCount > 0) document.getElementById('stat-today').textContent = todayCount - 1;
+}
+
+// ── Analysis overlay ──────────────────────────────────────────────────────────
+function openAnalysis(callId) {
+  const a = analyses[callId];
+  if (!a) return;
+
+  document.getElementById('analysis-title').textContent = `${a.custName} · ${a.date}`;
+
+  const dimsHtml = a.dims.map(d => `
+    <div class="dim-card">
+      <div class="dim-header"><span class="dim-icon">${d.icon}</span><span class="dim-name">${d.name}</span></div>
+      <div class="quote-box">"${d.quote}"</div>
+      <div class="diag-text">${d.diag}</div>
+      <div class="script-box"><div class="script-label">优化话术</div>${d.script}</div>
+    </div>
+  `).join('');
+
+  const nuggetsHtml = a.nuggets.map(n => `<span class="nugget">${n}</span>`).join('');
+
+  const actionsHtml = a.actions.map(act => `
+    <li><div class="action-check"></div>${act}</li>
+  `).join('');
+
+  document.getElementById('analysis-body').innerHTML = `
+    <div class="analysis-card">
+      <div class="analysis-card-title">通话摘要</div>
+      <div class="summary-text">${a.summary}</div>
+    </div>
+    <div class="analysis-card">
+      <div class="analysis-card-title">场景判断</div>
+      <span class="scene-badge">${a.scene}</span>
+      <div class="scene-desc">${a.sceneDesc}</div>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin:4px 0 8px">深度分析</div>
+    ${dimsHtml}
+    <div class="analysis-card">
+      <div class="analysis-card-title">关键信息</div>
+      <div class="nuggets">${nuggetsHtml}</div>
+    </div>
+    <div class="analysis-card">
+      <div class="analysis-card-title">下一步行动</div>
+      <ul class="action-list">${actionsHtml}</ul>
+    </div>
+    <div class="analysis-card">
+      <div class="analysis-card-title">AI跟进建议</div>
+      <div class="ai-box-text" style="font-size:13px;line-height:1.7;color:var(--text2)">${a.aiFollowup}</div>
+    </div>
+  `;
+
+  document.getElementById('analysis').classList.add('open');
+}
+
+function closeAnalysis() {
+  document.getElementById('analysis').classList.remove('open');
+}
+
+function checkNewAnalysis() {
+  // In production this would poll the server; for demo just show a toast
+  const btn = document.querySelector('#confirm-empty button');
+  const orig = btn.textContent;
+  btn.textContent = '检查中...';
+  btn.disabled = true;
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.disabled = false;
+    alert('暂无新分析，稍后再试');
+  }, 1200);
+}
+</script>
+</body>
+</html>

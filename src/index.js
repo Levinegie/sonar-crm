@@ -76,14 +76,15 @@ app.post('/api/url', async (req, res) => {
     }
 
     // 从 URL 中提取文件夹和文件名
-    // 例如: https://xxx.oss.com/bucket/agent001/20240316_123456_13800138000.m4a
+    // 例如: https://xxx.oss.com/bucket/租户文件夹/员工文件夹/20240316_123456_13800138000.m4a
     const urlObj = new URL(url);
     const pathname = urlObj.pathname;
     const pathParts = pathname.split('/').filter(p => p);
     const fileName = pathParts[pathParts.length - 1];
-    const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : null;
+    const agentFolder = pathParts.length > 1 ? pathParts[pathParts.length - 2] : null;
+    const tenantFolder = pathParts.length > 2 ? pathParts[pathParts.length - 3] : null;
 
-    console.log('[APK Callback] 文件夹:', folderName, '文件名:', fileName);
+    console.log('[APK Callback] 租户文件夹:', tenantFolder, '员工文件夹:', agentFolder, '文件名:', fileName);
 
     // 解析文件名获取信息（格式: 20240316_123456_13800138000.m4a）
     const match = fileName.match(/(\d{8})_(\d{6})_(\d+)/);
@@ -106,28 +107,41 @@ app.post('/api/url', async (req, res) => {
 
     console.log('[APK Callback] 通话时间:', callTime, '客户电话:', customerPhone);
 
-    // 根据文件夹名查找客服
+    // 根据文件夹名查找租户和客服
     let agent = null;
     let tenant = null;
 
-    if (folderName) {
-      agent = await prisma.user.findFirst({
-        where: {
-          ossFolder: folderName,
-          role: 'agent'
-        },
-        include: { tenant: true }
+    // 先匹配租户
+    if (tenantFolder) {
+      tenant = await prisma.tenant.findFirst({
+        where: { ossFolder: tenantFolder }
       });
 
-      if (agent) {
-        tenant = agent.tenant;
-        console.log('[APK Callback] 匹配到客服:', agent.name, '租户:', tenant.name);
+      if (tenant) {
+        console.log('[APK Callback] 匹配到租户:', tenant.name);
+
+        // 在该租户下匹配客服
+        if (agentFolder) {
+          agent = await prisma.user.findFirst({
+            where: {
+              tenantId: tenant.id,
+              ossFolder: agentFolder,
+              role: 'agent'
+            }
+          });
+
+          if (agent) {
+            console.log('[APK Callback] 匹配到客服:', agent.name);
+          } else {
+            console.log('[APK Callback] 未找到匹配的客服，员工文件夹:', agentFolder);
+          }
+        }
       } else {
-        console.log('[APK Callback] 未找到匹配的客服，文件夹:', folderName);
+        console.log('[APK Callback] 未找到匹配的租户，租户文件夹:', tenantFolder);
       }
     }
 
-    // 如果没有匹配到客服，查找交换空间租户作为默认
+    // 如果没有匹配到租户，查找交换空间租户作为默认
     if (!tenant) {
       tenant = await prisma.tenant.findFirst({
         where: { name: '交换空间' }
