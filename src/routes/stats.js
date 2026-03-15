@@ -50,13 +50,12 @@ router.get('/dashboard', authenticate, tenantScope, async (req, res) => {
       inSeaCount,
       pendingConfirm
     ] = await Promise.all([
-      // 今日通话数
+      // 今日通话数（包含所有录音，不过滤有效性）
       prisma.recording.count({
         where: {
           ...tenantFilter,
           ...agentFilter,
-          ...dateFilter,
-          isValid: true
+          ...dateFilter
         }
       }),
       // 总客户数
@@ -95,8 +94,7 @@ router.get('/dashboard', authenticate, tenantScope, async (req, res) => {
           where: {
             tenantId: req.tenantId,
             agentId: agent.id,
-            ...dateFilter,
-            isValid: true
+            ...dateFilter
           }
         });
         agentStats.push({
