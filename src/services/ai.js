@@ -3,7 +3,11 @@
  * 两阶段分析：录音解析 -> 深度诊断
  */
 
-const { PrismaClient } = require('@prisma/client');
+const {
+  PROMPT_LINE_A1, PROMPT_LINE_B1,
+  PROMPT_LINE_A2, PROMPT_LINE_B2,
+  PROMPT_CONFIRM_CARD,
+} = require('../config/defaultPrompts');
 const axios = require('axios');
 const { getSignedUrl } = require('./oss');
 
@@ -132,23 +136,16 @@ async function analyzeAudioWithGemini(ossUrl, systemPrompt) {
 async function analyzeRecording(recordingId) {
   console.log(`Starting analysis for recording: ${recordingId}`);
 
-  try {
-    // 1. 获取录音信息
-    const recording = await prisma.recording.findUnique({
-      where: { id: recordingId }
-    });
+  // 1. 获取录音信息
+  const recording = await prisma.recording.findUnique({
+    where: { id: recordingId }
+  });
 
-    if (!recording) {
-      throw new Error('Recording not found');
-    }
+  if (!recording) {
+    throw new Error('Recording not found');
+  }
 
-    // 2. 更新状态为处理中
-    await prisma.recording.update({
-      where: { id: recordingId },
-      data: { analysisStatus: 'processing' }
-    });
-
-    // 3. 查找是否已有客户（用于判断是首通还是跟进）
+  // 2. 查找是否已有客户（用于判断是首通还是跟进）
     let existingCustomer = null;
     if (recording.customerPhone) {
       const phone = recording.customerPhone.replace(/\D/g, '');
@@ -269,18 +266,6 @@ async function analyzeRecording(recordingId) {
     });
 
     console.log(`Analysis completed, waiting for confirmation: ${recordingId}`);
-
-  } catch (err) {
-    console.error(`Analysis failed for recording ${recordingId}:`, err);
-
-    await prisma.recording.update({
-      where: { id: recordingId },
-      data: {
-        analysisStatus: 'failed',
-        analysisError: err.message
-      }
-    });
-  }
 }
 
 /**
@@ -452,48 +437,7 @@ async function getPromptFromDB(tenantId, configName) {
 async function getStage1Prompt(callStage, tenantId) {
   const configName = callStage === 'cold_call' ? 'line_a1' : 'line_b1';
   const dbPrompt = tenantId ? await getPromptFromDB(tenantId, configName) : null;
-  if (dbPrompt) return dbPrompt;
-
-  if (callStage === 'cold_call') {
-    return `你是一台高精度的"录音解析仪"。你的任务：听录音，转写对话，评估客户线索质量和客服态度。
-
-请按以下格式输出 JSON：
-{
-  "is_valid": true/false,
-  "transcript": "完整的对话转写文本",
-  "scores": {
-    "lead_quality": {"score": 8.5, "grade": "A", "reason": "客户有明确装修需求"},
-    "agent_attitude": {"score": 7.5, "grade": "B", "reason": "态度友好但话术待优化"}
-  },
-  "metadata": {
-    "call_duration_sec": 180,
-    "customer_intent": "装修咨询",
-    "key_points": ["客户关注价格", "客户有户型图"]
-  }
-}
-
-评估标准：
-- is_valid: 是否为有效通话（不是空号、不是拒接等）
-- lead_quality: 线索质量评分（0-10分，S/A/B/C）
-- agent_attitude: 客服态度评分（0-10分）`;
-  } else {
-    return `你是一台高精度的"录音解析仪"，专门处理老客户跟进电话。你的任务：听录音，转写对话，评估客户意向和客服跟进质量。
-
-请按以下格式输出 JSON：
-{
-  "is_valid": true/false,
-  "transcript": "完整的对话转写文本",
-  "scores": {
-    "lead_quality": {"score": 8.5, "grade": "A", "reason": "客户意向增强"},
-    "agent_attitude": {"score": 7.5, "grade": "B", "reason": "跟进积极"}
-  },
-  "metadata": {
-    "call_duration_sec": 180,
-    "customer_intent": "考虑签约",
-    "key_points": ["客户对比竞品", "客户询问活动"]
-  }
-}`;
-  }
+  return dbPrompt || (callStage === 'cold_call' ? PROMPT_LINE_A1 : PROMPT_LINE_B1);
 }
 
 /**
@@ -502,76 +446,8 @@ async function getStage1Prompt(callStage, tenantId) {
 async function getStage2Prompt(lineType, tenantId) {
   const configName = lineType === 'line_a' ? 'line_a2' : 'line_b2';
   const dbPrompt = tenantId ? await getPromptFromDB(tenantId, configName) : null;
-  if (dbPrompt) return dbPrompt;
-
-  if (lineType === 'line_a') {
-    return `你是一位在家装网销领域拥有20年经验的"金牌操盘手"。你的任务：深度诊断首通电话的销售能力。
-
-请分析以下通话，从六个维度评分（0-10分）：
-1. 开场破冰：是否迅速建立信任
-2. 需求挖掘：是否准确了解客户需求
-3. 产品展示：是否突出产品优势
-4. 异议处理：是否妥善处理客户疑虑
-5. 逼单技巧：是否有效推进成交
-6. 整体表现：综合评估
-
-请按以下格式输出 JSON：
-{
-  "summary": "整体评价和建议（200字左右）",
-  "scores": {
-    "opening": {"score": 8, "strength": "热情专业", "improve": "可更快进入正题"},
-    "needs_discovery": {"score": 7, "strength": "问到了关键信息", "improve": "需更深入挖掘预算"},
-    "product_presentation": {"score": 6, "strength": "介绍了套餐", "improve": "缺少针对性"},
-    "objection_handling": {"score": 8, "strength": "耐心解答", "improve": "可更自信"},
-    "closing": {"score": 5, "strength": "尝试邀约", "improve": "逼单力度不够"},
-    "overall": {"score": 6.8}
-  },
-  "customer_card": {
-    "customer_name": "张先生",
-    "phone_last4": "1234",
-    "community": "万科城市花园",
-    "area": 120,
-    "budget": "30-50万",
-    "timeline": "3个月内",
-    "decision_maker": "夫妻共同",
-    "key_concern": "价格、工期"
-  },
-  "red_flag": false,
-  "red_flag_detail": ""
-}`;
-  } else {
-    return `你是一位在家装领域深耕20年的"客户资产管理大师"。你的任务：深度诊断老客户跟进电话。
-
-请分析以下通话，评估：
-1. 跟进时机是否恰当
-2. 跟进内容是否有价值
-3. 客户意向变化
-4. 下一步行动建议
-
-请按以下格式输出 JSON：
-{
-  "summary": "跟进评估和建议（200字左右）",
-  "scores": {
-    "timing": {"score": 8, "evaluation": "时机把握得当"},
-    "content_value": {"score": 7, "evaluation": "提供了有用信息"},
-    "interest_level": {"score": 8.5, "evaluation": "客户意向增强"},
-    "next_action": {"score": 7, "evaluation": "已明确下一步"},
-    "overall": {"score": 7.6}
-  },
-  "customer_card": {
-    "customer_name": "李女士",
-    "status_change": "从观望到考虑",
-    "new_info": {
-      "budget": "增加到40-50万",
-      "timeline": "希望2个月内开工",
-      "concern": "担心增项"
-    },
-    "recommend_action": "尽快安排设计师上门量房"
-  },
-  "red_flag": false,
-  "red_flag_detail": ""
-}`;
-  }
+  return dbPrompt || (lineType === 'line_a' ? PROMPT_LINE_A2 : PROMPT_LINE_B2);
+}
 }
 
 /**
@@ -580,78 +456,7 @@ async function getStage2Prompt(lineType, tenantId) {
  */
 async function getConfirmCardPrompt(tenantId) {
   const dbPrompt = tenantId ? await getPromptFromDB(tenantId, 'confirm_card') : null;
-  if (dbPrompt) return dbPrompt;
-
-  return `你是一位专业的家装客服助手。你的任务是从通话录音转写中提取客户信息，生成待确认卡片。
-
-请仔细分析通话内容，提取以下信息：
-
-## 基础信息（有就填写，没有就填 null）
-- customer_name: 客户姓名
-- customer_phone: 客户电话号码
-- community: 小区名称
-- area: 房屋面积（数字，单位平方米）
-- budget: 预算金额（如"25万"）
-
-## 客户画像（从对话中推断，没有就填 null）
-- house_type: 房屋类型（商品房/自建房/别墅/二手房）
-- house_usage: 房屋用途（���住/出租/办公）
-- house_state: 房屋现状（毛坯/简装/精装翻新）
-- family_members: 家庭成员（如"夫妻+1孩"、"三代同堂"）
-- profession: 客户职业
-- habits: 生活习惯或特殊需求
-- awareness: 了解程度（小白/百家咨询/有装修经验）
-- position: 装修定位（一线品牌/中等品牌/小公司/游击队）
-- budget_detail: 预算细节（如"25万全包"）
-- timeline: 装修时间节点（如"3个月后交房"）
-- focus_points: 客户关注点（工程质量/工期/价格/材料/设计）
-- style_preference: 风格偏好或设计师要求
-
-## 客户等级判断（重要！）
-根据以下标准判断客户等级：
-- S级: 别墅/大户型(180㎡+) + 高预算(30万+) + 明确需求
-- A级: 有明确装修需求 + 预算合理 + 有时间节点
-- B级: 有意向但需求模糊/预算偏低
-- C级: 意向弱/只是问问/没有明确需求
-- 无效: 外卖/推销/打错电话/完全不相关/态度恶劣明确拒绝
-
-## 下次跟进时间
-- next_follow: 如果对话中提到具体跟进时间，提取出来
-- 选项: 明天/后天/3天后/1周后
-- 如果没提到，默认填"明天"
-
-## 承诺事项
-- promise: 客服在对话中承诺的事情（如"下周二带方案上门"、"发案例给您"）
-
-请严格按照以下 JSON 格式输出：
-{
-  "basic_info": {
-    "customer_name": "张先生",
-    "customer_phone": "13812345678",
-    "community": "万科城市花园",
-    "area": 120,
-    "budget": "25-30万"
-  },
-  "portrait": {
-    "house_type": "商品房",
-    "house_usage": "自住",
-    "house_state": "毛坯",
-    "family_members": "夫妻+1孩",
-    "profession": "工程师",
-    "habits": null,
-    "awareness": "百家咨询",
-    "position": "一线品牌",
-    "budget_detail": "25万全包",
-    "timeline": "3个月后交房",
-    "focus_points": "工程质量、工期",
-    "style_preference": "现代简约"
-  },
-  "customer_level": "A",
-  "level_reason": "客户有明确装修需求，预算合理，3个月后交房时间明确",
-  "next_follow": "后天",
-  "promise": "发同类案例给客户",
-  "call_summary": "客户咨询装修，120平三房，预算25万左右，3个月后交房，正在对比多家公司，关注工程质量和工期"
-}`;
+  return dbPrompt || PROMPT_CONFIRM_CARD;
 }
 
 /**

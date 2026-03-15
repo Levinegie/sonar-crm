@@ -4,12 +4,17 @@
  */
 
 const jwt = require('jsonwebtoken');
+const rateLimit = require('express-rate-limit');
 const { error } = require('../utils/helpers');
 const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  console.error('[FATAL] JWT_SECRET environment variable is not set. Refusing to start.');
+  process.exit(1);
+}
 
 // =====================================================
 // 生成 Token
@@ -76,22 +81,15 @@ function tenantScope(req, res, next) {
 }
 
 // =====================================================
-// 登录限流中间件
+// 登录限流中间件（每 IP 5分钟内最多 10 次）
 // =====================================================
-async function loginRateLimit(req, res, next) {
-  const { username } = req.body;
-
-  if (!username) {
-    return next();
-  }
-
-  try {
-    // 这里简化处理，实际应该用 Redis
-    next();
-  } catch (err) {
-    next(err);
-  }
-}
+const loginRateLimit = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: '登录尝试过于频繁，请 5 分钟后再试', code: 429 }
+});
 
 // =====================================================
 // 记录操作日志中间件

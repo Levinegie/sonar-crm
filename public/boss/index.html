@@ -97,7 +97,7 @@ tr:last-child td{border-bottom:none;}
     <div id="login-btn" style="color:rgba(255,255,255,0.6);font-size:12px">
       <span onclick="showLogin()" style="cursor:pointer;opacity:0.7">登录</span>
     </div>
-    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.1</div>
+    <div style="color:rgba(255,255,255,0.3);font-size:10px;">v2.0</div>
   </div>
 </div>
 
@@ -130,6 +130,7 @@ tr:last-child td{border-bottom:none;}
       <a class="nav-link" onclick="showView('violations',this)"><span class="ni">⚠️</span>违禁词预警</a>
       <a class="nav-link" onclick="showView('settings',this)"><span class="ni">⚙️</span>规则设置</a>
       <a class="nav-link" onclick="showView('leave',this)"><span class="ni">📅</span>请假管理<span class="nav-badge" id="leave-badge" style="display:none">0</span></a>
+      <a class="nav-link" onclick="showView('users',this)"><span class="ni">🧑‍💼</span>人员管理</a>
     </div>
     <div class="nav-group">
       <div class="nav-group-label">AI 报告</div>
@@ -210,6 +211,12 @@ tr:last-child td{border-bottom:none;}
       <div class="page-body" id="leave-body"></div>
     </div>
 
+    <!-- 人员管理 -->
+    <div class="view" id="view-users">
+      <div class="page-header"><div class="page-title">人员管理</div><button class="btn btn-primary btn-sm" onclick="openUserModal()">+ 新增客服</button></div>
+      <div class="page-body"><div class="table-card" style="background:white;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden"><table id="users-table"><thead><tr><th>姓名</th><th>用户名</th><th>角色</th><th>OSS文件夹</th><th>最大客户数</th><th>状态</th><th>操作</th></tr></thead><tbody id="users-tbody"><tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">加载中...</td></tr></tbody></table></div></div>
+    </div>
+
     <!-- 经营报告 -->
     <div class="view" id="view-report">
       <div class="page-header">
@@ -234,6 +241,39 @@ tr:last-child td{border-bottom:none;}
     <div style="display:flex;gap:8px;justify-content:flex-end">
       <button class="btn btn-outline" onclick="document.getElementById('spend-modal').classList.remove('show')">取消</button>
       <button class="btn btn-primary" onclick="saveSpend()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增/编辑客服弹窗 -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal" style="width:460px">
+    <h3 id="user-modal-title">新增客服</h3>
+    <input type="hidden" id="um-id">
+    <div class="form-group"><label>姓名</label><input id="um-name" placeholder="真实姓名"></div>
+    <div class="form-group"><label>用户名</label><input id="um-username" placeholder="登录用户名"></div>
+    <div class="form-group" id="um-pwd-group"><label>密码</label><input id="um-password" type="password" placeholder="至少6位"></div>
+    <div class="form-group">
+      <label>OSS 文件夹绑定</label>
+      <select id="um-ossFolder" style="width:100%;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
+        <option value="">不绑定</option>
+        <option>严妍</option><option>严祥玉</option><option>乐雯</option><option>何海洋</option>
+        <option>叶婷婷</option><option>张小娥</option><option>彭丽</option><option>李薇</option>
+        <option>李进茹</option><option>王芳</option><option>王雪萍</option><option>王静</option>
+        <option>芦晓晓</option><option>闫孟霞</option><option>黄娟</option>
+      </select>
+    </div>
+    <div class="form-group"><label>最大客户数</label><input id="um-maxCustomers" type="number" value="50" min="1"></div>
+    <div class="form-group" id="um-active-group" style="display:none">
+      <label>状态</label>
+      <select id="um-isActive" style="width:100%;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
+        <option value="true">启用</option>
+        <option value="false">禁用</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:20px">
+      <button class="btn btn-outline" onclick="closeUserModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveUser()">保存</button>
     </div>
   </div>
 </div>
@@ -296,7 +336,7 @@ function showView(id, el) {
 
 // 加载所有数据
 async function loadAll() {
-  await Promise.all([loadDashboard(), loadCustomers(), loadAgents(), loadSettings(), loadLeaveRequests(), loadAgentList(), loadViolations(), loadReport()]);
+  await Promise.all([loadDashboard(), loadCustomers(), loadAgents(), loadSettings(), loadLeaveRequests(), loadAgentList(), loadViolations(), loadReport(), loadUsers()]);
   renderDashboard();
   renderAgentPerformance();
   renderROI();
@@ -304,6 +344,7 @@ async function loadAll() {
   renderViolations();
   renderSettings();
   renderReport();
+  renderUsers();
 }
 
 // ══ 今日概览 ══
@@ -655,6 +696,95 @@ async function saveSettings() {
     alert('规则已保存');
     renderDashboard(); // 刷新目标
   } else { alert(d.error || '保存失败'); }
+}
+
+// ══ 人员管理 ══
+let usersList = [];
+async function loadUsers() {
+  try {
+    const d = await api('/api/users/agents?pageSize=100');
+    if (d.success) usersList = d.data?.list || d.data || [];
+  } catch(e) {}
+  renderUsers();
+}
+
+function renderUsers() {
+  const tbody = document.getElementById('users-tbody');
+  if (!tbody) return;
+  if (!usersList.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">暂无人员</td></tr>';
+    return;
+  }
+  const roleLabel = { agent:'客服', boss:'老板', admin:'管理员' };
+  tbody.innerHTML = usersList.map(u => `
+    <tr>
+      <td><strong>${u.name}</strong></td>
+      <td style="color:var(--gray-500)">${u.username}</td>
+      <td>${roleLabel[u.role] || u.role}</td>
+      <td>${u.ossFolder ? `<span style="background:var(--blue-pale);color:var(--blue);font-size:12px;padding:2px 8px;border-radius:12px">${u.ossFolder}</span>` : '<span style="color:var(--gray-400);font-size:12px">未绑定</span>'}</td>
+      <td style="text-align:center">${u.maxCustomers}</td>
+      <td><span style="color:${u.isActive?'var(--green)':'var(--red)'};font-size:12px;font-weight:600">${u.isActive?'启用':'禁用'}</span></td>
+      <td>
+        <button class="btn btn-outline btn-sm" onclick="openUserModal(${JSON.stringify(u).replace(/"/g,'&quot;')})">编辑</button>
+        <button class="btn btn-outline btn-sm" onclick="resetUserPwd('${u.id}','${u.name}')" style="margin-left:4px">重置密码</button>
+      </td>
+    </tr>`).join('');
+}
+
+function openUserModal(user) {
+  const isEdit = !!user;
+  document.getElementById('user-modal-title').textContent = isEdit ? '编辑客服' : '新增客服';
+  document.getElementById('um-id').value = isEdit ? user.id : '';
+  document.getElementById('um-name').value = isEdit ? user.name : '';
+  document.getElementById('um-username').value = isEdit ? user.username : '';
+  document.getElementById('um-password').value = '';
+  document.getElementById('um-ossFolder').value = isEdit ? (user.ossFolder || '') : '';
+  document.getElementById('um-maxCustomers').value = isEdit ? user.maxCustomers : 50;
+  document.getElementById('um-pwd-group').querySelector('label').textContent = isEdit ? '新密码（留空不修改）' : '密码';
+  document.getElementById('um-active-group').style.display = isEdit ? 'block' : 'none';
+  if (isEdit) document.getElementById('um-isActive').value = String(user.isActive);
+  document.getElementById('user-modal').classList.add('show');
+}
+
+function closeUserModal() {
+  document.getElementById('user-modal').classList.remove('show');
+}
+
+async function saveUser() {
+  const id = document.getElementById('um-id').value;
+  const isEdit = !!id;
+  const name = document.getElementById('um-name').value.trim();
+  const username = document.getElementById('um-username').value.trim();
+  const password = document.getElementById('um-password').value;
+  const ossFolder = document.getElementById('um-ossFolder').value || null;
+  const maxCustomers = parseInt(document.getElementById('um-maxCustomers').value) || 50;
+
+  if (!name || !username) return alert('姓名和用户名必填');
+  if (!isEdit && !password) return alert('新增时密码必填');
+  if (password && password.length < 6) return alert('密码至少6位');
+
+  if (isEdit) {
+    const body = { name, ossFolder, maxCustomers, isActive: document.getElementById('um-isActive').value === 'true' };
+    const tasks = [api('/api/users/' + id, { method:'PUT', body: JSON.stringify(body) })];
+    if (password) tasks.push(api('/api/users/' + id + '/reset-password', { method:'POST', body: JSON.stringify({ newPassword: password }) }));
+    const results = await Promise.all(tasks);
+    if (!results[0].success) return alert(results[0].error || '更新失败');
+  } else {
+    const d = await api('/api/users', { method:'POST', body: JSON.stringify({ name, username, password, ossFolder, maxCustomers, role: 'agent' }) });
+    if (!d.success) return alert(d.error || '创建失败');
+  }
+
+  closeUserModal();
+  await loadUsers();
+  await loadAgentList();
+}
+
+async function resetUserPwd(id, name) {
+  const pwd = prompt(`重置 ${name} 的密码（至少6位）：`);
+  if (!pwd) return;
+  if (pwd.length < 6) return alert('密码至少6位');
+  const d = await api('/api/users/' + id + '/reset-password', { method:'POST', body: JSON.stringify({ newPassword: pwd }) });
+  if (d.success) alert('密码已重置'); else alert(d.error || '重置失败');
 }
 
 // ══ 请假管理 ══

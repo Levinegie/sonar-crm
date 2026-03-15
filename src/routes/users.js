@@ -46,6 +46,7 @@ router.get('/agents', authenticate, tenantScope, async (req, res) => {
           lastLoginAt: true,
           maxCustomers: true,
           leaveUntil: true,
+          ossFolder: true,
           createdAt: true,
           _count: { select: { customers: true } }
         }
@@ -63,7 +64,7 @@ router.get('/agents', authenticate, tenantScope, async (req, res) => {
 // 创建用户
 router.post('/', authenticate, authorize('admin'), tenantScope, async (req, res) => {
   try {
-    const { username, password, name, role = 'agent', phone, maxCustomers = 50 } = req.body;
+    const { username, password, name, role = 'agent', phone, maxCustomers = 50, ossFolder } = req.body;
 
     // 检查用户名是否存在
     const exists = await prisma.user.findUnique({
@@ -85,7 +86,8 @@ router.post('/', authenticate, authorize('admin'), tenantScope, async (req, res)
         name,
         role,
         phone,
-        maxCustomers
+        maxCustomers,
+        ossFolder: ossFolder || null
       }
     });
 
@@ -105,7 +107,7 @@ router.post('/', authenticate, authorize('admin'), tenantScope, async (req, res)
 router.put('/:id', authenticate, authorize('admin'), tenantScope, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, role, isActive, maxCustomers } = req.body;
+    const { name, phone, role, isActive, maxCustomers, ossFolder } = req.body;
 
     const user = await prisma.user.update({
       where: { id, tenantId: req.tenantId },
@@ -114,7 +116,8 @@ router.put('/:id', authenticate, authorize('admin'), tenantScope, async (req, re
         ...(phone && { phone }),
         ...(role && { role }),
         ...(isActive !== undefined && { isActive }),
-        ...(maxCustomers && { maxCustomers })
+        ...(maxCustomers && { maxCustomers }),
+        ...(ossFolder !== undefined && { ossFolder: ossFolder || null })
       }
     });
 

@@ -10,7 +10,7 @@ const { PrismaClient } = require('@prisma/client');
 const { success, error, paginate } = require('../utils/helpers');
 const { authenticate, tenantScope } = require('../middleware/auth');
 const { uploadToOSS, deleteFromOSS } = require('../services/oss');
-const { analyzeRecording } = require('../services/ai');
+// analyzeRecording is now handled by the queue worker
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -88,8 +88,26 @@ router.post('/upload', authenticate, tenantScope, upload.single('file'), async (
 
     const { customerPhone, customerName, agentId, callTime } = req.body;
 
-    // 生成 OSS 路径
-    const ossKey = `recordings/${req.tenantId}/${Date.now()}-${uuidv4()}.m4a`;
+    // 从文件名解析电话号码和通话时间
+    // 格式：电话号码(电话号码)_YYYYMMDDHHmmss.mp3
+    const fileName = req.file.originalname;
+    let parsedPhone = customerPhone || '';
+    let parsedCallTime = callTime ? new Date(callTime) : new Date();
+
+    const fileNameMatch = fileName.match(/^(\d+)\([\d]+\)_(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+    if (fileNameMatch) {
+      if (!parsedPhone) parsedPhone = fileNameMatch[1];
+      if (!callTime) {
+        const [, , y, mo, d, h, mi, s] = fileNameMatch;
+        parsedCallTime = new Date(`${y}-${mo}-${d}T${h}:${mi}:${s}+08:00`);
+      }
+    }
+
+    // 生成 OSS 路径（优先用用户绑定的 ossFolder）
+    const folder = req.user.ossFolder
+      ? `交换空间/${req.user.ossFolder}`
+      : `recordings/${req.tenantId}`;
+    const ossKey = `${folder}/${Date.now()}-${uuidv4()}.m4a`;
 
     // 上传到 OSS
     const ossUrl = await uploadToOSS(req.file.buffer, ossKey, req.file.mimetype);
@@ -98,21 +116,16 @@ router.post('/upload', authenticate, tenantScope, upload.single('file'), async (
     const recording = await prisma.recording.create({
       data: {
         tenantId: req.tenantId,
-        fileName: req.file.originalname,
+        fileName,
         ossUrl,
         ossKey,
         fileSize: req.file.size,
-        customerPhone: customerPhone || '',
+        customerPhone: parsedPhone,
         customerName,
         agentId: agentId || req.user.id,
-        callTime: callTime ? new Date(callTime) : new Date(),
+        callTime: parsedCallTime,
         analysisStatus: 'pending'
       }
-    });
-
-    // 触发 AI 分析（异步）
-    analyzeRecording(recording.id).catch(err => {
-      console.error('AI analysis failed:', err);
     });
 
     res.json(success(recording, '上传成功，正在分析'));

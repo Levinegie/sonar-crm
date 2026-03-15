@@ -7,13 +7,34 @@ const cron = require('node-cron');
 // 加载环境变量
 dotenv.config();
 
+// 全局未捕获异常兜底，防止进程无声崩溃
+process.on('unhandledRejection', (reason) => {
+  console.error('[UnhandledRejection]', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[UncaughtException]', err);
+});
+
 const { ensureTable, generateDailyTasks } = require('./services/daily-tasks');
+const { startWorker } = require('./services/queue');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 中间件
-app.use(cors());
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+  ? process.env.ALLOWED_ORIGINS.split(',').map(o => o.trim())
+  : null;
+
+app.use(cors({
+  origin: allowedOrigins
+    ? (origin, cb) => {
+        // 允许无 origin 的请求（服务端直调、健康检查）和白名单内的域名
+        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+        cb(new Error('Not allowed by CORS'));
+      }
+    : true  // 未配置时全放行（开发环境）
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -35,9 +56,17 @@ app.use('/api/oss', require('./routes/oss'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/tasks', require('./routes/tasks'));
 
+const { PrismaClient } = require('@prisma/client');
+const healthPrisma = new PrismaClient();
+
 // 健康检查
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  try {
+    await healthPrisma.$queryRaw`SELECT 1`;
+    res.json({ status: 'ok', db: 'ok', timestamp: new Date().toISOString() });
+  } catch {
+    res.status(503).json({ status: 'error', db: 'unreachable', timestamp: new Date().toISOString() });
+  }
 });
 
 // 根路径重定向到管理后台
@@ -62,6 +91,9 @@ app.listen(PORT, async () => {
 
   // 启动时确保 daily_tasks 表存在
   await ensureTable();
+
+  // 启动录音分析队列 worker
+  startWorker();
 
   // 每天凌晨 00:00（Asia/Shanghai）自动生成每日任务
   cron.schedule('0 0 * * *', async () => {

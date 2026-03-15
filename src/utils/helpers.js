@@ -9,7 +9,11 @@ const dayjs = require('dayjs');
 // =====================================================
 // AES 加密/解密（用于敏感数据）
 // =====================================================
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'sonar-crm-secret-key-32'.slice(32);
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY;
+if (!ENCRYPTION_KEY || Buffer.from(ENCRYPTION_KEY).length !== 32) {
+  console.error('[FATAL] ENCRYPTION_KEY must be set and exactly 32 bytes. Refusing to start.');
+  process.exit(1);
+}
 const IV_LENGTH = 16;
 
 function encrypt(text) {

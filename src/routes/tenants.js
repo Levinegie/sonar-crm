@@ -9,6 +9,11 @@ const crypto = require('crypto');
 const { PrismaClient } = require('@prisma/client');
 const { success, error } = require('../utils/helpers');
 const { authenticate, platformOnly } = require('../middleware/auth');
+const {
+  PROMPT_LINE_A1, PROMPT_LINE_B1,
+  PROMPT_LINE_A2, PROMPT_LINE_B2,
+  PROMPT_CONFIRM_CARD,
+} = require('../config/defaultPrompts');
 
 const router = express.Router();
 const prisma = new PrismaClient();
@@ -161,13 +166,17 @@ router.post('/', async (req, res) => {
       }
 
       // 5. 初始化 5 条 AI 配置（复制默认模板）
+      const aiModel  = process.env.AI_DEFAULT_MODEL    || 'gemini-3.1-flash-lite-preview';
+      const aiUrl    = process.env.AI_API_URL           || 'https://yunwu.ai';
+      const aiKey    = process.env.AI_API_KEY           || '';
+      const aiProv   = process.env.AI_DEFAULT_PROVIDER  || 'openai';
       const defaultConfigs = [
-        { name: 'line_a1', description: '首通客户 - 第一阶段：录音解析', provider: 'gemini', model: 'gemini-3.1-flash-preview', apiUrl: 'https://yunwu.ai' },
-        { name: 'line_a2', description: '首通客户 - 第二阶段：深度诊断', provider: 'gemini', model: 'gemini-3.1-flash-preview', apiUrl: 'https://yunwu.ai' },
-        { name: 'line_b1', description: '跟进客户 - 第一阶段：录音解析', provider: 'gemini', model: 'gemini-3.1-flash-preview', apiUrl: 'https://yunwu.ai' },
-        { name: 'line_b2', description: '跟进客户 - 第二阶段：深度诊断', provider: 'gemini', model: 'gemini-3.1-flash-preview', apiUrl: 'https://yunwu.ai' },
-        { name: 'confirm_card', description: '待确认卡片识别', provider: 'gemini', model: 'gemini-3.1-flash-preview', apiUrl: 'https://yunwu.ai' }
-      ];
+        { name: 'line_a1',      description: '首通电话录音转写 + 线索质量 + 客服态度评分',  systemPrompt: PROMPT_LINE_A1 },
+        { name: 'line_b1',      description: '跟进电话录音转写 + 意向评分 + 跟进质量评分',  systemPrompt: PROMPT_LINE_B1 },
+        { name: 'line_a2',      description: '首通电话六维销售能力诊断 + 客户档案提取',     systemPrompt: PROMPT_LINE_A2 },
+        { name: 'line_b2',      description: '跟进电话深度诊断 + 意向变化 + 下一步建议',    systemPrompt: PROMPT_LINE_B2 },
+        { name: 'confirm_card', description: '从通话中提取并核实客户基础信息完整度',        systemPrompt: PROMPT_CONFIRM_CARD },
+      ].map(c => ({ ...c, provider: aiProv, model: aiModel, apiUrl: aiUrl, apiKey: aiKey }));
 
       for (const cfg of defaultConfigs) {
         await tx.aIConfig.create({

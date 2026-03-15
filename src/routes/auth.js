@@ -215,6 +215,7 @@ router.get('/me', authenticate, async (req, res) => {
       avatar: user.avatar,
       leaveUntil: user.leaveUntil,
       carryoverCalls: user.carryoverCalls || 0,
+      ossFolder: user.ossFolder || null,
       tenant: {
         id: user.tenant.id,
         name: user.tenant.name,
