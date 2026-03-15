@@ -10,6 +10,7 @@ const {
 } = require('../config/defaultPrompts');
 const axios = require('axios');
 const { getSignedUrl } = require('./oss');
+const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
