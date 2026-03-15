@@ -254,10 +254,15 @@ router.get('/pending/confirm', authenticate, tenantScope, async (req, res) => {
         });
       }
 
+      // 估算时长：如果duration为0，用fileSize估算（MP3约5KB/秒）
+      const estimatedDuration = r.duration > 0 ? r.duration : Math.round((r.fileSize || 0) / 5000);
+      // 30秒以下显示"<30秒"，避免估算不准
+      const durationDisplay = estimatedDuration < 30 ? '<30' : estimatedDuration;
+
       pendingCards.push({
         id: r.id,
         callTime: r.callTime,
-        duration: r.duration,
+        duration: durationDisplay,
         customerPhone: r.customerPhone,
         customerPhoneMasked: r.customerPhone ? r.customerPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : null,
         agentName: r.agent?.name,

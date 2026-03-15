@@ -190,14 +190,14 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 /* 确认卡片 */
 .confirm-card-wrap{background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;margin-bottom:16px;max-width:580px;}
 .confirm-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.confirm-card-ai{background:var(--blue-pale);border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:#1e40af;line-height:1.6;}
+.confirm-card-ai{background:var(--blue-pale);border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;margin-bottom:20px;font-size:12px;color:#1e40af;line-height:1.6;}
 .confirm-fields{display:flex;flex-direction:column;gap:8px;}
 .confirm-field{display:flex;align-items:center;gap:8px;}
 .confirm-field label{font-size:12px;color:var(--gray-600);width:80px;flex-shrink:0;}
 .confirm-field input,.confirm-field select{flex:1;padding:6px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:12px;color:var(--gray-800);background:white;outline:none;font-family:'Noto Sans SC',sans-serif;}
 .confirm-field input:focus,.confirm-field select:focus{border-color:var(--blue);}
-.confirm-section-label{font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:1px;text-transform:uppercase;margin:12px 0 6px;}
-.portrait-confirm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;}
+.confirm-section-label{font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:1px;text-transform:uppercase;margin:20px 0 8px;padding-top:16px;border-top:1px solid var(--gray-200);}
+.portrait-confirm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;background:var(--blue-pale);border:1px solid #bfdbfe;border-radius:8px;padding:12px;}
 .portrait-confirm-item{background:var(--gray-50);border-radius:8px;padding:10px;}
 .portrait-confirm-item .pc-label{font-size:11px;color:var(--gray-400);margin-bottom:4px;}
 .portrait-confirm-item input,.portrait-confirm-item select{width:100%;padding:5px 8px;border:1px solid var(--gray-200);border-radius:5px;font-size:12px;outline:none;font-family:'Noto Sans SC',sans-serif;background:white;}
@@ -1133,6 +1133,19 @@ function updateConfirmBadge() {
   }
 }
 
+// 折叠/展开客户画像
+function togglePortrait(cardId) {
+  const grid = document.getElementById('portrait-grid-' + cardId);
+  const toggle = document.getElementById('portrait-toggle-' + cardId);
+  if (grid.style.display === 'none') {
+    grid.style.display = 'grid';
+    toggle.textContent = '▲ 收起';
+  } else {
+    grid.style.display = 'none';
+    toggle.textContent = '▼ 展开';
+  }
+}
+
 // 渲染待确认卡片
 function renderConfirmCards() {
   const container = document.getElementById('confirm-body');
@@ -1194,7 +1207,7 @@ function renderConfirmCards() {
         </div>
       </div>` : ''}
 
-      <div class="confirm-card-ai">
+      <div class="confirm-card-ai" style="${card.callSummary?.includes('录音时长不足30秒') || card.callSummary?.includes('录音过短') ? 'background:#fee;border-color:#fcc;color:#c00' : ''}">
         🤖 <strong>AI 识别摘要：</strong>${card.callSummary || '暂无'}
         ${card.levelReason ? `<br><span style="opacity:0.8">等级判断理由：${card.levelReason}</span>` : ''}
       </div>
@@ -1209,15 +1222,38 @@ function renderConfirmCards() {
         <div class="confirm-field"><label>房屋面积</label><input id="confirm-area-${card.id}" value="${basicInfo.area || ''}" placeholder="如 120" style="width:80px"> ㎡</div>
         <div class="confirm-field"><label>预算金额</label><input id="confirm-budget-${card.id}" value="${basicInfo.budget || ''}" placeholder="如 25万"></div>
       </div>
-      <div class="confirm-section-label">👤 客户画像（AI 预填，可修改）</div>
-      <div class="portrait-confirm-grid">
-        ${portraitFields.map(f => `
-          <div class="portrait-confirm-item">
-            <div class="pc-label">${f.label}</div>
-            <input id="confirm-${f.key}-${card.id}" value="${portrait[f.key] || ''}" placeholder="未识别，可填写">
+
+      ${(() => {
+        const filledFields = portraitFields.filter(f => portrait[f.key]);
+        const emptyFields = portraitFields.filter(f => !portrait[f.key]);
+        return `
+          ${filledFields.length > 0 ? `
+          <div class="confirm-section-label">👤 客户画像（AI 已识别）</div>
+          <div class="portrait-confirm-grid">
+            ${filledFields.map(f => `
+              <div class="portrait-confirm-item">
+                <div class="pc-label">${f.label}</div>
+                <input id="confirm-${f.key}-${card.id}" value="${portrait[f.key]}" placeholder="可修改">
+              </div>
+            `).join('')}
           </div>
-        `).join('')}
-      </div>
+          ` : ''}
+
+          ${emptyFields.length > 0 ? `
+          <div class="confirm-section-label" onclick="togglePortrait('${card.id}')" style="cursor:pointer;user-select:none">
+            👤 未识别画像（可补充）<span id="portrait-toggle-${card.id}" style="float:right;font-size:12px">▼ 展开</span>
+          </div>
+          <div class="portrait-confirm-grid" id="portrait-grid-${card.id}" style="display:none">
+            ${emptyFields.map(f => `
+              <div class="portrait-confirm-item">
+                <div class="pc-label">${f.label}</div>
+                <input id="confirm-${f.key}-${card.id}" value="" placeholder="未识别，可填写">
+              </div>
+            `).join('')}
+          </div>
+          ` : ''}
+        `;
+      })()}
       ` : `
       <!-- 老客户：只显示新识别的画像 -->
       <input type="hidden" id="confirm-name-${card.id}" value="${existing.name || ''}">
