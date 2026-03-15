@@ -170,17 +170,17 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
 .score-low{background:#fee2e2;color:#dc2626;}
 
 /* 深度报告 */
-.report-panel{background:var(--navy);color:white;border-radius:10px;padding:16px;margin-top:10px;}
+.report-panel{background:var(--blue-pale);border:1px solid #bfdbfe;color:#1e40af;border-radius:10px;padding:16px;margin-top:10px;}
 .report-title{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
 .report-section{margin-bottom:12px;}
-.report-section-title{font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
-.report-section p{font-size:12px;color:rgba(255,255,255,0.85);line-height:1.7;}
+.report-section-title{font-size:11px;font-weight:700;color:var(--gray-400);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;}
+.report-section p{font-size:12px;color:#1e40af;line-height:1.7;}
 .score-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
-.score-dim{font-size:11px;color:rgba(255,255,255,0.6);width:64px;flex-shrink:0;}
-.score-bar-wrap{flex:1;background:rgba(255,255,255,0.1);border-radius:3px;height:5px;}
+.score-dim{font-size:11px;color:var(--gray-600);width:64px;flex-shrink:0;}
+.score-bar-wrap{flex:1;background:#dbeafe;border-radius:3px;height:5px;}
 .score-bar-fill{height:5px;border-radius:3px;}
-.score-num{font-size:11px;font-weight:700;color:white;width:24px;text-align:right;}
-.report-quote{background:rgba(255,255,255,0.08);border-left:3px solid var(--amber);border-radius:4px;padding:8px 10px;font-size:12px;color:rgba(255,255,255,0.8);line-height:1.6;margin-top:6px;font-style:italic;}
+.score-num{font-size:11px;font-weight:700;color:#1e40af;width:24px;text-align:right;}
+.report-quote{background:#dbeafe;border-left:3px solid var(--amber);border-radius:4px;padding:8px 10px;font-size:12px;color:#1e40af;line-height:1.6;margin-top:6px;font-style:italic;}
 
 /* AI建议 */
 .ai-suggestion{background:linear-gradient(135deg,#eff6ff,#f5f3ff);border:1px solid #c7d2fe;border-radius:10px;padding:14px;font-size:13px;color:#3730a3;line-height:1.7;}
@@ -1216,11 +1216,11 @@ function renderConfirmCards() {
       <!-- 新客户：完整表单 -->
       <div class="confirm-section-label">📋 基础信息（AI 预填，可修改）</div>
       <div class="confirm-fields">
-        <div class="confirm-field"><label>客户姓名</label><input id="confirm-name-${card.id}" value="${basicInfo.name || basicInfo.customerName || ''}" placeholder="请输入姓名" required></div>
-        <div class="confirm-field"><label>电话号码</label><input id="confirm-phone-${card.id}" value="${basicInfo.phone || basicInfo.customerPhone || card.customerPhone || ''}" placeholder="请输入电话" required></div>
-        <div class="confirm-field"><label>小区名称</label><input id="confirm-community-${card.id}" value="${basicInfo.community || ''}" placeholder="请输入小区"></div>
-        <div class="confirm-field"><label>房屋面积</label><input id="confirm-area-${card.id}" value="${basicInfo.area || ''}" placeholder="如 120" style="width:80px"> ㎡</div>
-        <div class="confirm-field"><label>预算金额</label><input id="confirm-budget-${card.id}" value="${basicInfo.budget || ''}" placeholder="如 25万"></div>
+        <div class="confirm-field"><label>客户姓名 <span style="color:red">*</span></label><input id="confirm-name-${card.id}" value="${basicInfo.name || basicInfo.customerName || ''}" placeholder="${basicInfo.name || basicInfo.customerName ? '' : '未识别，必填'}" required></div>
+        <div class="confirm-field"><label>电话号码 <span style="color:red">*</span></label><input id="confirm-phone-${card.id}" value="${basicInfo.phone || basicInfo.customerPhone || card.customerPhone || ''}" placeholder="${basicInfo.phone || basicInfo.customerPhone || card.customerPhone ? '' : '未识别，必填'}" required></div>
+        <div class="confirm-field"><label>小区名称</label><input id="confirm-community-${card.id}" value="${basicInfo.community || ''}" placeholder="${basicInfo.community ? '' : '未识别，可填写'}"></div>
+        <div class="confirm-field"><label>房屋面积</label><input id="confirm-area-${card.id}" value="${basicInfo.area || ''}" placeholder="${basicInfo.area ? '' : '未识别，可填写（如 120）'}" style="width:80px"> ㎡</div>
+        <div class="confirm-field"><label>预算金额</label><input id="confirm-budget-${card.id}" value="${basicInfo.budget || ''}" placeholder="${basicInfo.budget ? '' : '未识别，可填写（如 25万）'}"></div>
       </div>
 
       ${(() => {
@@ -2648,10 +2648,13 @@ async function openDetail(id) {
         const summary = confirmCard?.summary || stage2?.summary || stage1?.summary || '暂无分析摘要';
         // 评分取 stage1 的 scores
         const scores = stage1?.scores || {};
+        // 估算时长：如果duration为0，用fileSize估算（MP3约5KB/秒）
+        const estimatedDuration = r.duration > 0 ? r.duration : Math.round((r.fileSize || 0) / 5000);
+        const durationDisplay = estimatedDuration < 30 ? '<30秒' : formatDuration(estimatedDuration);
         return {
           n: i + 1,
           date: r.callTime ? formatDate(r.callTime) : formatDate(r.createdAt),
-          dur: r.duration ? formatDuration(r.duration) : '--',
+          dur: durationDisplay,
           summary,
           scores,
           stage2Result: stage2
@@ -2783,6 +2786,11 @@ function renderDetailTabs(c, recordings, report) {
     const scores = report.scores || {};
     const sections = [];
 
+    // 整体评分
+    if (scores.overall?.score) {
+      sections.push({title: '整体评分', content: `<strong style="font-size:24px;color:#1e40af">${scores.overall.score}分</strong>`});
+    }
+
     if (scores.scene || report.metadata?.scene) {
       sections.push({title: '场景判定', content: scores.scene || report.metadata.scene});
     }
@@ -2791,18 +2799,31 @@ function renderDetailTabs(c, recordings, report) {
     }
     // 各维度的文字点评
     const dims = [
-      {name:'开场白', key:'opening'}, {name:'需求挖掘', key:'needs_discovery'},
-      {name:'价值塑造', key:'value_building'}, {name:'异议处理', key:'objection_handling'},
-      {name:'邀约能力', key:'invitation'}, {name:'私域留存', key:'retention'},
+      {name:'开场破冰', key:'opening'},
+      {name:'需求挖掘', key:'needs_discovery'},
+      {name:'产品展示', key:'product_presentation'},
+      {name:'异议处理', key:'objection_handling'},
+      {name:'逼单技巧', key:'closing'},
     ];
     const dimComments = dims.map(d => {
       const v = scores[d.key];
-      const comment = typeof v === 'object' ? v?.comment : null;
-      return comment ? `<strong>${d.name}：</strong>${comment}` : null;
+      if (!v || typeof v !== 'object') return null;
+      const score = v.score || 0;
+      const strength = v.strength || '';
+      const improve = v.improve || '';
+      if (!strength && !improve) return null;
+      return `<strong>${d.name}（${score}分）：</strong><br>✅ 优点：${strength}<br>⚠️ 改进：${improve}`;
     }).filter(Boolean);
     if (dimComments.length) {
-      sections.push({title: '维度分析', content: dimComments.join('<br>')});
+      sections.push({title: '六维分析', content: dimComments.join('<br><br>')});
     }
+
+    // 风险预警
+    if (report.redFlag || report.red_flag) {
+      const detail = report.redFlagDetail || report.red_flag_detail || '存在风险';
+      sections.push({title: '⚠️ 风险预警', content: `<span style="color:#dc2626;font-weight:600">${detail}</span>`});
+    }
+
     if (scores.gold_quote) {
       sections.push({title: '金句萃取', content: `<div class="report-quote">${scores.gold_quote}</div>`});
     }
