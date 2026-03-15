@@ -17,6 +17,7 @@ process.on('uncaughtException', (err) => {
 
 const { ensureTable, generateDailyTasks } = require('./services/daily-tasks');
 const { startWorker } = require('./services/queue');
+const { runSeaRecovery } = require('./services/sea-recovery');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -95,13 +96,18 @@ app.listen(PORT, async () => {
   // 启动录音分析队列 worker
   startWorker();
 
-  // 每天凌晨 00:00（Asia/Shanghai）自动生成每日任务
+  // 每天凌晨 00:00（Asia/Shanghai）自动生成每日任务 + 公海回收
   cron.schedule('0 0 * * *', async () => {
     console.log('[Cron] 开始生成每日任务...');
     try {
       await generateDailyTasks();
     } catch (e) {
       console.error('[Cron] 生成每日任务失败:', e);
+    }
+    try {
+      await runSeaRecovery();
+    } catch (e) {
+      console.error('[Cron] 公海回收失败:', e);
     }
   }, { timezone: 'Asia/Shanghai' });
   console.log('[Cron] 每日任务定时器已注册 (00:00 Asia/Shanghai)');

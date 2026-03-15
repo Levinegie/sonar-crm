@@ -448,7 +448,6 @@ async function getStage2Prompt(lineType, tenantId) {
   const dbPrompt = tenantId ? await getPromptFromDB(tenantId, configName) : null;
   return dbPrompt || (lineType === 'line_a' ? PROMPT_LINE_A2 : PROMPT_LINE_B2);
 }
-}
 
 /**
  * 待确认卡片识别提示词

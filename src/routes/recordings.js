@@ -10,7 +10,7 @@ const { PrismaClient } = require('@prisma/client');
 const { success, error, paginate } = require('../utils/helpers');
 const { authenticate, tenantScope } = require('../middleware/auth');
 const { uploadToOSS, deleteFromOSS } = require('../services/oss');
-// analyzeRecording is now handled by the queue worker
+const { analyzeRecording } = require('../services/ai');
 
 const router = express.Router();
 const prisma = new PrismaClient();
