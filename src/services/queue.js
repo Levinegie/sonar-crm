@@ -71,6 +71,25 @@ async function processBatch() {
     });
     if (claimed.count === 0) continue; // Another worker claimed it
 
+    // Check file size - skip if too short (< 150KB ≈ 30 seconds)
+    const recording = await prisma.recording.findUnique({
+      where: { id: rec.id },
+      select: { fileSize: true }
+    });
+    if (recording && recording.fileSize < 150000) {
+      await prisma.recording.update({
+        where: { id: rec.id },
+        data: {
+          analysisStatus: 'completed',
+          isValid: false,
+          analyzedAt: new Date(),
+          analysisError: '录音过短（<30秒），无分析价值'
+        }
+      });
+      console.log(`[Queue] Recording ${rec.id} too short (${recording.fileSize} bytes), skipped`);
+      continue;
+    }
+
     activeCount++;
     analyzeRecording(rec.id)
       .catch(async (err) => {

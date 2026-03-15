@@ -257,6 +257,7 @@ router.get('/pending/confirm', authenticate, tenantScope, async (req, res) => {
       pendingCards.push({
         id: r.id,
         callTime: r.callTime,
+        duration: r.duration,
         customerPhone: r.customerPhone,
         customerPhoneMasked: r.customerPhone ? r.customerPhone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : null,
         agentName: r.agent?.name,
