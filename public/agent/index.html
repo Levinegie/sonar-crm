@@ -391,7 +391,7 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
     </div>
     <div class="nav-group">
       <div class="nav-group-label">工作台</div>
-      <a class="nav-link active" onclick="showStaffView('todo',this)"><span class="ni">📋</span>今日待办<span class="nav-badge" id="todo-badge">8</span></a>
+      <a class="nav-link active" onclick="showStaffView('todo',this)"><span class="ni">📋</span>今日待办<span class="nav-badge" id="todo-badge" style="display:none">0</span></a>
       <a class="nav-link" onclick="showStaffView('confirm',this)"><span class="ni">✅</span>待确认卡片<span class="nav-badge" id="confirm-count" style="display:none">0</span></a>
       <a class="nav-link" onclick="showStaffView('search',this)"><span class="ni">🔍</span>搜索查重</a>
     </div>
@@ -399,7 +399,7 @@ tr:hover td{background:var(--gray-50);cursor:pointer;}
       <div class="nav-group-label">客户</div>
       <a class="nav-link" onclick="showStaffView('customers',this)"><span class="ni">👥</span>我的客户</a>
       <a class="nav-link" onclick="showStaffView('pinned',this)"><span class="ni">⭐</span>重点客户</a>
-      <a class="nav-link" onclick="showStaffView('sea',this)"><span class="ni">🌊</span>公海抢单<span class="nav-badge green" id="sea-badge">5</span></a>
+      <a class="nav-link" onclick="showStaffView('sea',this)"><span class="ni">🌊</span>公海抢单<span class="nav-badge green" id="sea-badge" style="display:none">0</span></a>
       <a class="nav-link" onclick="showStaffView('dead-sea',this)"><span class="ni">💀</span>死单公海</a>
     </div>
     <div class="nav-group">
@@ -2116,7 +2116,7 @@ function updateSeaBadge() {
   if (badge) {
     const count = seaCustomers.length + invalidSeaCustomers.length;
     if (count <= 0) { badge.style.display = 'none'; }
-    else { badge.textContent = count; }
+    else { badge.textContent = count; badge.style.display = ''; }
   }
 }
 
