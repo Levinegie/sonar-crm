@@ -110,13 +110,50 @@ router.post('/', authenticate, authorize('admin', 'boss'), tenantScope, async (r
       }
     });
 
+    // 如果设置了 ossFolder，自动认领历史孤儿录音
+    let claimedCount = 0;
+    if (ossFolder) {
+      const orphanRecordings = await prisma.recording.findMany({
+        where: {
+          tenantId: req.tenantId,
+          agentId: null,
+          ossKey: { contains: `/${ossFolder}/` }
+        }
+      });
+
+      if (orphanRecordings.length > 0) {
+        await prisma.recording.updateMany({
+          where: {
+            id: { in: orphanRecordings.map(r => r.id) }
+          },
+          data: {
+            agentId: user.id,
+            analysisStatus: 'pending'
+          }
+        });
+
+        claimedCount = orphanRecordings.length;
+
+        // 异步触发 AI 分析
+        const { analyzeRecording } = require('../services/ai');
+        orphanRecordings.forEach(rec => {
+          analyzeRecording(rec.id).catch(err => {
+            console.error('认领录音分析失败:', rec.id, err);
+          });
+        });
+
+        console.log(`[创建客服] ${user.name} 认领了 ${claimedCount} 条孤儿录音`);
+      }
+    }
+
     res.json(success({
       id: user.id,
       username: user.username,
       name: user.name,
       role: user.role,
-      ossFolder: user.ossFolder
-    }, '创建成功'));
+      ossFolder: user.ossFolder,
+      claimedRecordings: claimedCount
+    }, claimedCount > 0 ? `创建成功，已认领 ${claimedCount} 条历史录音` : '创建成功'));
   } catch (err) {
     console.error(err);
     res.status(500).json(error('创建用户失败', 500));

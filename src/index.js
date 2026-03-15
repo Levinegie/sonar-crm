@@ -148,7 +148,7 @@ app.post('/api/url', async (req, res) => {
         ossKey: pathname.substring(1), // 去掉开头的 /
         fileName: fileName,
         fileSize: 0,
-        customerPhone,
+        customerPhone: customerPhone || 'unknown', // 如果没有电话号码，使用默认值
         callTime,
         analysisStatus: agent ? 'pending' : 'unassigned' // 有客服就待分析，无客服就未分配
       }
