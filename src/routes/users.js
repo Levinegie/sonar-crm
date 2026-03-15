@@ -66,18 +66,23 @@ router.post('/', authenticate, authorize('admin', 'boss'), tenantScope, async (r
   try {
     const { username, password, name, role = 'agent', phone } = req.body;
 
-    // 检查租户客服数量限制
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: req.tenantId },
-      select: { maxUsers: true }
-    });
+    // 检查租户客服数量限制（只限制客服角色）
+    if (role === 'agent') {
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: req.tenantId },
+        select: { maxUsers: true }
+      });
 
-    const currentUserCount = await prisma.user.count({
-      where: { tenantId: req.tenantId }
-    });
+      const currentAgentCount = await prisma.user.count({
+        where: {
+          tenantId: req.tenantId,
+          role: 'agent'
+        }
+      });
 
-    if (currentUserCount >= tenant.maxUsers) {
-      return res.status(400).json(error(`客服已到达上限！当前 ${currentUserCount}/${tenant.maxUsers} 人`, 400));
+      if (currentAgentCount >= tenant.maxUsers) {
+        return res.status(400).json(error(`客服已到达上限！当前 ${currentAgentCount}/${tenant.maxUsers} 人`, 400));
+      }
     }
 
     // 检查用户名是否存在

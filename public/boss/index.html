@@ -757,7 +757,7 @@ async function loadUsers() {
       tenantMaxUsers = me.data.tenant.maxUsers || 100;
       const quotaEl = document.getElementById('user-quota-info');
       if (quotaEl) {
-        const used = usersList.length;
+        const used = usersList.filter(u => u.role === 'agent').length;
         const remaining = tenantMaxUsers - used;
         quotaEl.innerHTML = `已使用 <strong>${used}</strong> / ${tenantMaxUsers} 个客服名额，剩余 <strong style="color:${remaining > 5 ? 'var(--green)' : 'var(--red)'}">${remaining}</strong> 个`;
       }
