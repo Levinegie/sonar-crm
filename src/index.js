@@ -83,19 +83,25 @@ app.post('/api/emergency-reset-password', async (req, res) => {
     const newPassword = 'admin123';
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    await prisma.user.update({
+    const updated = await prisma.user.update({
       where: { id: admin.id },
       data: {
         password: hashedPassword,
         loginFailCount: 0,
-        lockedUntil: null
+        lockedUntil: null,
+        isActive: true
       }
     });
+
+    // 验证密码是否正确设置
+    const verify = await bcrypt.compare(newPassword, updated.password);
 
     res.json({
       success: true,
       message: '密码已重置为 admin123',
-      username: admin.username
+      username: admin.username,
+      verified: verify,
+      isActive: updated.isActive
     });
 
   } catch (err) {
