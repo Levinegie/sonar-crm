@@ -58,6 +58,23 @@ app.use('/api/stats', require('./routes/stats'));
 app.use('/api/tasks', require('./routes/tasks'));
 app.use('/api/agent', require('./routes/agent'));
 
+// 临时数据库迁移接口
+app.post('/api/emergency-migrate', async (req, res) => {
+  const { exec } = require('child_process');
+  const { secret } = req.body;
+
+  if (secret !== 'reset-admin-2026') {
+    return res.status(403).json({ success: false, error: '无权限' });
+  }
+
+  exec('npx prisma migrate deploy', (error, stdout, stderr) => {
+    if (error) {
+      return res.json({ success: false, error: error.message, stderr });
+    }
+    res.json({ success: true, output: stdout });
+  });
+});
+
 // 临时重置密码接口（紧急使用，用完记得删除）
 app.post('/api/emergency-reset-password', async (req, res) => {
   const { PrismaClient } = require('@prisma/client');
