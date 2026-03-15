@@ -18,6 +18,7 @@ model Tenant {
   id          String   @id @default(uuid())
   name        String
   slug        String   @unique
+  ossFolder   String?  @unique
 
   maxUsers        Int      @default(10)
   status          String   @default("active")
