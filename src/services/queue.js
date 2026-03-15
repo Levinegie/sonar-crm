@@ -80,13 +80,29 @@ async function processBatch() {
       await prisma.recording.update({
         where: { id: rec.id },
         data: {
-          analysisStatus: 'completed',
-          isValid: false,
+          analysisStatus: 'pending_confirm',
+          isValid: true,
           analyzedAt: new Date(),
-          analysisError: '录音过短（<30秒），无分析价值'
+          analysisError: '录音过短（<30秒），请客服手动判断'
         }
       });
-      console.log(`[Queue] Recording ${rec.id} too short (${recording.fileSize} bytes), skipped`);
+      // Create a minimal confirm card result
+      await prisma.analysisResult.create({
+        data: {
+          recordingId: rec.id,
+          stage: 'confirm_card',
+          customerCard: {
+            isNewCustomer: true,
+            basicInfo: {},
+            portrait: {},
+            customerLevel: 'C',
+            levelReason: '录音过短（<30秒），无法自动分析',
+            callSummary: '录音时长不足30秒，无法提取有效信息，请客服根据实际情况判断是否建档',
+            nextFollow: '明天'
+          }
+        }
+      });
+      console.log(`[Queue] Recording ${rec.id} too short (${recording.fileSize} bytes), created minimal confirm card`);
       continue;
     }
 
