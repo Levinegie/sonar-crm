@@ -963,8 +963,178 @@ window.addEventListener('DOMContentLoaded', () => {
   const hash = window.location.hash.substring(1);
   if (hash === 'todo' || !hash) {
     loadTodos();
+  } else if (hash === 'confirm' || hash === 'customers') {
+    loadPendingConfirmations();
   }
 });
+
+// 加载待确认录音
+async function loadPendingConfirmations() {
+  agentId = getAgentId();
+  if (!agentId) {
+    console.warn('未找到agentId，使用demo数据');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/agent/pending-confirmations?agentId=${agentId}`);
+    const data = await res.json();
+
+    if (data.success) {
+      renderConfirmations(data.data.recordings);
+    }
+  } catch (err) {
+    console.error('加载待确认录音失败:', err);
+  }
+}
+
+// 渲染待确认列表
+function renderConfirmations(recordings) {
+  const confirmPage = document.getElementById('page-customers');
+  const banner = confirmPage.querySelector('.confirm-banner');
+
+  // 更新banner
+  if (recordings.length > 0) {
+    banner.textContent = `⏳ ${recordings.length} 条录音分析完成，待确认`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+
+  // 清空现有卡片
+  const oldCards = confirmPage.querySelectorAll('.confirm-card');
+  oldCards.forEach(card => card.remove());
+
+  const emptyDiv = confirmPage.querySelector('#confirm-empty');
+  if (emptyDiv) emptyDiv.remove();
+
+  // 如果没有待确认录音，显示空状态
+  if (recordings.length === 0) {
+    const empty = document.createElement('div');
+    empty.id = 'confirm-empty';
+    empty.innerHTML = `
+      <div style="padding:80px 20px;text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">✨</div>
+        <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">暂无待确认录音</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.6">上传新录音后，AI会自动分析<br>分析完成后会出现在这里</div>
+        <button onclick="checkNewAnalysis()" style="margin-top:16px;background:var(--accent);color:#fff;border:none;border-radius:10px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit">检查新分析</button>
+      </div>
+    `;
+    banner.after(empty);
+    return;
+  }
+
+  // 更新Tab badge
+  const badge = document.getElementById('tab-customers').querySelector('.tab-badge');
+  if (badge) badge.textContent = recordings.length;
+
+  // 渲染录音卡片
+  recordings.forEach(rec => {
+    const card = document.createElement('div');
+    card.className = `confirm-card ${rec.isFirstCall ? 'first' : 'follow'}`;
+    card.id = `confirm-${rec.id}`;
+
+    const typePill = rec.isFirstCall
+      ? '<span class="type-pill pill-first">首通</span>'
+      : '<span class="type-pill pill-follow">跟进</span>';
+
+    const callInfo = rec.isFirstCall
+      ? `${rec.customerName} · 第1通`
+      : `${rec.customerName} · 第${rec.callNumber}通`;
+
+    const timeStr = formatCallTime(rec.callTime);
+
+    card.innerHTML = `
+      <div class="confirm-card-head">
+        ${typePill}
+        <span class="confirm-phone">${callInfo}</span>
+        <span class="confirm-time">${timeStr}</span>
+      </div>
+      <div class="confirm-ai-hint">
+        <div class="confirm-ai-label">🤖 AI 识别</div>
+        <div class="confirm-ai-text">${rec.aiAnalysis.followup || '分析中...'}</div>
+      </div>
+      <div class="confirm-actions">
+        <button class="confirm-btn reject" onclick="rejectConfirm('${rec.id}');event.stopPropagation()">❌ 不准确</button>
+        <button class="confirm-btn accept" onclick="acceptConfirm('${rec.id}');event.stopPropagation()">✅ 确认无误</button>
+      </div>
+    `;
+
+    banner.after(card);
+  });
+}
+
+// 格式化通话时间
+function formatCallTime(callTime) {
+  const date = new Date(callTime);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const callDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  const diffDays = Math.floor((today - callDate) / (1000 * 60 * 60 * 24));
+
+  const timeStr = date.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+
+  if (diffDays === 0) return `今天 ${timeStr}`;
+  if (diffDays === 1) return `昨天 ${timeStr}`;
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${timeStr}`;
+}
+
+// 确认录音
+async function acceptConfirm(recordingId) {
+  try {
+    const res = await fetch('/api/agent/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recordingId, confirmed: true })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      const card = document.getElementById(`confirm-${recordingId}`);
+      if (card) {
+        card.style.transition = 'opacity 0.3s, transform 0.3s';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(20px)';
+        setTimeout(() => {
+          card.remove();
+          loadPendingConfirmations();
+        }, 300);
+      }
+    }
+  } catch (err) {
+    console.error('确认录音失败:', err);
+    alert('确认失败，请重试');
+  }
+}
+
+// 拒绝录音
+async function rejectConfirm(recordingId) {
+  try {
+    const res = await fetch('/api/agent/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ recordingId, confirmed: false })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      const card = document.getElementById(`confirm-${recordingId}`);
+      if (card) {
+        card.style.transition = 'opacity 0.3s, transform 0.3s';
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(-20px)';
+        setTimeout(() => {
+          card.remove();
+          loadPendingConfirmations();
+        }, 300);
+      }
+    }
+  } catch (err) {
+    console.error('拒绝录音失败:', err);
+    alert('操作失败，请重试');
+  }
+}
 </script>
 </body>
 </html>
