@@ -211,8 +211,8 @@ tr:hover td{background:var(--gray-50)}
       </div>
       <div class="table-card">
         <table>
-          <thead><tr><th>租户名称</th><th>登录账号</th><th>邀请链接</th><th>到期时间</th><th>用户数</th><th>状态</th><th>操作</th></tr></thead>
-          <tbody id="tenantTableBody"><tr><td colspan="7" class="loading">加载中...</td></tr></tbody>
+          <thead><tr><th>租户名称</th><th>登录账号</th><th>到期时间</th><th>用户数</th><th>客户数</th><th>录音数</th><th>签单数</th><th>状态</th><th>操作</th></tr></thead>
+          <tbody id="tenantTableBody"><tr><td colspan="9" class="loading">加载中...</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -432,23 +432,18 @@ async function loadTenants() {
 
 function renderTenants(list) {
   const tbody = $('tenantTableBody');
-  if (!list.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">暂无租户</td></tr>'; return; }
+  if (!list.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:var(--gray-400)">暂无租户</td></tr>'; return; }
   tbody.innerHTML = list.map(t => {
     const statusBadge = t.status === 'active' ? '<span class="badge badge-active">启用</span>' : '<span class="badge badge-disabled">禁用</span>';
     const isDefault = t.slug === 'default';
-    const inviteAgent = t.inviteCodeAgent ? `${location.origin}/agent?invite=${t.inviteCodeAgent}` : '';
-    const inviteBoss = t.inviteCodeBoss ? `${location.origin}/agent?invite=${t.inviteCodeBoss}` : '';
-    const inviteExpired = t.inviteExpiresAt && new Date(t.inviteExpiresAt) < new Date();
     return `<tr>
       <td><strong>${t.name}</strong><br><span style="font-size:11px;color:var(--gray-400)">${t.slug}</span></td>
       <td>${t.adminUser || '-'}</td>
-      <td style="font-size:11px">${inviteExpired ? '<span style="color:var(--red)">已过期</span>' : t.inviteCodeAgent ? `
-        <span style="cursor:pointer;color:var(--blue)" onclick="copyInvite('${inviteAgent}')">客服: ${t.inviteCodeAgent} 📋</span><br>
-        <span style="cursor:pointer;color:var(--purple)" onclick="copyInvite('${inviteBoss}')">老板: ${t.inviteCodeBoss} 📋</span>
-        ${t.inviteExpiresAt ? '<br><span style="color:var(--gray-400)">'+fmtDate(t.inviteExpiresAt)+'到期</span>' : ''}
-      ` : '-'}</td>
       <td>${fmtDate(t.expiresAt)}</td>
       <td>${t.userCount}/${t.maxUsers}</td>
+      <td><strong style="color:var(--blue)">${t.customerCount || 0}</strong></td>
+      <td><strong style="color:var(--cyan)">${t.recordingCount || 0}</strong></td>
+      <td><strong style="color:var(--green)">${t.signedCount || 0}</strong></td>
       <td>${statusBadge}</td>
       <td>
         ${isDefault ? '<span style="font-size:11px;color:var(--gray-400)">平台租户</span>' : `

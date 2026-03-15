@@ -60,24 +60,43 @@ router.get('/', async (req, res) => {
           where: { role: 'admin' },
           select: { username: true, name: true }
         },
-        _count: { select: { users: true } }
+        _count: {
+          select: {
+            users: true,
+            customers: true,
+            recordings: true
+          }
+        }
       }
     });
 
-    const list = tenants.map(t => ({
-      id: t.id,
-      name: t.name,
-      slug: t.slug,
-      maxUsers: t.maxUsers,
-      status: t.status,
-      expiresAt: t.expiresAt,
-      allowedIps: t.allowedIps,
-      inviteCodeAgent: t.inviteCodeAgent,
-      inviteCodeBoss: t.inviteCodeBoss,
-      inviteExpiresAt: t.inviteExpiresAt,
-      adminUser: t.users[0]?.username || null,
-      userCount: t._count.users,
-      createdAt: t.createdAt
+    // 获取每个租户的签单数
+    const list = await Promise.all(tenants.map(async (t) => {
+      const signedCount = await prisma.customer.count({
+        where: {
+          tenantId: t.id,
+          status: 'signed'
+        }
+      });
+
+      return {
+        id: t.id,
+        name: t.name,
+        slug: t.slug,
+        maxUsers: t.maxUsers,
+        status: t.status,
+        expiresAt: t.expiresAt,
+        allowedIps: t.allowedIps,
+        inviteCodeAgent: t.inviteCodeAgent,
+        inviteCodeBoss: t.inviteCodeBoss,
+        inviteExpiresAt: t.inviteExpiresAt,
+        adminUser: t.users[0]?.username || null,
+        userCount: t._count.users,
+        customerCount: t._count.customers,
+        recordingCount: t._count.recordings,
+        signedCount: signedCount,
+        createdAt: t.createdAt
+      };
     }));
 
     res.json(success(list));
