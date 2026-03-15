@@ -73,7 +73,8 @@ app.post('/api/emergency-reset-password', async (req, res) => {
     }
 
     const admin = await prisma.user.findFirst({
-      where: { username: 'admin', role: 'admin' }
+      where: { username: 'admin', role: 'admin' },
+      include: { tenant: true }
     });
 
     if (!admin) {
@@ -82,6 +83,15 @@ app.post('/api/emergency-reset-password', async (req, res) => {
 
     const newPassword = 'admin123';
     const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 同时修复租户状态
+    await prisma.tenant.update({
+      where: { id: admin.tenantId },
+      data: {
+        status: 'active',
+        expiresAt: new Date('2030-12-31')
+      }
+    });
 
     const updated = await prisma.user.update({
       where: { id: admin.id },
@@ -101,7 +111,8 @@ app.post('/api/emergency-reset-password', async (req, res) => {
       message: '密码已重置为 admin123',
       username: admin.username,
       verified: verify,
-      isActive: updated.isActive
+      isActive: updated.isActive,
+      tenantStatus: 'active'
     });
 
   } catch (err) {
