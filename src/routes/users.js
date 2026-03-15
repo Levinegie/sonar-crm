@@ -65,7 +65,7 @@ router.get('/agents', authenticate, tenantScope, async (req, res) => {
 // 创建用户
 router.post('/', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
   try {
-    const { username, password, name, role = 'agent', phone } = req.body;
+    const { username, password, name, role = 'agent', phone, ossFolder } = req.body;
 
     // 检查租户客服数量限制（只限制客服角色）
     if (role === 'agent') {
@@ -105,7 +105,8 @@ router.post('/', authenticate, authorize('admin', 'boss'), tenantScope, async (r
         password: hashedPassword,
         name,
         role,
-        phone
+        phone,
+        ossFolder: ossFolder || null
       }
     });
 
@@ -113,7 +114,8 @@ router.post('/', authenticate, authorize('admin', 'boss'), tenantScope, async (r
       id: user.id,
       username: user.username,
       name: user.name,
-      role: user.role
+      role: user.role,
+      ossFolder: user.ossFolder
     }, '创建成功'));
   } catch (err) {
     console.error(err);
@@ -125,7 +127,7 @@ router.post('/', authenticate, authorize('admin', 'boss'), tenantScope, async (r
 router.put('/:id', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, role, isActive } = req.body;
+    const { name, phone, role, isActive, ossFolder } = req.body;
 
     const user = await prisma.user.update({
       where: { id, tenantId: req.tenantId },
@@ -133,7 +135,8 @@ router.put('/:id', authenticate, authorize('admin', 'boss'), tenantScope, async 
         ...(name && { name }),
         ...(phone && { phone }),
         ...(role && { role }),
-        ...(isActive !== undefined && { isActive })
+        ...(isActive !== undefined && { isActive }),
+        ...(ossFolder !== undefined && { ossFolder: ossFolder || null })
       }
     });
 

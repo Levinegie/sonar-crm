@@ -258,6 +258,7 @@ tr:last-child td{border-bottom:none;}
     <input type="hidden" id="um-id">
     <div class="form-group"><label>姓名</label><input id="um-name" placeholder="真实姓名"></div>
     <div class="form-group"><label>用户名</label><input id="um-username" placeholder="登录用户名"></div>
+    <div class="form-group"><label>OSS文件夹</label><input id="um-ossFolder" placeholder="例如: agent001（用于匹配录音）"></div>
     <div class="form-group" id="um-pwd-group"><label>密码</label><input id="um-password" type="password" placeholder="至少6位"></div>
     <div class="form-group" id="um-active-group" style="display:none">
       <label>状态</label>
@@ -810,19 +811,20 @@ async function saveUser() {
   const name = document.getElementById('um-name').value.trim();
   const username = document.getElementById('um-username').value.trim();
   const password = document.getElementById('um-password').value;
+  const ossFolder = document.getElementById('um-ossFolder').value.trim();
 
   if (!name || !username) return alert('姓名和用户名必填');
   if (!isEdit && !password) return alert('新增时密码必填');
   if (password && password.length < 6) return alert('密码至少6位');
 
   if (isEdit) {
-    const body = { name, isActive: document.getElementById('um-isActive').value === 'true' };
+    const body = { name, ossFolder, isActive: document.getElementById('um-isActive').value === 'true' };
     const tasks = [api('/api/users/' + id, { method:'PUT', body: JSON.stringify(body) })];
     if (password) tasks.push(api('/api/users/' + id + '/reset-password', { method:'POST', body: JSON.stringify({ newPassword: password }) }));
     const results = await Promise.all(tasks);
     if (!results[0].success) return alert(results[0].error || '更新失败');
   } else {
-    const d = await api('/api/users', { method:'POST', body: JSON.stringify({ name, username, password, role: 'agent' }) });
+    const d = await api('/api/users', { method:'POST', body: JSON.stringify({ name, username, password, ossFolder, role: 'agent' }) });
     if (!d.success) return alert(d.error || '创建失败');
   }
 

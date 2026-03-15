@@ -57,6 +57,126 @@ app.use('/api/oss', require('./routes/oss'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/tasks', require('./routes/tasks'));
 
+// APK 上传完成回调（硬编码在 APK 里的接口）
+const { v4: uuidv4 } = require('uuid');
+const { analyzeRecording } = require('./services/ai');
+const { success, error } = require('./utils/helpers');
+
+app.post('/api/url', async (req, res) => {
+  const { PrismaClient } = require('@prisma/client');
+  const prisma = new PrismaClient();
+
+  try {
+    console.log('[APK Callback] 收到通知:', req.body);
+
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json(error('缺少 url 参数', 400));
+    }
+
+    // 从 URL 中提取文件夹和文件名
+    // 例如: https://xxx.oss.com/bucket/agent001/20240316_123456_13800138000.m4a
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+    const pathParts = pathname.split('/').filter(p => p);
+    const fileName = pathParts[pathParts.length - 1];
+    const folderName = pathParts.length > 1 ? pathParts[pathParts.length - 2] : null;
+
+    console.log('[APK Callback] 文件夹:', folderName, '文件名:', fileName);
+
+    // 解析文件名获取信息（格式: 20240316_123456_13800138000.m4a）
+    const match = fileName.match(/(\d{8})_(\d{6})_(\d+)/);
+
+    let callTime = new Date();
+    let customerPhone = null;
+
+    if (match) {
+      const [, dateStr, timeStr, phone] = match;
+      const year = dateStr.substr(0, 4);
+      const month = dateStr.substr(4, 2);
+      const day = dateStr.substr(6, 2);
+      const hour = timeStr.substr(0, 2);
+      const minute = timeStr.substr(2, 2);
+      const second = timeStr.substr(4, 2);
+
+      callTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}+08:00`);
+      customerPhone = phone;
+    }
+
+    console.log('[APK Callback] 通话时间:', callTime, '客户电话:', customerPhone);
+
+    // 根据文件夹名查找客服
+    let agent = null;
+    let tenant = null;
+
+    if (folderName) {
+      agent = await prisma.user.findFirst({
+        where: {
+          ossFolder: folderName,
+          role: 'agent'
+        },
+        include: { tenant: true }
+      });
+
+      if (agent) {
+        tenant = agent.tenant;
+        console.log('[APK Callback] 匹配到客服:', agent.name, '租户:', tenant.name);
+      } else {
+        console.log('[APK Callback] 未找到匹配的客服，文件夹:', folderName);
+      }
+    }
+
+    // 如果没有匹配到客服，查找交换空间租户作为默认
+    if (!tenant) {
+      tenant = await prisma.tenant.findFirst({
+        where: { name: '交换空间' }
+      });
+    }
+
+    if (!tenant) {
+      return res.status(500).json(error('租户不存在', 500));
+    }
+
+    // 创建录音记录
+    const recording = await prisma.recording.create({
+      data: {
+        id: uuidv4(),
+        tenantId: tenant.id,
+        agentId: agent?.id || null, // 如果匹配到客服就关联，否则为空（孤儿录音）
+        ossUrl: url,
+        ossKey: pathname.substring(1), // 去掉开头的 /
+        fileName: fileName,
+        fileSize: 0,
+        customerPhone,
+        callTime,
+        analysisStatus: agent ? 'pending' : 'unassigned' // 有客服就待分析，无客服就未分配
+      }
+    });
+
+    console.log('[APK Callback] 录音记录已创建:', recording.id, agent ? '(已关联客服)' : '(孤儿录音)');
+
+    // 只有匹配到客服才触发 AI 分析
+    if (agent) {
+      analyzeRecording(recording.id).catch(err => {
+        console.error('[APK Callback] AI分析失败:', err);
+      });
+    }
+
+    res.json(success({
+      recordingId: recording.id,
+      matched: !!agent,
+      agentName: agent?.name
+    }, agent ? '录音已接收，正在分析' : '录音已接收，等待分配'));
+
+  } catch (err) {
+    console.error('[APK Callback] 处理失败:', err);
+    res.status(500).json(error('处理失败: ' + err.message, 500));
+  } finally {
+    await prisma.$disconnect();
+  }
+});
+
 const { PrismaClient } = require('@prisma/client');
 const healthPrisma = new PrismaClient();
 
