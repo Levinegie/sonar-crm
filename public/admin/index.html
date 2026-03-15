@@ -201,6 +201,54 @@ tr:hover td{background:var(--gray-50)}
         <div class="stat-card"><div class="stat-label">即将到期</div><div class="stat-val" id="statExpiring">-</div><div class="stat-sub">7天内到期</div><div class="stat-icon">⏰</div></div>
         <div class="stat-card"><div class="stat-label">用户总数</div><div class="stat-val" id="statUsers">-</div><div class="stat-icon">👥</div></div>
       </div>
+
+      <!-- 系统健康监控 -->
+      <div class="page-header" style="margin-top:24px"><div><div class="page-title">系统健康监控</div><div class="page-sub">实时运行状态</div></div></div>
+
+      <!-- 服务器状态 -->
+      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;margin-bottom:16px">
+        <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px">🖥️ 服务器状态</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+          <div><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">运行时间</div><div style="font-size:16px;font-weight:600;color:var(--blue)" id="serverUptime">-</div></div>
+          <div><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">内存使用</div><div style="font-size:16px;font-weight:600;color:var(--purple)" id="serverMem">-</div></div>
+          <div><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">CPU负载</div><div style="font-size:16px;font-weight:600;color:var(--cyan)" id="serverCpu">-</div></div>
+          <div><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">总内存</div><div style="font-size:16px;font-weight:600;color:var(--gray-500)" id="serverTotalMem">-</div></div>
+        </div>
+      </div>
+
+      <!-- 录音处理情况 -->
+      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px;margin-bottom:16px">
+        <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px">📊 录音处理情况</div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:20px">
+          <div>
+            <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px">最近 1 小时</div>
+            <div style="display:flex;gap:16px">
+              <div><span style="font-size:11px;color:var(--gray-400)">上传</span> <strong style="font-size:18px;color:var(--blue)" id="rec1hTotal">-</strong></div>
+              <div><span style="font-size:11px;color:var(--gray-400)">分析</span> <strong style="font-size:18px;color:var(--green)" id="rec1hAnalyzed">-</strong></div>
+              <div><span style="font-size:11px;color:var(--gray-400)">失败</span> <strong style="font-size:18px;color:var(--red)" id="rec1hFailed">-</strong></div>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--gray-400);margin-bottom:8px">最近 24 小时</div>
+            <div style="display:flex;gap:16px">
+              <div><span style="font-size:11px;color:var(--gray-400)">上传</span> <strong style="font-size:18px;color:var(--blue)" id="rec24hTotal">-</strong></div>
+              <div><span style="font-size:11px;color:var(--gray-400)">分析</span> <strong style="font-size:18px;color:var(--green)" id="rec24hAnalyzed">-</strong></div>
+              <div><span style="font-size:11px;color:var(--gray-400)">失败</span> <strong style="font-size:18px;color:var(--red)" id="rec24hFailed">-</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI 分析队列 -->
+      <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px">
+        <div style="font-size:14px;font-weight:600;color:var(--navy);margin-bottom:16px">🤖 AI 分析队列</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+          <div><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">待处理</div><div style="font-size:20px;font-weight:600;color:var(--amber)" id="queuePending">-</div></div>
+          <div><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">处理中</div><div style="font-size:20px;font-weight:600;color:var(--blue)" id="queueProcessing">-</div></div>
+          <div><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">已完成</div><div style="font-size:20px;font-weight:600;color:var(--green)" id="queueCompleted">-</div></div>
+          <div><div style="font-size:11px;color:var(--gray-400);margin-bottom:4px">失败</div><div style="font-size:20px;font-weight:600;color:var(--red)" id="queueFailed">-</div></div>
+        </div>
+      </div>
     </div>
 
     <!-- 租户管理 -->
@@ -412,6 +460,33 @@ async function loadDashboard() {
     $('statActive').textContent = d.active;
     $('statExpiring').textContent = d.expiringSoon;
     $('statUsers').textContent = d.totalUsers;
+
+    // 加载健康监控数据
+    const health = await api('/tenants/health');
+    const h = health.data;
+
+    // 服务器状态
+    const uptimeHours = Math.floor(h.server.uptime / 3600);
+    const uptimeMins = Math.floor((h.server.uptime % 3600) / 60);
+    $('serverUptime').textContent = uptimeHours > 0 ? `${uptimeHours}h ${uptimeMins}m` : `${uptimeMins}m`;
+    $('serverMem').textContent = h.server.memUsage + '%';
+    $('serverMem').style.color = h.server.memUsage > 80 ? 'var(--red)' : 'var(--purple)';
+    $('serverCpu').textContent = h.server.cpuUsage;
+    $('serverTotalMem').textContent = h.server.totalMem;
+
+    // 录音处理情况
+    $('rec1hTotal').textContent = h.recordings.last1h.total;
+    $('rec1hAnalyzed').textContent = h.recordings.last1h.analyzed;
+    $('rec1hFailed').textContent = h.recordings.last1h.failed;
+    $('rec24hTotal').textContent = h.recordings.last24h.total;
+    $('rec24hAnalyzed').textContent = h.recordings.last24h.analyzed;
+    $('rec24hFailed').textContent = h.recordings.last24h.failed;
+
+    // AI 队列
+    $('queuePending').textContent = h.queue.pending;
+    $('queueProcessing').textContent = h.queue.processing;
+    $('queueCompleted').textContent = h.queue.completed;
+    $('queueFailed').textContent = h.queue.failed;
   } catch (e) {
     toast('加载统计失败: ' + e.message, 'error');
   }

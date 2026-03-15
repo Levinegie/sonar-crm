@@ -6,6 +6,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const os = require('os');
 const { PrismaClient } = require('@prisma/client');
 const { success, error } = require('../utils/helpers');
 const { authenticate, platformOnly } = require('../middleware/auth');
@@ -18,8 +19,78 @@ const {
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// 记录服务启动时间
+const serverStartTime = Date.now();
+
 // 所有路由需要认证 + 平台管理员权限
 router.use(authenticate, platformOnly);
+
+// =====================================================
+// 系统健康监控
+// =====================================================
+router.get('/health', async (req, res) => {
+  try {
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
+    // 服务器状态
+    const uptime = Math.floor((Date.now() - serverStartTime) / 1000);
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const usedMem = totalMem - freeMem;
+    const memUsage = ((usedMem / totalMem) * 100).toFixed(1);
+    const cpuUsage = os.loadavg()[0].toFixed(2);
+
+    // 录音处理情况（最近1小时和24小时）
+    const [
+      recordingsLast1h,
+      recordingsLast24h,
+      analyzedLast1h,
+      analyzedLast24h,
+      failedLast1h,
+      failedLast24h
+    ] = await Promise.all([
+      prisma.recording.count({ where: { createdAt: { gte: oneHourAgo } } }),
+      prisma.recording.count({ where: { createdAt: { gte: oneDayAgo } } }),
+      prisma.analysisResult.count({ where: { createdAt: { gte: oneHourAgo } } }),
+      prisma.analysisResult.count({ where: { createdAt: { gte: oneDayAgo } } }),
+      prisma.recording.count({ where: { createdAt: { gte: oneHourAgo }, status: 'failed' } }),
+      prisma.recording.count({ where: { createdAt: { gte: oneDayAgo }, status: 'failed' } })
+    ]);
+
+    // AI 分析队列状态
+    const [pending, processing, failed, completed] = await Promise.all([
+      prisma.recording.count({ where: { status: 'pending' } }),
+      prisma.recording.count({ where: { status: 'processing' } }),
+      prisma.recording.count({ where: { status: 'failed' } }),
+      prisma.recording.count({ where: { status: 'completed' } })
+    ]);
+
+    res.json(success({
+      server: {
+        uptime,
+        memUsage,
+        cpuUsage,
+        totalMem: (totalMem / 1024 / 1024 / 1024).toFixed(2) + ' GB',
+        usedMem: (usedMem / 1024 / 1024 / 1024).toFixed(2) + ' GB'
+      },
+      recordings: {
+        last1h: { total: recordingsLast1h, analyzed: analyzedLast1h, failed: failedLast1h },
+        last24h: { total: recordingsLast24h, analyzed: analyzedLast24h, failed: failedLast24h }
+      },
+      queue: {
+        pending,
+        processing,
+        failed,
+        completed
+      }
+    }));
+  } catch (err) {
+    console.error('Health check error:', err);
+    res.status(500).json(error('获取健康状态失败', 500));
+  }
+});
 
 // =====================================================
 // 租户统计
