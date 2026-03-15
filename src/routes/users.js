@@ -18,6 +18,7 @@ router.get('/agents', authenticate, tenantScope, async (req, res) => {
 
     const where = {
       tenantId: req.tenantId,
+      role: { not: 'admin' }, // 排除平台管理员
       ...(role && { role }),
       ...(isActive !== undefined && { isActive: isActive === 'true' }),
       ...(keyword && {
