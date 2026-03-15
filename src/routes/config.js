@@ -185,7 +185,7 @@ router.get('/channels', authenticate, tenantScope, async (req, res) => {
 });
 
 // 添加渠道
-router.post('/channels', authenticate, authorize('admin'), tenantScope, async (req, res) => {
+router.post('/channels', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
   try {
     const { name, code, type } = req.body;
 
@@ -196,6 +196,27 @@ router.post('/channels', authenticate, authorize('admin'), tenantScope, async (r
     res.json(success(channel, '添加成功'));
   } catch (err) {
     res.status(500).json(error('添加渠道失败', 500));
+  }
+});
+
+// 删除渠道
+router.delete('/channels/:id', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 确保只能删除自己租户的渠道
+    const channel = await prisma.channel.findFirst({
+      where: { id, tenantId: req.tenantId }
+    });
+
+    if (!channel) {
+      return res.status(404).json(error('渠道不存在', 404));
+    }
+
+    await prisma.channel.delete({ where: { id } });
+    res.json(success(null, '删除成功'));
+  } catch (err) {
+    res.status(500).json(error('删除渠道失败', 500));
   }
 });
 

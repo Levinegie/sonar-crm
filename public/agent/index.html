@@ -1101,6 +1101,7 @@ const agents = [
   {name:'张小红',avatar:'张',color:'#10b981',done:14,target:60,score:75,portraitAvg:44},
 ];
 let forbiddenWords = [];
+let channels = [];
 
 // 画像字段映射
 const portraitFields = [
@@ -1113,6 +1114,18 @@ const portraitFields = [
 
 // ══ 待确认卡片 ══
 let pendingConfirmCards = [];
+
+// 加载渠道列表
+async function loadChannels() {
+  try {
+    const result = await api('/api/config/channels');
+    if (result.success && result.data) {
+      channels = result.data;
+    }
+  } catch (e) {
+    console.error('加载渠道失败:', e);
+  }
+}
 
 // 加载待确认卡片
 async function loadConfirmCards() {
@@ -1299,6 +1312,13 @@ function renderConfirmCards() {
       <!-- 客户等级和跟进 -->
       <div class="confirm-section-label">⭐ 客户等级与跟进</div>
       <div class="confirm-fields">
+        <div class="confirm-field">
+          <label>客户渠道</label>
+          <select id="confirm-source-${card.id}">
+            <option value="">请选择渠道</option>
+            ${channels.map(ch => `<option value="${ch.name}" ${existing?.source === ch.name ? 'selected' : ''}>${ch.name}</option>`).join('')}
+          </select>
+        </div>
         ${!isNewCustomer && card.customerLevel && card.customerLevel !== existing.level ? `
         <div class="confirm-field ai-new">
           <label>客户等级</label>
@@ -1369,6 +1389,7 @@ async function submitConfirmCard(recordingId) {
     community: document.getElementById(`confirm-community-${recordingId}`).value,
     area: document.getElementById(`confirm-area-${recordingId}`).value,
     budget: document.getElementById(`confirm-budget-${recordingId}`).value,
+    source: document.getElementById(`confirm-source-${recordingId}`)?.value || undefined,
     customerLevel: level,
     nextFollow: document.getElementById(`confirm-next-${recordingId}`).value,
     promise: document.getElementById(`confirm-promise-${recordingId}`).value,
@@ -2683,6 +2704,31 @@ function copyBriefing(btn) {
 
 // 保存客户字段
 async function saveCustomerField(id, field, value) {
+  // 如果状态改为已签单，先询问签单金额
+  if (field === 'status' && value === 'signed') {
+    const amount = prompt('请输入签单金额（元）：');
+    if (amount === null) {
+      // 用户取消，恢复原状态
+      const c = customers.find(x => String(x.id) === String(id));
+      if (c) {
+        document.getElementById('edit-status').value = c.status;
+      }
+      return;
+    }
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      alert('请输入有效的金额');
+      const c = customers.find(x => String(x.id) === String(id));
+      if (c) {
+        document.getElementById('edit-status').value = c.status;
+      }
+      return;
+    }
+    // 同时更新状态和签单金额
+    await saveCustomerWithAmount(id, numAmount);
+    return;
+  }
+
   // 更新本地数据
   const c = customers.find(x => String(x.id) === String(id));
   if (c) {
@@ -2701,6 +2747,33 @@ async function saveCustomerField(id, field, value) {
     const data = await api(`/api/customers/${id}`, { method: 'PUT', body: JSON.stringify(body) });
     if (data.success) {
       showToast('已更新', 'success');
+      renderCustomerTable();
+    } else {
+      showToast(data.message || '更新失败', 'error');
+    }
+  } catch (e) {
+    showToast('更新失败', 'error');
+  }
+}
+
+async function saveCustomerWithAmount(id, amount) {
+  const c = customers.find(x => String(x.id) === String(id));
+  if (c) {
+    c.status = 'signed';
+    c.signedAmount = amount;
+  }
+  if (useMockData) {
+    showToast('已更新为已签单', 'success');
+    renderCustomerTable();
+    return;
+  }
+  try {
+    const data = await api(`/api/customers/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'signed', signedAmount: amount })
+    });
+    if (data.success) {
+      showToast(`已更新为已签单，金额：${amount}元`, 'success');
       renderCustomerTable();
     } else {
       showToast(data.message || '更新失败', 'error');
@@ -3629,7 +3702,7 @@ async function init() {
     document.getElementById('login-btn').style.display = 'none';
     document.getElementById('user-info').style.display = 'block';
     // 加载真实数据
-    const [c, s, cc, ds] = await Promise.all([loadCustomers(), loadSeaCustomers(), loadConfirmCards(), loadDeadSeaCustomers()]);
+    const [c, s, cc, ds] = await Promise.all([loadCustomers(), loadSeaCustomers(), loadConfirmCards(), loadDeadSeaCustomers(), loadChannels()]);
     loadForbiddenWords();
     if (!c) window.customers = mockCustomers;
     if (!s) window.seaCustomers = mockSeaCustomers;

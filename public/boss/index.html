@@ -213,8 +213,14 @@ tr:last-child td{border-bottom:none;}
 
     <!-- 人员管理 -->
     <div class="view" id="view-users">
-      <div class="page-header"><div class="page-title">人员管理</div><button class="btn btn-primary btn-sm" onclick="openUserModal()">+ 新增客服</button></div>
-      <div class="page-body"><div class="table-card" style="background:white;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden"><table id="users-table"><thead><tr><th>姓名</th><th>用户名</th><th>角色</th><th>OSS文件夹</th><th>最大客户数</th><th>状态</th><th>操作</th></tr></thead><tbody id="users-tbody"><tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">加载中...</td></tr></tbody></table></div></div>
+      <div class="page-header">
+        <div>
+          <div class="page-title">人员管理</div>
+          <div class="page-sub" id="user-quota-info">加载中...</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ 新增客服</button>
+      </div>
+      <div class="page-body"><div class="table-card" style="background:white;border:1px solid var(--gray-200);border-radius:12px;overflow:hidden"><table id="users-table"><thead><tr><th>姓名</th><th>用户名</th><th>角色</th><th>状态</th><th>操作</th></tr></thead><tbody id="users-tbody"><tr><td colspan="5" style="text-align:center;padding:40px;color:var(--gray-400)">加载中...</td></tr></tbody></table></div></div>
     </div>
 
     <!-- 经营报告 -->
@@ -253,17 +259,6 @@ tr:last-child td{border-bottom:none;}
     <div class="form-group"><label>姓名</label><input id="um-name" placeholder="真实姓名"></div>
     <div class="form-group"><label>用户名</label><input id="um-username" placeholder="登录用户名"></div>
     <div class="form-group" id="um-pwd-group"><label>密码</label><input id="um-password" type="password" placeholder="至少6位"></div>
-    <div class="form-group">
-      <label>OSS 文件夹绑定</label>
-      <select id="um-ossFolder" style="width:100%;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
-        <option value="">不绑定</option>
-        <option>严妍</option><option>严祥玉</option><option>乐雯</option><option>何海洋</option>
-        <option>叶婷婷</option><option>张小娥</option><option>彭丽</option><option>李薇</option>
-        <option>李进茹</option><option>王芳</option><option>王雪萍</option><option>王静</option>
-        <option>芦晓晓</option><option>闫孟霞</option><option>黄娟</option>
-      </select>
-    </div>
-    <div class="form-group"><label>最大客户数</label><input id="um-maxCustomers" type="number" value="50" min="1"></div>
     <div class="form-group" id="um-active-group" style="display:none">
       <label>状态</label>
       <select id="um-isActive" style="width:100%;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
@@ -680,8 +675,15 @@ function renderSettings() {
       <div id="fw-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
       <div style="display:flex;gap:8px"><input id="new-fw" type="text" placeholder="添加违禁词…" style="flex:1;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;font-family:'Noto Sans SC',sans-serif"><button class="btn btn-primary btn-sm" onclick="addFW()">添加</button></div>
     </div>
+    <div class="chart-card">
+      <div class="chart-title">渠道管理</div>
+      <div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">配置客户来源渠道，用于渠道ROI统计</div>
+      <div id="channel-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+      <div style="display:flex;gap:8px"><input id="new-channel" type="text" placeholder="添加渠道名称（如：抖音-装修主号）…" style="flex:1;padding:8px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;outline:none;font-family:'Noto Sans SC',sans-serif"><button class="btn btn-primary btn-sm" onclick="addChannel()">添加</button></div>
+    </div>
     <div style="margin-top:16px;display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="saveSettings()">保存设置</button></div>`;
   loadForbiddenWords();
+  loadChannels();
 }
 
 let fwList = [];
@@ -704,6 +706,27 @@ async function removeFW(id) {
   try { await api('/api/config/forbidden-words/' + id, { method:'DELETE' }); await loadForbiddenWords(); } catch(e) {}
 }
 
+let channelList = [];
+async function loadChannels() {
+  try { const d = await api('/api/config/channels'); if (d.success) channelList = d.data || []; } catch(e) { channelList = []; }
+  renderChannels();
+}
+function renderChannels() {
+  const el = document.getElementById('channel-list');
+  if (!el) return;
+  el.innerHTML = channelList.map(ch => `<span style="background:var(--blue-pale);color:var(--blue);font-size:12px;font-weight:600;padding:4px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:6px">${ch.name}<span style="cursor:pointer;opacity:0.6" onclick="removeChannel('${ch.id}')">✕</span></span>`).join('') || '<span style="color:var(--gray-400);font-size:12px">暂无渠道</span>';
+}
+async function addChannel() {
+  const el = document.getElementById('new-channel');
+  const v = el.value.trim();
+  if (!v) return;
+  try { await api('/api/config/channels', { method:'POST', body: JSON.stringify({name:v}) }); el.value = ''; await loadChannels(); } catch(e) { alert('添加失败'); }
+}
+async function removeChannel(id) {
+  if (!confirm('确定删除该渠道？')) return;
+  try { await api('/api/config/channels/' + id, { method:'DELETE' }); await loadChannels(); } catch(e) {}
+}
+
 async function saveSettings() {
   const body = {
     per_person_target: document.getElementById('s-per-target').value,
@@ -722,10 +745,23 @@ async function saveSettings() {
 
 // ══ 人员管理 ══
 let usersList = [];
+let tenantMaxUsers = 100;
 async function loadUsers() {
   try {
     const d = await api('/api/users/agents?pageSize=100');
     if (d.success) usersList = d.data?.list || d.data || [];
+
+    // 获取租户配额信息
+    const me = await api('/api/auth/me');
+    if (me.success && me.data?.tenant) {
+      tenantMaxUsers = me.data.tenant.maxUsers || 100;
+      const quotaEl = document.getElementById('user-quota-info');
+      if (quotaEl) {
+        const used = usersList.length;
+        const remaining = tenantMaxUsers - used;
+        quotaEl.innerHTML = `已使用 <strong>${used}</strong> / ${tenantMaxUsers} 个客服名额，剩余 <strong style="color:${remaining > 5 ? 'var(--green)' : 'var(--red)'}">${remaining}</strong> 个`;
+      }
+    }
   } catch(e) {}
   renderUsers();
 }
@@ -734,7 +770,7 @@ function renderUsers() {
   const tbody = document.getElementById('users-tbody');
   if (!tbody) return;
   if (!usersList.length) {
-    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--gray-400)">暂无人员</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--gray-400)">暂无人员</td></tr>';
     return;
   }
   const roleLabel = { agent:'客服', boss:'老板', admin:'管理员' };
@@ -743,8 +779,6 @@ function renderUsers() {
       <td><strong>${u.name}</strong></td>
       <td style="color:var(--gray-500)">${u.username}</td>
       <td>${roleLabel[u.role] || u.role}</td>
-      <td>${u.ossFolder ? `<span style="background:var(--blue-pale);color:var(--blue);font-size:12px;padding:2px 8px;border-radius:12px">${u.ossFolder}</span>` : '<span style="color:var(--gray-400);font-size:12px">未绑定</span>'}</td>
-      <td style="text-align:center">${u.maxCustomers}</td>
       <td><span style="color:${u.isActive?'var(--green)':'var(--red)'};font-size:12px;font-weight:600">${u.isActive?'启用':'禁用'}</span></td>
       <td>
         <button class="btn btn-outline btn-sm" onclick="openUserModal(${JSON.stringify(u).replace(/"/g,'&quot;')})">编辑</button>
@@ -760,8 +794,6 @@ function openUserModal(user) {
   document.getElementById('um-name').value = isEdit ? user.name : '';
   document.getElementById('um-username').value = isEdit ? user.username : '';
   document.getElementById('um-password').value = '';
-  document.getElementById('um-ossFolder').value = isEdit ? (user.ossFolder || '') : '';
-  document.getElementById('um-maxCustomers').value = isEdit ? user.maxCustomers : 50;
   document.getElementById('um-pwd-group').querySelector('label').textContent = isEdit ? '新密码（留空不修改）' : '密码';
   document.getElementById('um-active-group').style.display = isEdit ? 'block' : 'none';
   if (isEdit) document.getElementById('um-isActive').value = String(user.isActive);
@@ -778,21 +810,19 @@ async function saveUser() {
   const name = document.getElementById('um-name').value.trim();
   const username = document.getElementById('um-username').value.trim();
   const password = document.getElementById('um-password').value;
-  const ossFolder = document.getElementById('um-ossFolder').value || null;
-  const maxCustomers = parseInt(document.getElementById('um-maxCustomers').value) || 50;
 
   if (!name || !username) return alert('姓名和用户名必填');
   if (!isEdit && !password) return alert('新增时密码必填');
   if (password && password.length < 6) return alert('密码至少6位');
 
   if (isEdit) {
-    const body = { name, ossFolder, maxCustomers, isActive: document.getElementById('um-isActive').value === 'true' };
+    const body = { name, isActive: document.getElementById('um-isActive').value === 'true' };
     const tasks = [api('/api/users/' + id, { method:'PUT', body: JSON.stringify(body) })];
     if (password) tasks.push(api('/api/users/' + id + '/reset-password', { method:'POST', body: JSON.stringify({ newPassword: password }) }));
     const results = await Promise.all(tasks);
     if (!results[0].success) return alert(results[0].error || '更新失败');
   } else {
-    const d = await api('/api/users', { method:'POST', body: JSON.stringify({ name, username, password, ossFolder, maxCustomers, role: 'agent' }) });
+    const d = await api('/api/users', { method:'POST', body: JSON.stringify({ name, username, password, role: 'agent' }) });
     if (!d.success) return alert(d.error || '创建失败');
   }
 
@@ -827,9 +857,9 @@ function renderLeave() {
 
   document.getElementById('leave-body').innerHTML = `
     <div style="max-width:700px">
-      <!-- 停单管理 -->
+      <!-- 请假管理 -->
       <div class="chart-card" style="margin-bottom:20px">
-        <div class="chart-title">停单管理</div>
+        <div class="chart-title">请假管理</div>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
           <select id="pause-agent" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
             <option value="">选择客服</option>
@@ -838,11 +868,11 @@ function renderLeave() {
           <select id="pause-days" style="padding:6px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:13px;font-family:'Noto Sans SC',sans-serif">
             ${[1,2,3,5,7,14,30].map(d => `<option value="${d}">${d}天</option>`).join('')}
           </select>
-          <button class="btn btn-primary btn-sm" onclick="pauseAgent(document.getElementById('pause-agent').value, document.getElementById('pause-days').value)">停单</button>
+          <button class="btn btn-primary btn-sm" onclick="pauseAgent(document.getElementById('pause-agent').value, document.getElementById('pause-days').value)">请假</button>
         </div>
         ${(()=>{
           const paused = agentList.filter(a => a.leaveUntil && new Date(a.leaveUntil) > new Date());
-          if (paused.length === 0) return '<div style="color:var(--gray-400);font-size:12px">当前无停单客服</div>';
+          if (paused.length === 0) return '<div style="color:var(--gray-400);font-size:12px">当前无请假客服</div>';
           return '<table style="border:1px solid var(--gray-200);border-radius:8px;overflow:hidden"><thead><tr><th>客服</th><th>恢复时间</th><th>操作</th></tr></thead><tbody>' +
             paused.map(a => '<tr><td><strong>' + a.name + '</strong></td><td>' + new Date(a.leaveUntil).toLocaleDateString() + '</td><td><button class="btn btn-outline btn-sm" onclick="resumeAgent(\'' + a.id + '\')">恢复</button></td></tr>').join('') +
             '</tbody></table>';
@@ -880,7 +910,7 @@ async function reviewLeave(id, status) {
   if (d.success) { await loadLeaveRequests(); } else { alert(d.error || '操作失败'); }
 }
 
-// ══ 停单管理 ══
+// ══ 请假管理 ══
 async function loadAgentList() {
   try {
     const d = await api('/api/users/agents?pageSize=100');
@@ -892,7 +922,7 @@ async function loadAgentList() {
 async function pauseAgent(agentId, days) {
   if (!agentId || !days) return alert('请选择客服和天数');
   const d = await api('/api/users/' + agentId + '/pause-tasks', { method:'POST', body: JSON.stringify({days: parseInt(days)}) });
-  if (d.success) { await loadAgentList(); } else { alert(d.error || '停单失败'); }
+  if (d.success) { await loadAgentList(); } else { alert(d.error || '请假失败'); }
 }
 
 async function resumeAgent(agentId) {

@@ -219,7 +219,8 @@ router.get('/me', authenticate, async (req, res) => {
       tenant: {
         id: user.tenant.id,
         name: user.tenant.name,
-        slug: user.tenant.slug
+        slug: user.tenant.slug,
+        maxUsers: user.tenant.maxUsers
       }
     }));
   } catch (err) {

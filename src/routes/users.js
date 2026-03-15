@@ -62,9 +62,23 @@ router.get('/agents', authenticate, tenantScope, async (req, res) => {
 });
 
 // 创建用户
-router.post('/', authenticate, authorize('admin'), tenantScope, async (req, res) => {
+router.post('/', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
   try {
-    const { username, password, name, role = 'agent', phone, maxCustomers = 50, ossFolder } = req.body;
+    const { username, password, name, role = 'agent', phone } = req.body;
+
+    // 检查租户客服数量限制
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: req.tenantId },
+      select: { maxUsers: true }
+    });
+
+    const currentUserCount = await prisma.user.count({
+      where: { tenantId: req.tenantId }
+    });
+
+    if (currentUserCount >= tenant.maxUsers) {
+      return res.status(400).json(error(`客服已到达上限！当前 ${currentUserCount}/${tenant.maxUsers} 人`, 400));
+    }
 
     // 检查用户名是否存在
     const exists = await prisma.user.findUnique({
@@ -85,9 +99,7 @@ router.post('/', authenticate, authorize('admin'), tenantScope, async (req, res)
         password: hashedPassword,
         name,
         role,
-        phone,
-        maxCustomers,
-        ossFolder: ossFolder || null
+        phone
       }
     });
 
@@ -104,10 +116,10 @@ router.post('/', authenticate, authorize('admin'), tenantScope, async (req, res)
 });
 
 // 更新用户
-router.put('/:id', authenticate, authorize('admin'), tenantScope, async (req, res) => {
+router.put('/:id', authenticate, authorize('admin', 'boss'), tenantScope, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, phone, role, isActive, maxCustomers, ossFolder } = req.body;
+    const { name, phone, role, isActive } = req.body;
 
     const user = await prisma.user.update({
       where: { id, tenantId: req.tenantId },
@@ -115,9 +127,7 @@ router.put('/:id', authenticate, authorize('admin'), tenantScope, async (req, re
         ...(name && { name }),
         ...(phone && { phone }),
         ...(role && { role }),
-        ...(isActive !== undefined && { isActive }),
-        ...(maxCustomers && { maxCustomers }),
-        ...(ossFolder !== undefined && { ossFolder: ossFolder || null })
+        ...(isActive !== undefined && { isActive })
       }
     });
 
