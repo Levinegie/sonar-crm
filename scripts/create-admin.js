@@ -31,7 +31,7 @@ async function createAdmin() {
       console.log('✓ admin用户已存在');
     } else {
       // 创建admin用户
-      const hashedPassword = await bcrypt.hash('admin123', 10);
+      const hashedPassword = await bcrypt.hash('du5616', 10);
       admin = await prisma.user.create({
         data: {
           id: 'admin-user',
@@ -42,7 +42,7 @@ async function createAdmin() {
           tenantId: tenant.id
         }
       });
-      console.log('✓ 创建admin用户 (用户名: admin, 密码: admin123)');
+      console.log('✓ 创建admin用户 (用户名: admin, 密码: du5616)');
     }
 
     console.log('\n完成！');
