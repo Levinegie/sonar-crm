@@ -52,11 +52,13 @@ html, body { height:100%; background:#1a1a2e; font-family:-apple-system,'Noto Sa
 .content { flex:1; overflow-y:auto; overflow-x:hidden; position:relative; }
 .content::-webkit-scrollbar { display:none; }
 
-.tabbar { height:72px; background:var(--nav-bg); border-top:1px solid #374151; display:flex; align-items:stretch; flex-shrink:0; padding-bottom:8px; }
+.tabbar { height:72px; background:var(--white); border-top:1px solid var(--border); display:flex; align-items:stretch; flex-shrink:0; padding-bottom:8px; box-shadow:0 -2px 10px rgba(0,0,0,.05); }
 .tab-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; cursor:pointer; transition:all .15s; position:relative; }
-.tab-icon { font-size:22px; line-height:1; }
-.tab-label { font-size:10px; font-weight:500; color:var(--dim); }
+.tab-icon { font-size:22px; line-height:1; transition:transform .15s; }
+.tab-label { font-size:10px; font-weight:500; color:var(--muted); transition:all .15s; }
+.tab-item.active .tab-icon { transform:scale(1.1); }
 .tab-item.active .tab-label { color:var(--accent); font-weight:600; }
+.tab-item.active::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:32px; height:3px; background:var(--accent); border-radius:0 0 3px 3px; }
 .tab-badge { position:absolute; top:6px; right:22px; min-width:16px; height:16px; background:var(--red); border-radius:8px; color:#fff; font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 4px; }
 
 .page { display:none; padding:16px; }
@@ -440,46 +442,12 @@ html, body { height:100%; background:#1a1a2e; font-family:-apple-system,'Noto Sa
       </div>
     </div>
 
-    <!-- TAB 3: 声纳 -->
-    <div class="page" id="page-sonar">
-      <div class="upload-zone">
-        <div class="upload-icon">🎙️</div>
-        <div class="upload-text">上传录音文件</div>
-        <div style="font-size:11px;color:var(--dim);margin-top:4px">支持 MP3、M4A、WAV 格式</div>
-      </div>
-      <button class="sync-btn">↻ 重新触发同步</button>
-      <div class="section-title">最近录音</div>
-      <div class="recording-item" onclick="openAnalysis('c1-call1')">
-        <span class="rec-icon">🎵</span>
-        <div class="rec-info">
-          <div class="rec-name">王建国_20260315_1423.mp3</div>
-          <div class="rec-dur">3分42秒</div>
-        </div>
-        <span class="rec-status done">已分析</span>
-      </div>
-      <div class="recording-item">
-        <span class="rec-icon">🎵</span>
-        <div class="rec-info">
-          <div class="rec-name">陈志远_20260315_1105.mp3</div>
-          <div class="rec-dur">2分18秒</div>
-        </div>
-        <span class="rec-status processing">分析中</span>
-      </div>
-      <div class="recording-item" onclick="openAnalysis('c3-call1')">
-        <span class="rec-icon">🎵</span>
-        <div class="rec-info">
-          <div class="rec-name">李梅_20260314_1630.mp3</div>
-          <div class="rec-dur">1分55秒</div>
-        </div>
-        <span class="rec-status done">已分析</span>
-      </div>
-      <div class="recording-item">
-        <span class="rec-icon">🎵</span>
-        <div class="rec-info">
-          <div class="rec-name">赵磊_20260314_1012.mp3</div>
-          <div class="rec-dur">4分07秒</div>
-        </div>
-        <span class="rec-status pending">待上传</span>
+    <!-- TAB 3: 文件同步 (原生功能占位) -->
+    <div class="page" id="page-sync">
+      <div style="padding:60px 20px;text-align:center;color:var(--muted)">
+        <div style="font-size:48px;margin-bottom:16px">📁</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">文件同步</div>
+        <div style="font-size:13px;line-height:1.6">此功能由原生RoundSync提供<br>在APP中可以上传录音到云端</div>
       </div>
     </div>
 
@@ -489,7 +457,7 @@ html, body { height:100%; background:#1a1a2e; font-family:-apple-system,'Noto Sa
   <div class="tabbar">
     <div class="tab-item active" onclick="switchTab('todo')"><span class="tab-icon">✅</span><span class="tab-label">待办</span></div>
     <div class="tab-item" id="tab-customers" onclick="switchTab('customers')"><span class="tab-icon">👥</span><span class="tab-label">确认信息</span><span class="tab-badge">3</span></div>
-    <div class="tab-item" onclick="switchTab('sonar')"><span class="tab-icon">📡</span><span class="tab-label">声纳</span></div>
+    <div class="tab-item" onclick="switchTab('sync')"><span class="tab-icon">📁</span><span class="tab-label">文件同步</span></div>
   </div>
 
   <!-- Backdrop -->
@@ -692,7 +660,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   const tabs = document.querySelectorAll('.tab-item');
-  const map = { todo:0, customers:1, sonar:2 };
+  const map = { todo:0, customers:1, sync:2 };
   tabs[map[name]].classList.add('active');
 }
 
@@ -772,11 +740,17 @@ function markDone(taskId) {
   doneTasks.add(taskId);
   const card = document.getElementById(taskId);
   if (!card) return;
-  card.classList.add('done');
-  const btn = card.querySelector('.call-btn');
-  if (btn) {
-    btn.replaceWith(Object.assign(document.createElement('span'), { className:'done-badge', textContent:'✓ 完成' }));
-  }
+
+  // 添加淡出动画
+  card.style.transition = 'opacity 0.3s, transform 0.3s';
+  card.style.opacity = '0';
+  card.style.transform = 'translateX(20px)';
+
+  // 300ms后移除元素
+  setTimeout(() => {
+    card.remove();
+  }, 300);
+
   const doneCount = parseInt(document.getElementById('stat-done').textContent);
   document.getElementById('stat-done').textContent = doneCount + 1;
   const todayCount = parseInt(document.getElementById('stat-today').textContent);
@@ -839,17 +813,158 @@ function closeAnalysis() {
 }
 
 function checkNewAnalysis() {
-  // In production this would poll the server; for demo just show a toast
   const btn = document.querySelector('#confirm-empty button');
   const orig = btn.textContent;
-  btn.textContent = '检查中...';
+  btn.textContent = '启动中...';
   btn.disabled = true;
-  setTimeout(() => {
-    btn.textContent = orig;
-    btn.disabled = false;
-    alert('暂无新分析，稍后再试');
-  }, 1200);
+
+  // 调用Android原生同步功能
+  if (typeof Android !== 'undefined' && Android.triggerSync) {
+    Android.triggerSync();
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.disabled = false;
+    }, 1000);
+  } else {
+    // 浏览器测试环境
+    setTimeout(() => {
+      btn.textContent = orig;
+      btn.disabled = false;
+      alert('同步任务已启动（浏览器环境仅为演示）');
+    }, 1000);
+  }
 }
+
+// ==================== 真实数据加载 ====================
+let agentId = null;
+
+// 从URL获取agentId或从localStorage获取
+function getAgentId() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlAgentId = urlParams.get('agentId');
+  if (urlAgentId) {
+    localStorage.setItem('agentId', urlAgentId);
+    return urlAgentId;
+  }
+  return localStorage.getItem('agentId');
+}
+
+// 加载今日待办
+async function loadTodos() {
+  agentId = getAgentId();
+  if (!agentId) {
+    console.warn('未找到agentId，使用demo数据');
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/agent/todos?agentId=${agentId}`);
+    const data = await res.json();
+
+    if (data.success) {
+      renderTodos(data.data);
+    }
+  } catch (err) {
+    console.error('加载待办失败:', err);
+  }
+}
+
+// 渲染待办列表
+function renderTodos(data) {
+  const { stats, tasks } = data;
+
+  // 更新统计
+  document.getElementById('stat-overdue').textContent = stats.overdue;
+  document.getElementById('stat-today').textContent = stats.today;
+  document.getElementById('stat-done').textContent = stats.done;
+
+  // 清空现有任务
+  const todoPage = document.getElementById('page-todo');
+  const oldSections = todoPage.querySelectorAll('.section-title, .task-card');
+  oldSections.forEach(el => el.remove());
+
+  // 按优先级分组
+  const groups = {
+    P0: { title: '逾期未跟', color: 'red', tasks: [] },
+    P1: { title: '今日 S/A 级', color: 'amber', tasks: [] },
+    P2: { title: '今日 B/C 级', color: 'accent', tasks: [] }
+  };
+
+  tasks.forEach(task => {
+    if (groups[task.priority]) {
+      groups[task.priority].tasks.push(task);
+    }
+  });
+
+  // 渲染各组
+  const statsRow = todoPage.querySelector('.stats-row');
+  let lastElement = statsRow;
+
+  Object.entries(groups).forEach(([priority, group]) => {
+    if (group.tasks.length === 0) return;
+
+    // 添加分组标题
+    const sectionTitle = document.createElement('div');
+    sectionTitle.className = 'section-title';
+    sectionTitle.innerHTML = `<span class="section-dot" style="background:var(--${group.color})"></span>${group.title}`;
+    lastElement.after(sectionTitle);
+    lastElement = sectionTitle;
+
+    // 添加任务卡片
+    group.tasks.forEach(task => {
+      const card = document.createElement('div');
+      card.className = 'task-card';
+      card.id = `task-${task.id}`;
+
+      const levelBadge = priority === 'P0' ? 'P0' : task.level.toUpperCase();
+      const levelClass = priority === 'P0' ? 'p0' : (task.level === 's' ? 'p1' : 'p2');
+
+      let tags = `<span class="tag">${task.community || '未知小区'}</span><span class="tag">${task.area || '-'}㎡</span>`;
+      if (priority === 'P0') {
+        tags += `<span class="tag" style="color:var(--red)">逾期${task.overdueDays}天</span>`;
+      }
+
+      card.innerHTML = `
+        <div class="priority-badge ${levelClass}">${levelBadge}</div>
+        <div class="task-info">
+          <div class="task-name">${task.name}</div>
+          <div class="task-tags">${tags}</div>
+        </div>
+        <button class="call-btn" onclick="completeTask('${task.id}');event.stopPropagation()">完成</button>
+      `;
+
+      lastElement.after(card);
+      lastElement = card;
+    });
+  });
+}
+
+// 完成任务
+async function completeTask(taskId) {
+  try {
+    const res = await fetch('/api/agent/complete-task', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ taskId })
+    });
+
+    const data = await res.json();
+    if (data.success) {
+      markDone(`task-${taskId}`);
+    }
+  } catch (err) {
+    console.error('完成任务失败:', err);
+    alert('完成任务失败，请重试');
+  }
+}
+
+// 页面加载时获取数据
+window.addEventListener('DOMContentLoaded', () => {
+  const hash = window.location.hash.substring(1);
+  if (hash === 'todo' || !hash) {
+    loadTodos();
+  }
+});
 </script>
 </body>
 </html>

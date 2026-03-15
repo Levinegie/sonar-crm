@@ -56,6 +56,7 @@ app.use('/api/tenants', require('./routes/tenants'));
 app.use('/api/oss', require('./routes/oss'));
 app.use('/api/stats', require('./routes/stats'));
 app.use('/api/tasks', require('./routes/tasks'));
+app.use('/api/agent', require('./routes/agent'));
 
 // APK 上传完成回调（硬编码在 APK 里的接口）
 const { v4: uuidv4 } = require('uuid');
@@ -86,23 +87,50 @@ app.post('/api/url', async (req, res) => {
 
     console.log('[APK Callback] 租户文件夹:', tenantFolder, '员工文件夹:', agentFolder, '文件名:', fileName);
 
-    // 解析文件名获取信息（格式: 20240316_123456_13800138000.m4a）
-    const match = fileName.match(/(\d{8})_(\d{6})_(\d+)/);
-
-    let callTime = new Date();
+    // 通用解析：提取手机号和时间
     let customerPhone = null;
+    let callTime = new Date();
 
-    if (match) {
-      const [, dateStr, timeStr, phone] = match;
-      const year = dateStr.substr(0, 4);
-      const month = dateStr.substr(4, 2);
-      const day = dateStr.substr(6, 2);
+    // 1. 提取11位手机号（任意位置，1开头）
+    const phoneMatch = fileName.match(/\b(1[3-9]\d{9})\b/);
+    if (phoneMatch) {
+      customerPhone = phoneMatch[1];
+    }
+
+    // 2. 提取日期时间（支持多种格式）
+    let dateTimeMatch = null;
+
+    // 格式1: YYYYMMDD_HHMMSS 或 YYMMDD_HHMMSS
+    dateTimeMatch = fileName.match(/(\d{6,8})_(\d{6})/);
+    if (dateTimeMatch) {
+      let [, dateStr, timeStr] = dateTimeMatch;
+
+      // 判断是6位还是8位日期
+      let year, month, day;
+      if (dateStr.length === 8) {
+        year = dateStr.substr(0, 4);
+        month = dateStr.substr(4, 2);
+        day = dateStr.substr(6, 2);
+      } else {
+        // 6位日期，补充20前缀
+        year = '20' + dateStr.substr(0, 2);
+        month = dateStr.substr(2, 2);
+        day = dateStr.substr(4, 2);
+      }
+
       const hour = timeStr.substr(0, 2);
       const minute = timeStr.substr(2, 2);
       const second = timeStr.substr(4, 2);
 
       callTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}+08:00`);
-      customerPhone = phone;
+    }
+    // 格式2: YYYY-MM-DD HH_MM_SS
+    else {
+      dateTimeMatch = fileName.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2})[_:](\d{2})[_:](\d{2})/);
+      if (dateTimeMatch) {
+        const [, year, month, day, hour, minute, second] = dateTimeMatch;
+        callTime = new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}+08:00`);
+      }
     }
 
     console.log('[APK Callback] 通话时间:', callTime, '客户电话:', customerPhone);
