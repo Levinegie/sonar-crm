@@ -437,7 +437,7 @@ router.get('/:id', authenticate, tenantScope, async (req, res) => {
           take: 20,
           orderBy: { callTime: 'desc' },
           include: {
-            analysisResults: { orderBy: { createdAt: 'asc' } }
+            analysisResults: { orderBy: { createdAt: 'desc' } }
           }
         },
         followUps: {

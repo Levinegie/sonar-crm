@@ -2322,83 +2322,149 @@ async function claimDeadSea(id, btn) {
 }
 
 // ══ 金牌通话分析 ══
-const mockGoldCalls = [
-  {id:'g1',name:'王明',area:'学仕里',phone:'135****6093',duration:326,date:'2026-03-12',callNum:3,level:'S',
-   score:8.9,summary:'客户是个体老板，本次通话成功确认到店时间。客服精准把握客户心理，用差异化方案打动客户。',
-   highlights:['精准挖掘客户需求','有效处理价格异议','成功推进到店邀约'],
-   report:'本次通话表现优秀。开场简洁有力，30秒内切入主题。中段客户提出价格顾虑时，客服没有直接降价，而是用「同小区邻居案例」建立信任，再用「到店看实景」降低决策门槛。收尾明确约定到店时间和陪同人员，执行力强。建议：可以在介绍方案时多用数字量化优势。'},
-  {id:'g2',name:'周婷',area:'碧桂园二期',phone:'158****6985',duration:412,date:'2026-03-11',callNum:3,level:'S',
-   score:9.2,summary:'医生客户，注重专业性。客服全程保持顾问姿态，用工艺检测报告和质保体系打动客户，成功约定量房。',
-   highlights:['顾问式沟通','专业数据支撑','量房邀约成功'],
-   report:'教科书级别的高端客户沟通。客服准确识别医生客户的决策特点——重逻辑、重数据、重专业性。全程没有用促销话术，而是用「工艺检测报告」「第三方质检」等专业内容建立信任。客户主动提出量房需求，属于被动成交的最佳状态。值得全员学习的案例。'},
-  {id:'g3',name:'郑欣',area:'光山碧桂园',phone:'159****7906',duration:285,date:'2026-03-10',callNum:2,level:'A',
-   score:8.5,summary:'夫妻客户，丈夫是医生。客服用数据说话，推进邀约到店看实景，策略执行到位。',
-   highlights:['数据化沟通','夫妻决策引导','到店推进'],
-   report:'客服很好地执行了针对医生客户的沟通策略。预算参考表提前发送，本次通话直接讨论方案细节，效率很高。在引导夫妻共同决策方面处理得当——先获得丈夫认可，再建议「带太太一起到店看实景」。改进点：可以更早确认装修时间节点。'},
-  {id:'g4',name:'李雪梅',area:'碧桂园',phone:'137****2079',duration:248,date:'2026-03-09',callNum:2,level:'A',
-   score:8.1,summary:'客户非常在意收纳，客服精准推荐全屋收纳设计方案，用同类案例图片打动客户。',
-   highlights:['需求精准匹配','案例图片辅助','收纳方案亮点'],
-   report:'客服对客户的核心需求（收纳）把握准确。发送的同类案例图片起到了关键作用，客户看完后明显兴趣提升。话术亮点：「您家128㎡做到30个收纳柜体，每个空间都不浪费」——用具体数字让客户有画面感。不足：结尾邀约到店的话术偏弱，可以更果断。'},
-  {id:'g5',name:'刘芳',area:'中粮福临',phone:'152****3252',duration:380,date:'2026-03-08',callNum:3,level:'S',
-   score:9.0,summary:'180㎡大户型客户，已到店。客服用全屋智能方案制造差异化，客户当场交定金。',
-   highlights:['大户型专业方案','智能家居差异化','当场交定'],
-   report:'大户型高预算客户的标杆案例。客服在前两通已经充分了解客户需求，本次到店接待准备充分。亮点：提前准备了3套不同风格的方案，让客户有选择感而非被推销感。智能家居方案是决定性因素——客户说「这是唯一一家把智能和装修结合讲清楚的」。成交关键：专业+差异化。'},
-];
+let goldCallsData = [];
 
-function renderGoldCalls() {
+async function renderGoldCalls() {
   const container = document.getElementById('goldcalls-body');
   if (!container) return;
 
-  // 真实模式下从录音数据筛选时长>200秒的
-  const calls = mockGoldCalls;
+  try {
+    // 从后端获取时长>200秒的录音（已分析过的）
+    const res = await fetch('/api/recordings?minDuration=200&limit=50', {
+      headers: { 'Authorization': token ? `Bearer ${token}` : '' }
+    });
+    const data = await res.json();
 
-  container.innerHTML = calls.length === 0
-    ? '<div style="text-align:center;padding:60px;color:var(--gray-400)"><div style="font-size:48px;margin-bottom:16px">🎖️</div><div>暂无金牌通话，通话时长超过200秒的优质通话将出现在这里</div></div>'
-    : `<div style="display:flex;flex-direction:column;gap:12px">${calls.map(c => `
-      <div class="chart-card" style="cursor:pointer;transition:box-shadow 0.15s" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''" onclick="showGoldCallDetail('${c.id}')">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <div>
-            <div style="font-size:15px;font-weight:600;color:var(--navy)">${c.name} <span style="font-size:12px;color:var(--gray-400);font-weight:400">· ${c.area}</span></div>
-            <div style="font-size:12px;color:var(--gray-400);margin-top:4px">${c.date} · 第${c.callNum}通 · ${Math.floor(c.duration/60)}分${c.duration%60}秒</div>
+    if (!data.success) {
+      container.innerHTML = `<div style="text-align:center;padding:60px;color:var(--gray-400)">加载失败</div>`;
+      return;
+    }
+
+    const recordings = data.data?.list || [];
+    goldCallsData = recordings.map(r => {
+      const results = r.analysisResults || [];
+      const stage2List = results.filter(a => a.stage === 'stage2').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      const stage2 = stage2List[0];
+
+      // 从客户数据中获取通话次数
+      const customer = customers.find(c => c.id === r.customerId);
+      const callNum = customer?.calls || 1;
+
+      return {
+        id: r.id,
+        customerId: r.customerId,
+        name: r.customer?.name || '未知',
+        area: r.customer?.community || '未知',
+        duration: r.duration || 0,
+        date: r.callTime ? formatDate(r.callTime) : formatDate(r.createdAt),
+        level: r.customer?.level || 'C',
+        callNum: callNum,
+        summary: stage2?.summary || '暂无摘要',
+        highlights: ['优质通话', '深度沟通', '高意向'],
+        stage2Report: stage2
+      };
+    });
+
+    const calls = goldCallsData;
+
+    container.innerHTML = calls.length === 0
+      ? '<div style="text-align:center;padding:60px;color:var(--gray-400)"><div style="font-size:48px;margin-bottom:16px">🎖️</div><div>暂无金牌通话，通话时长超过200秒的优质通话将出现在这里</div></div>'
+      : `<div style="display:flex;flex-direction:column;gap:12px">${calls.map(c => `
+        <div class="chart-card" style="cursor:pointer;transition:box-shadow 0.15s" onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,0.1)'" onmouseout="this.style.boxShadow=''" onclick="showGoldCallDetail('${c.id}')">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-size:15px;font-weight:600;color:var(--navy)">${c.name} <span style="font-size:12px;color:var(--gray-400);font-weight:400">· ${c.area}</span></div>
+              <div style="font-size:12px;color:var(--gray-400);margin-top:4px">${c.date} · 第${c.callNum}通 · ${Math.floor(c.duration/60)}分${c.duration%60}秒</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <span class="badge ${levelMap[c.level]||''}" style="font-size:14px;padding:4px 12px">${c.level}级</span>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <span class="badge ${levelMap[c.level]||''}">${c.level}级</span>
-            <span style="background:linear-gradient(135deg,#f59e0b,#f97316);color:white;padding:3px 10px;border-radius:6px;font-size:12px;font-weight:700">${c.score}分</span>
-          </div>
-        </div>
-        <div style="margin-top:10px;font-size:13px;color:var(--gray-600);line-height:1.6">${c.summary}</div>
-        <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${c.highlights.map(h => `<span style="background:var(--amber-pale);color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px">${h}</span>`).join('')}</div>
-      </div>`).join('')}</div>`;
+          <div style="margin-top:10px;font-size:13px;color:var(--gray-600);line-height:1.6">${c.summary}</div>
+          <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">${c.highlights.map(h => `<span style="background:var(--amber-pale);color:#92400e;padding:2px 8px;border-radius:4px;font-size:11px">${h}</span>`).join('')}</div>
+        </div>`).join('')}</div>`;
+  } catch (e) {
+    console.error('Load gold calls error:', e);
+    container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--gray-400)">加载失败</div>';
+  }
 }
 
 function showGoldCallDetail(id) {
-  const c = mockGoldCalls.find(x => x.id === id);
+  const c = goldCallsData.find(x => x.id === id);
   if (!c) return;
 
   // 用详情面板展示深度报告
   document.getElementById('detail-header-info').innerHTML = `
     <div style="font-size:16px;font-weight:700;color:var(--navy);font-family:'Noto Serif SC',serif">🎖️ ${c.name} · 金牌通话</div>
-    <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.area} · ${c.date} · 第${c.callNum}通 · ${Math.floor(c.duration/60)}分${c.duration%60}秒</div>`;
+    <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${c.area} · ${c.date} · ${Math.floor(c.duration/60)}分${c.duration%60}秒</div>`;
+
+  let reportHtml = '';
+  const report = c.stage2Report;
+
+  if (report && report.rawOutput) {
+    // 使用与客户详情页相同的报告渲染逻辑
+    const content = report.rawOutput.replace(/===SCORE_JSON_START===[\s\S]*===SCORE_JSON_END===/g, '').trim();
+    const sections = [];
+
+    // 提取录音概括
+    const overviewMatch = content.match(/## 📋 录音概括 📋([\s\S]*?)(?=##|$)/);
+    if (overviewMatch) {
+      const text = overviewMatch[1].replace(/^\* /gm, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').trim();
+      sections.push({title: '录音概括', content: text});
+    }
+
+    // 提取六维深度解析
+    const dimMatch = content.match(/## 🔬 六维深度解析([\s\S]*?)(?=## 💎|## 🎯|$)/);
+    if (dimMatch) {
+      const dimContent = dimMatch[1];
+      const dims = dimContent.match(/### \d+\. (.+?)\n([\s\S]*?)(?=### \d+\.|$)/g);
+      if (dims) {
+        const dimHtml = dims.map(d => {
+          const lines = d.split('\n').filter(l => l.trim());
+          const title = lines[0].replace(/### \d+\. /, '').replace(/[（(]得分[：:]\d+[）)]/, '').trim();
+          const details = lines.slice(1).map(l =>
+            l.replace(/^\* /, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          ).join('<br>');
+          return `<div style="margin-bottom:16px;padding:12px;background:#f8fafc;border-radius:6px;border-left:3px solid #3b82f6">
+            <div style="font-weight:700;color:#1e40af;margin-bottom:8px">${title}</div>
+            <div style="font-size:12px;line-height:1.7">${details}</div>
+          </div>`;
+        }).join('');
+        sections.push({title: '六维深度解析', content: dimHtml});
+      }
+    }
+
+    // 提取金句
+    const quoteMatch = content.match(/## 💎 金句萃取\s*[""]([^"""]+)[""]/);
+    if (quoteMatch) {
+      sections.push({title: '金句萃取', content: `<div class="report-quote">${quoteMatch[1]}</div>`});
+    }
+
+    // 提取综合提升指导
+    const guidanceMatch = content.match(/## 🎯 综合提升指导([\s\S]*?)(?=##|$)/);
+    if (guidanceMatch) {
+      const text = guidanceMatch[1].replace(/^\* /gm, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').trim();
+      sections.push({title: '综合提升指导', content: text});
+    }
+
+    reportHtml = `
+      <div class="report-panel">
+        <div class="report-title">🤖 AI 深度分析报告</div>
+        ${sections.map(s => `<div class="report-section">
+          <div class="report-section-title">${s.title}</div>
+          <p>${s.content}</p>
+        </div>`).join('')}
+      </div>`;
+  } else {
+    reportHtml = `<div style="text-align:center;padding:40px;color:var(--gray-400)">暂无深度分析报告</div>`;
+  }
 
   document.getElementById('detail-body').innerHTML = `
     <div style="padding:16px">
       <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center">
-        <span class="badge ${levelMap[c.level]||''}">${c.level}级</span>
-        <span style="background:linear-gradient(135deg,#f59e0b,#f97316);color:white;padding:4px 12px;border-radius:6px;font-size:13px;font-weight:700">${c.score}分</span>
-        <span class="badge badge-calls">第${c.callNum}通</span>
+        <span class="badge ${levelMap[c.level]||''}" style="font-size:14px;padding:4px 12px">${c.level}级</span>
       </div>
-      <div style="background:var(--blue-pale);border-radius:10px;padding:14px;margin-bottom:16px">
-        <div style="font-size:12px;font-weight:600;color:var(--blue);margin-bottom:6px">通话摘要</div>
-        <div style="font-size:13px;color:var(--gray-700);line-height:1.6">${c.summary}</div>
-      </div>
-      <div style="margin-bottom:16px">
-        <div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:8px">亮点标签</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap">${c.highlights.map(h => `<span style="background:var(--amber-pale);color:#92400e;padding:4px 10px;border-radius:6px;font-size:12px">${h}</span>`).join('')}</div>
-      </div>
-      <div style="background:var(--gray-50);border:1px solid var(--gray-200);border-radius:10px;padding:16px">
-        <div style="font-size:13px;font-weight:600;color:var(--navy);margin-bottom:10px">🤖 AI 深度分析报告</div>
-        <div style="font-size:13px;color:var(--gray-700);line-height:1.8;white-space:pre-wrap">${c.report}</div>
-      </div>
+      ${reportHtml}
     </div>`;
 
   // 隐藏 tabs，只显示报告
@@ -2643,7 +2709,9 @@ async function openDetail(id) {
         const results = r.analysisResults || [];
         const stage1 = results.find(a => a.stage === 'stage1');
         const confirmCard = results.find(a => a.stage === 'confirm_card');
-        const stage2 = results.find(a => a.stage === 'stage2');
+        // 取最新的 stage2（按 createdAt 降序排序后取第一个）
+        const stage2List = results.filter(a => a.stage === 'stage2').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        const stage2 = stage2List[0];
         // 摘要优先取 confirm_card > stage2 > stage1
         const summary = confirmCard?.summary || stage2?.summary || stage1?.summary || '暂无分析摘要';
         // 评分取 stage1 的 scores
@@ -2782,22 +2850,76 @@ function renderDetailTabs(c, recordings, report) {
           <div style="font-size:12px;margin-top:6px">上传录音并完成AI分析后，将自动生成深度分析报告</div>
         </div>
       </div>`;
+  } else if (report.rawOutput) {
+    // 显示完整的 markdown 报告，按原来的结构化格式
+    const content = report.rawOutput.replace(/===SCORE_JSON_START===[\s\S]*===SCORE_JSON_END===/g, '').trim();
+
+    // 提取各个部分
+    const sections = [];
+
+    // 提取录音概括
+    const overviewMatch = content.match(/## 📋 录音概括 📋([\s\S]*?)(?=##|$)/);
+    if (overviewMatch) {
+      const text = overviewMatch[1].replace(/^\* /gm, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').trim();
+      sections.push({title: '录音概括', content: text});
+    }
+
+    // 提取六维深度解析
+    const dimMatch = content.match(/## 🔬 六维深度解析([\s\S]*?)(?=## 💎|## 🎯|$)/);
+    if (dimMatch) {
+      const dimContent = dimMatch[1];
+      const dims = dimContent.match(/### \d+\. (.+?)\n([\s\S]*?)(?=### \d+\.|$)/g);
+      if (dims) {
+        const dimHtml = dims.map(d => {
+          const lines = d.split('\n').filter(l => l.trim());
+          // 去掉标题中的评分部分，比如 "1. 情绪账户充值（得分：4）" -> "情绪账户充值"
+          const title = lines[0].replace(/### \d+\. /, '').replace(/[（(]得分[：:]\d+[）)]/, '').trim();
+          const details = lines.slice(1).map(l =>
+            l.replace(/^\* /, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          ).join('<br>');
+          return `<div style="margin-bottom:16px;padding:12px;background:#f8fafc;border-radius:6px;border-left:3px solid #3b82f6">
+            <div style="font-weight:700;color:#1e40af;margin-bottom:8px">${title}</div>
+            <div style="font-size:12px;line-height:1.7">${details}</div>
+          </div>`;
+        }).join('');
+        sections.push({title: '六维深度解析', content: dimHtml});
+      }
+    }
+
+    // 提取金句
+    const quoteMatch = content.match(/## 💎 金句萃取\s*[""]([^"""]+)[""]/);
+    if (quoteMatch) {
+      sections.push({title: '金句萃取', content: `<div class="report-quote">${quoteMatch[1]}</div>`});
+    }
+
+    // 提取综合提升指导
+    const guidanceMatch = content.match(/## 🎯 综合提升指导([\s\S]*?)(?=##|$)/);
+    if (guidanceMatch) {
+      const text = guidanceMatch[1].replace(/^\* /gm, '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').trim();
+      sections.push({title: '综合提升指导', content: text});
+    }
+
+    reportHtml = `
+      <div class="detail-tab-content" id="dtab-3">
+        <div class="report-panel">
+          <div class="report-title">🤖 AI 深度分析报告</div>
+          ${sections.map(s => `<div class="report-section">
+            <div class="report-section-title">${s.title}</div>
+            <p>${s.content}</p>
+          </div>`).join('')}
+        </div>
+      </div>`;
   } else {
+    // 兼容旧格式
     const scores = report.scores || {};
     const sections = [];
 
-    // 整体评分
     if (scores.overall?.score) {
       sections.push({title: '整体评分', content: `<strong style="font-size:24px;color:#1e40af">${scores.overall.score}分</strong>`});
-    }
-
-    if (scores.scene || report.metadata?.scene) {
-      sections.push({title: '场景判定', content: scores.scene || report.metadata.scene});
     }
     if (report.summary) {
       sections.push({title: '通话总结', content: report.summary});
     }
-    // 各维度的文字点评
     const dims = [
       {name:'开场破冰', key:'opening'},
       {name:'需求挖掘', key:'needs_discovery'},
@@ -2817,18 +2939,8 @@ function renderDetailTabs(c, recordings, report) {
     if (dimComments.length) {
       sections.push({title: '六维分析', content: dimComments.join('<br><br>')});
     }
-
-    // 风险预警
-    if (report.redFlag || report.red_flag) {
-      const detail = report.redFlagDetail || report.red_flag_detail || '存在风险';
-      sections.push({title: '⚠️ 风险预警', content: `<span style="color:#dc2626;font-weight:600">${detail}</span>`});
-    }
-
-    if (scores.gold_quote) {
-      sections.push({title: '金句萃取', content: `<div class="report-quote">${scores.gold_quote}</div>`});
-    }
-    if (scores.suggest || scores.next_action) {
-      sections.push({title: '下次跟进建议', content: scores.suggest || scores.next_action});
+    if (report.redFlag) {
+      sections.push({title: '⚠️ 风险预警', content: `<span style="color:#dc2626;font-weight:600">${report.redFlagDetail || '存在风险'}</span>`});
     }
 
     reportHtml = `

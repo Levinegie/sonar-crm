@@ -391,7 +391,74 @@ function parseStage1Output(output) {
  */
 function parseStage2Output(output) {
   try {
-    // 尝试提取 JSON
+    // 先尝试提取 ===SCORE_JSON_START=== 和 ===SCORE_JSON_END=== 之间的 JSON
+    const jsonBlockMatch = output.match(/===SCORE_JSON_START===\s*([\s\S]*?)\s*===SCORE_JSON_END===/);
+    if (jsonBlockMatch) {
+      const parsed = JSON.parse(jsonBlockMatch[1]);
+      const scoreData = parsed.score_summary || {};
+      const customerData = parsed.customer_card_update || {};
+
+      // 提取 markdown 报告内容（JSON 之前的部分）
+      const reportContent = output.split('===SCORE_JSON_START===')[0].trim();
+
+      // 从 markdown 中提取每个维度的详细内容
+      const extractDimension = (dimNumber, dimName) => {
+        const dimRegex = new RegExp(`### ${dimNumber}\\. ${dimName}([\\s\\S]*?)(?=### \\d+\\.|## |===|$)`, 'm');
+        const dimMatch = reportContent.match(dimRegex);
+        if (!dimMatch) return { strength: '', improve: '' };
+
+        const dimContent = dimMatch[1];
+
+        // 提取深度诊断（完整句子）
+        const diagnosisMatch = dimContent.match(/\*\s+\*\*深度诊断\*\*[：:]\s*([^\n]+)/);
+        // 提取优化话术（在同一行，支持中英文引号）
+        const optimizeMatch = dimContent.match(/\*\s+\*\*优化话术\*\*[：:]\s*[""]([^"""]+?)[""]/) ||
+                             dimContent.match(/\*\s+\*\*优化话术\*\*[：:]\s*"([^"]+?)"/);
+
+        return {
+          strength: optimizeMatch ? optimizeMatch[1].trim() : '',
+          improve: diagnosisMatch ? diagnosisMatch[1].trim() : ''
+        };
+      };
+
+      const dim1 = extractDimension(1, '情绪账户充值');
+      const dim2 = extractDimension(2, '卡点精准试探');
+      const dim3 = extractDimension(3, '新变量注入');
+      const dim5 = extractDimension(5, '异议降维打击');
+      const dim6 = extractDimension(6, '备胎计划与留存');
+
+      // 提取金句
+      const goldQuoteMatch = reportContent.match(/## 💎 金句萃取\s*["""]([\\s\\S]*?)["""]/);
+      const goldQuote = goldQuoteMatch ? goldQuoteMatch[1].trim() : '';
+
+      // 提取综合提升指导
+      const guidanceMatch = reportContent.match(/\*\*提升方向\*\*[：:]\s*([\s\S]*?)(?=---|##|===|$)/);
+      const guidance = guidanceMatch ? guidanceMatch[1].trim() : '';
+
+      return {
+        summary: scoreData.one_line_summary || reportContent.slice(0, 200),
+        scores: {
+          opening: { score: scoreData.dim1_emotional_deposit || 0, strength: dim1.strength, improve: dim1.improve },
+          needs_discovery: { score: scoreData.dim2_stall_diagnosis || 0, strength: dim2.strength, improve: dim2.improve },
+          product_presentation: { score: scoreData.dim3_new_variable || 0, strength: dim3.strength, improve: dim3.improve },
+          objection_handling: { score: scoreData.dim5_objection_deescalation || 0, strength: dim5.strength, improve: dim5.improve },
+          closing: { score: scoreData.dim6_nurture_exit || 0, strength: dim6.strength, improve: dim6.improve },
+          overall: { score: scoreData.follow_up_score || 0 },
+          gold_quote: goldQuote,
+          next_action: customerData.next_action || guidance
+        },
+        customerCard: customerData,
+        redFlag: scoreData.red_flag_triggered || false,
+        redFlagDetail: scoreData.red_flag_detail || '',
+        metadata: {
+          fullReport: reportContent,
+          followUpGrade: scoreData.follow_up_grade,
+          personalGrade: scoreData.personal_grade
+        }
+      };
+    }
+
+    // 兼容旧格式：直接匹配 JSON
     const jsonMatch = output.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);

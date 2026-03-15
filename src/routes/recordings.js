@@ -24,7 +24,7 @@ const upload = multer({
 // 获取录音列表
 router.get('/', authenticate, tenantScope, async (req, res) => {
   try {
-    const { page = 1, pageSize = 20, agentId, customerId, analysisStatus, keyword, startDate, endDate } = req.query;
+    const { page = 1, pageSize = 20, agentId, customerId, analysisStatus, keyword, startDate, endDate, minDuration, limit } = req.query;
 
     const isAgent = req.user.role === 'agent';
 
@@ -34,6 +34,7 @@ router.get('/', authenticate, tenantScope, async (req, res) => {
       ...(agentId && { agentId }),
       ...(customerId && { customerId }),
       ...(analysisStatus && { analysisStatus }),
+      ...(minDuration && { duration: { gte: parseInt(minDuration) } }),
       ...(keyword && {
         OR: [
           { customerName: { contains: keyword } },
@@ -48,15 +49,20 @@ router.get('/', authenticate, tenantScope, async (req, res) => {
       })
     };
 
+    // 如果指定了 limit 参数，不使用分页
+    const takeCount = limit ? parseInt(limit) : parseInt(pageSize);
+    const skipCount = limit ? 0 : (page - 1) * pageSize;
+
     const [list, total] = await Promise.all([
       prisma.recording.findMany({
         where,
-        skip: (page - 1) * pageSize,
-        take: parseInt(pageSize),
+        skip: skipCount,
+        take: takeCount,
         orderBy: { callTime: 'desc' },
         include: {
-          customer: { select: { id: true, name: true, phone: true, community: true } },
+          customer: { select: { id: true, name: true, phone: true, community: true, level: true } },
           agent: { select: { id: true, name: true } },
+          analysisResults: { orderBy: { createdAt: 'desc' } },
           _count: { select: { analysisResults: true } }
         }
       }),
