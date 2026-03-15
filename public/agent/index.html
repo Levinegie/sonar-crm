@@ -3418,19 +3418,13 @@ async function init() {
     if (!ds) deadSeaCustomers = mockDeadSeaCustomers;
     // cc 是待确认卡片，已经存入 pendingConfirmCards
   } else {
-    // 未登录 — 如果 URL 带邀请码，自动弹注册
+    // 未登录 — 如果 URL 带邀请码，自动弹注册，否则弹登录
     const params = new URLSearchParams(location.search);
     if (params.get('invite')) {
       showRegisterModal();
+    } else {
+      showLoginModal();
     }
-    // 未登录，使用 mock 数据演示
-    useMockData = true;
-    document.getElementById('login-btn').style.display = 'none';
-    document.getElementById('user-info').style.display = 'block';
-    document.getElementById('current-user').textContent = '演示模式';
-    window.customers = mockCustomers;
-    window.seaCustomers = mockSeaCustomers;
-    deadSeaCustomers = mockDeadSeaCustomers;
     pendingConfirmCards = [
       // 新客户测试卡片
       {
