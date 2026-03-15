@@ -274,7 +274,7 @@ router.get('/agent-performance', authenticate, tenantScope, async (req, res) => 
 
     const result = [];
     for (const agent of agents) {
-      const [todayCalls, monthCalls, customerCount, signedCount, visitedCount] = await Promise.all([
+      const [todayCalls, monthCalls, customerCount, signedCount, visitedCount, analysisRows] = await Promise.all([
         prisma.recording.count({
           where: { tenantId: req.tenantId, agentId: agent.id, callTime: { gte: todayStart, lte: todayEnd }, isValid: true }
         }),
@@ -284,7 +284,36 @@ router.get('/agent-performance', authenticate, tenantScope, async (req, res) => 
         prisma.customer.count({ where: { tenantId: req.tenantId, agentId: agent.id } }),
         prisma.customer.count({ where: { tenantId: req.tenantId, agentId: agent.id, status: 'signed' } }),
         prisma.customer.count({ where: { tenantId: req.tenantId, agentId: agent.id, status: 'visited' } }),
+        // 从本月分析结果聚合6维评分
+        prisma.analysisResult.findMany({
+          where: {
+            recording: { tenantId: req.tenantId, agentId: agent.id, callTime: { gte: monthStart, lte: todayEnd } },
+            scores: { not: null }
+          },
+          select: { scores: true },
+          take: 100
+        })
       ]);
+
+      // 聚合6维评分均值
+      const dimKeys = ['opening', 'needs', 'value', 'objection', 'invitation', 'retention'];
+      let avgScores = null;
+      if (analysisRows.length > 0) {
+        const sums = { opening: 0, needs: 0, value: 0, objection: 0, invitation: 0, retention: 0 };
+        let count = 0;
+        for (const row of analysisRows) {
+          const s = row.scores;
+          if (s && typeof s === 'object') {
+            let valid = false;
+            for (const k of dimKeys) { if (typeof s[k] === 'number') { sums[k] += s[k]; valid = true; } }
+            if (valid) count++;
+          }
+        }
+        if (count > 0) {
+          avgScores = {};
+          for (const k of dimKeys) avgScores[k] = Math.round((sums[k] / count) * 10) / 10;
+        }
+      }
 
       result.push({
         id: agent.id,
@@ -295,6 +324,8 @@ router.get('/agent-performance', authenticate, tenantScope, async (req, res) => 
         customerCount,
         signedCount,
         visitedCount,
+        avgScores,
+        analysisCount: analysisRows.length
       });
     }
 

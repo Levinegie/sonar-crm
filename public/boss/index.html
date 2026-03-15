@@ -425,14 +425,8 @@ async function loadAgents() {
 
 function renderAgentPerformance() {
   const target = parseInt(settings.daily_call_min || '60');
-  // 用 mock 6维评分（真实数据需要 AI 分析结果聚合，暂用 mock）
-  const mockDims = {
-    '严妍': [8.5, 8.2, 7.8, 7.0, 8.8, 7.5],
-    '李晓东': [7.0, 7.5, 8.5, 8.2, 7.0, 8.0],
-    '王美琪': [7.8, 6.8, 7.0, 8.5, 7.2, 8.8],
-    default: [7.5, 7.8, 7.2, 7.0, 7.5, 7.0]
-  };
   const dimNames = ['开场白','需求挖掘','价值塑造','异议处理','邀约能力','私域留存'];
+  const dimKeys  = ['opening','needs','value','objection','invitation','retention'];
   const colors = ['#3b82f6','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4'];
 
   if (agentPerf.length === 0) {
@@ -443,26 +437,39 @@ function renderAgentPerformance() {
   document.getElementById('agents-body').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px">
     ${agentPerf.map((a, idx) => {
-      const dims = mockDims[a.name] || mockDims.default;
+      const hasScores = a.avgScores && Object.keys(a.avgScores).length > 0;
+      const callPct = target > 0 ? Math.min(100, Math.round(a.todayCalls / target * 100)) : 0;
+      const callColor = callPct >= 100 ? 'var(--green)' : callPct >= 60 ? 'var(--blue)' : 'var(--amber)';
       return `
       <div style="background:white;border:1px solid var(--gray-200);border-radius:12px;padding:20px">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
           <div class="avatar" style="background:${colors[idx%6]}">${(a.name||'?')[0]}</div>
-          <div style="flex:1"><div style="font-size:15px;font-weight:700;color:var(--navy)">${a.name}</div><div style="font-size:11px;color:var(--gray-400)">今日 ${a.todayCalls}/${target} 通 · 本月 ${a.monthCalls} 通</div></div>
+          <div style="flex:1">
+            <div style="font-size:15px;font-weight:700;color:var(--navy)">${a.name}</div>
+            <div style="font-size:11px;color:var(--gray-400)">今日 ${a.todayCalls}/${target} 通 · 本月 ${a.monthCalls} 通</div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:${callColor}">${callPct}%</div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
           <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--navy)">${a.customerCount}</div><div style="font-size:10px;color:var(--gray-400)">客户总数</div></div>
           <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--green)">${a.signedCount}</div><div style="font-size:10px;color:var(--gray-400)">已签单</div></div>
+          <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center"><div style="font-size:18px;font-weight:700;color:var(--purple)">${a.visitedCount}</div><div style="font-size:10px;color:var(--gray-400)">已到店</div></div>
         </div>
-        <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px">6维评分（基于AI分析）</div>
-        ${dimNames.map((dim, i) => {
-          const s = dims[i] || 7;
-          return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
-            <div style="font-size:11px;color:var(--gray-600);width:60px">${dim}</div>
-            <div style="flex:1;background:var(--gray-100);border-radius:3px;height:5px"><div style="width:${s*10}%;height:5px;border-radius:3px;background:${s>=8?'var(--green)':s>=7?'var(--blue)':'var(--amber)'}"></div></div>
-            <div style="font-size:11px;font-weight:700;color:var(--gray-700);width:24px">${s}</div>
-          </div>`;
-        }).join('')}
+        <div style="font-size:11px;color:var(--gray-400);margin-bottom:6px">
+          6维评分（AI分析）
+          ${hasScores ? `<span style="color:var(--green);margin-left:4px">· 基于${a.analysisCount}条录音</span>` : '<span style="color:var(--gray-300);margin-left:4px">· 暂无AI评分数据</span>'}
+        </div>
+        ${hasScores
+          ? dimNames.map((dim, i) => {
+              const s = a.avgScores[dimKeys[i]] || 0;
+              return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+                <div style="font-size:11px;color:var(--gray-600);width:60px">${dim}</div>
+                <div style="flex:1;background:var(--gray-100);border-radius:3px;height:5px"><div style="width:${s*10}%;height:5px;border-radius:3px;background:${s>=8?'var(--green)':s>=7?'var(--blue)':'var(--amber)'}"></div></div>
+                <div style="font-size:11px;font-weight:700;color:var(--gray-700);width:28px">${s}</div>
+              </div>`;
+            }).join('')
+          : `<div style="text-align:center;padding:12px 0;color:var(--gray-300);font-size:12px">上传录音并完成AI分析后展示</div>`
+        }
       </div>`;
     }).join('')}
     </div>`;

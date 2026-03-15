@@ -305,7 +305,13 @@ router.get('/pending/confirm', authenticate, tenantScope, async (req, res) => {
         callSummary: card.callSummary || '',
 
         // 原始分析结果 ID（用于确认时更新）
-        analysisResultId: confirmResult?.id
+        analysisResultId: confirmResult?.id,
+
+        // 锁定状态
+        isLocked: !!(confirmResult?.processingBy &&
+          confirmResult.processingBy !== req.user.id &&
+          confirmResult.processingAt > new Date(Date.now() - 5 * 60 * 1000)),
+        lockedByName: confirmResult?.processingBy && confirmResult.processingBy !== req.user.id ? '他人' : null
       });
     }
 
@@ -313,6 +319,35 @@ router.get('/pending/confirm', authenticate, tenantScope, async (req, res) => {
   } catch (err) {
     console.error('Get pending confirm error:', err);
     res.status(500).json(error('获取待确认列表失败', 500));
+  }
+});
+
+// 锁定待确认卡片（防止多人同时操作）
+router.post('/:id/lock', authenticate, tenantScope, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await prisma.analysisResult.findFirst({
+      where: { recordingId: id, stage: 'confirm_card' }
+    });
+
+    if (!result) return res.status(404).json(error('卡片不存在', 404));
+
+    // 检查是否已被别人锁定（5分钟内）
+    const lockExpiry = new Date(Date.now() - 5 * 60 * 1000);
+    if (result.processingBy && result.processingBy !== req.user.id && result.processingAt > lockExpiry) {
+      return res.status(409).json(error('该卡片正在被他人处理', 409));
+    }
+
+    // 加锁
+    await prisma.analysisResult.update({
+      where: { id: result.id },
+      data: { processingBy: req.user.id, processingAt: new Date() }
+    });
+
+    res.json(success(null, '已锁定'));
+  } catch (err) {
+    res.status(500).json(error('锁定失败', 500));
   }
 });
 
@@ -356,6 +391,15 @@ router.post('/:id/confirm', authenticate, tenantScope, async (req, res) => {
 
     if (recording.analysisStatus !== 'pending_confirm') {
       return res.status(400).json(error('该录音已确认或状态异常', 400));
+    }
+
+    // 检查是否被别人锁定
+    const confirmResult = recording.analysisResults[0];
+    if (confirmResult) {
+      const lockExpiry = new Date(Date.now() - 5 * 60 * 1000);
+      if (confirmResult.processingBy && confirmResult.processingBy !== req.user.id && confirmResult.processingAt > lockExpiry) {
+        return res.status(409).json(error('该卡片正在被他人处理，请稍后再试', 409));
+      }
     }
 
     // 如果标记为无效

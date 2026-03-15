@@ -1171,6 +1171,23 @@ function renderConfirmCards() {
     const levelOptions = ['S', 'A', 'B', 'C', '无效'];
     const followOptions = ['明天', '后天', '3天后', '1周后'];
 
+    // 如果被别人锁定，显示锁定状态
+    if (card.isLocked) {
+      return `
+      <div class="confirm-card-wrap" style="opacity:0.6;pointer-events:none">
+        <div class="confirm-card-header">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--navy)">
+              ${basicInfo.name || existing.name || '未知客户'}
+            </div>
+            <div style="font-size:12px;color:var(--gray-400);margin-top:2px">${card.customerPhoneMasked}</div>
+          </div>
+          <span style="background:#f59e0b;color:white;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600">⏳ 处理中</span>
+        </div>
+        <div style="text-align:center;padding:16px;color:var(--gray-400);font-size:13px">他人正在处理该卡片，请稍后...</div>
+      </div>`;
+    }
+
     // 判断字段是否为 AI 新识别（老客户场景）
     const isNewBasic = (key, aiVal) => !isNewCustomer && aiVal && aiVal !== existing[key];
     const isNewPortrait = (key, aiVal) => !isNewCustomer && aiVal && aiVal !== existPortrait[key] && aiVal !== '暂无';
@@ -1360,6 +1377,16 @@ async function submitConfirmCard(recordingId) {
   });
 
   try {
+    // 先尝试锁定（非mock模式）
+    if (!useMockData && !recordingId.startsWith('mock-')) {
+      const lockResult = await api(`/api/recordings/${recordingId}/lock`, { method: 'POST' });
+      if (!lockResult.success) {
+        showToast('该卡片正在被他人处理，请稍后再试', 'error');
+        await loadConfirmCards();
+        return;
+      }
+    }
+
     // mock 模式下跳过 API
     let result;
     if (useMockData || recordingId.startsWith('mock-')) {

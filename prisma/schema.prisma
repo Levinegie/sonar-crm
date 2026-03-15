@@ -194,6 +194,8 @@ model AnalysisResult {
   summary       String?  @db.Text
   redFlag       Boolean  @default(false)
   redFlagDetail String?
+  processingBy  String?
+  processingAt  DateTime?
   createdAt     DateTime @default(now())
 
   recording Recording @relation(fields: [recordingId], references: [id])
